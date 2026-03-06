@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum EstadoChecklist {
+  COMPLETADO
+  PENDIENTE
+  NO_APLICA
+}
+
+enum Urgencia {
+  CRITICA
+  ALTA
+  MEDIA
+  BAJA
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+
+  @@map("users")
+}
+
+model Comunidad {
+  id        String     @id @default(cuid())
+  nombre    String
+  nif       String
+  direccion String
+  pisos     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  operativa  Operativa?
+  checklists Checklist[]
+  documentos Documento[]
+  alertas    Alerta[]
+
+  @@map("comunidades")
+}
+
+model Operativa {
+  id          String    @id @default(cuid())
+  comunidadId String    @unique
+  comunidad   Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
+
+  usaAgreGasfincas            Boolean @default(false)
+  somosCorredorSeguro         Boolean @default(false)
+  corredorSeguroNombre        String?
+  numeroPolizaSeguro          String?
+  usaNuevoSistemaIncidencias  Boolean @default(false)
+  tieneAppTuComunidad         Boolean @default(false)
+  tienePortero                Boolean @default(false)
+  tieneConserje               Boolean @default(false)
+  tieneGarajista              Boolean @default(false)
+  tieneLimpiadora             Boolean @default(false)
+  tieneOtroPersonal           Boolean @default(false)
+  descripcionOtroPersonal     String?
+  tieneVideovigilancia        Boolean @default(false)
+  actuaComoArrendadora        Boolean @default(false)
+  activoArrendadoDescripcion  String?
+  gestionaConsumos            Boolean @default(false)
+  empresaGestionConsumos      String?
+  gestionaPermisosGasoleo     Boolean @default(false)
+  reformaFontaneria           Boolean @default(false)
+  fechaReformaFontaneria      DateTime?
+  reformaSaneamiento          Boolean @default(false)
+  fechaReformaSaneamiento     DateTime?
+  reformaElectricidad         Boolean @default(false)
+  fechaReformaElectricidad    DateTime?
+  obligadaITE                 Boolean @default(false)
+  fechaProximaITE             DateTime?
+
+  @@map("operativas")
+}
+
+model Checklist {
+  id           String          @id @default(cuid())
+  comunidadId  String
+  comunidad    Comunidad       @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
+  docTypeId    String
+  estado       EstadoChecklist @default(PENDIENTE)
+  fecha        DateTime?
+  observaciones String         @default("")
+  justificacion String         @default("")
+
+  @@unique([comunidadId, docTypeId])
+  @@map("checklists")
+}
+
+model Documento {
+  id          String    @id @default(cuid())
+  comunidadId String
+  comunidad   Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
+  docTypeId   String
+  nombre      String
+  rutaArchivo String?
+  sizeBytes   Int       @default(0)
+  aiConfianza Int?
+  uploadedAt  DateTime  @default(now())
+
+  @@map("documentos")
+}
+
+model Alerta {
+  id          String    @id @default(cuid())
+  comunidadId String
+  comunidad   Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
+  tipo        String
+  urgencia    Urgencia
+  titulo      String
+  descripcion String
+  descartada  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@map("alertas")
+}
