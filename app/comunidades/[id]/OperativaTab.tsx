@@ -89,7 +89,7 @@ function BoolToggle({
     );
   }
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-1.5">
       <button
         type="button"
         onClick={() => onChange(true)}
@@ -126,8 +126,8 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between py-1.5">
-      <span className="text-gray-600" style={{ fontSize: 12 }}>
+    <div className="flex items-center justify-between py-2">
+      <span className="text-gray-600 text-sm">
         {label}
       </span>
       <div>{children}</div>
@@ -146,13 +146,13 @@ function SectionCard({
 }) {
   return (
     <div
-      className="card"
+      className="card-static"
       style={{
         borderTop: `4px solid ${color}`,
-        padding: "14px 16px",
+        padding: "16px 20px",
       }}
     >
-      <h4 className="font-semibold text-gray-800 mb-3" style={{ fontSize: 13 }}>
+      <h4 className="section-title" style={{ marginBottom: 12 }}>
         {title}
       </h4>
       <div className="space-y-1">{children}</div>
@@ -216,7 +216,7 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
 
   if (loading)
     return (
-      <div className="text-gray-500" style={{ fontSize: 12 }}>
+      <div className="text-gray-500 text-sm">
         Cargando operativa...
       </div>
     );
@@ -236,7 +236,6 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
           <button
             onClick={() => setEditing(true)}
             className="btn-secondary"
-            style={{ fontSize: 12, padding: "6px 14px" }}
           >
             Editar información operativa
           </button>
@@ -246,14 +245,12 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
               onClick={handleSave}
               disabled={saving}
               className="btn-primary"
-              style={{ fontSize: 12, padding: "6px 14px" }}
             >
               {saving ? "Guardando..." : "Guardar"}
             </button>
             <button
               onClick={handleCancel}
               className="btn-secondary"
-              style={{ fontSize: 12, padding: "6px 14px" }}
             >
               Cancelar
             </button>
@@ -278,10 +275,10 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
                   value={form.corredorSeguroNombre}
                   onChange={(e) => set("corredorSeguroNombre", e.target.value)}
                   className="input-field"
-                  style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+                  style={{ width: 200 }}
                 />
               ) : (
-                <span style={{ fontSize: 12 }}>{textValue(form.corredorSeguroNombre)}</span>
+                <span className="text-sm">{textValue(form.corredorSeguroNombre)}</span>
               )}
             </Field>
           )}
@@ -292,10 +289,10 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
                 value={form.numeroPolizaSeguro}
                 onChange={(e) => set("numeroPolizaSeguro", e.target.value)}
                 className="input-field"
-                style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+                style={{ width: 200 }}
               />
             ) : (
-              <span style={{ fontSize: 12 }}>{textValue(form.numeroPolizaSeguro)}</span>
+              <span className="text-sm">{textValue(form.numeroPolizaSeguro)}</span>
             )}
           </Field>
         </SectionCard>
@@ -368,10 +365,10 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
                   value={form.descripcionOtroPersonal}
                   onChange={(e) => set("descripcionOtroPersonal", e.target.value)}
                   className="input-field"
-                  style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+                  style={{ width: 200 }}
                 />
               ) : (
-                <span style={{ fontSize: 12 }}>
+                <span className="text-sm">
                   {textValue(form.descripcionOtroPersonal)}
                 </span>
               )}
@@ -407,10 +404,10 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
                     set("activoArrendadoDescripcion", e.target.value)
                   }
                   className="input-field"
-                  style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+                  style={{ width: 200 }}
                 />
               ) : (
-                <span style={{ fontSize: 12 }}>
+                <span className="text-sm">
                   {textValue(form.activoArrendadoDescripcion)}
                 </span>
               )}
@@ -436,10 +433,10 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
                     set("empresaGestionConsumos", e.target.value)
                   }
                   className="input-field"
-                  style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+                  style={{ width: 200 }}
                 />
               ) : (
-                <span style={{ fontSize: 12 }}>
+                <span className="text-sm">
                   {textValue(form.empresaGestionConsumos)}
                 </span>
               )}
@@ -475,10 +472,10 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
                     set("fechaReformaFontaneria", e.target.value)
                   }
                   className="input-field"
-                  style={{ fontSize: 12, padding: "4px 8px", width: 160 }}
+                  style={{ width: 180 }}
                 />
               ) : (
-                <span style={{ fontSize: 12 }}>
+                <span className="text-sm">
                   {formatDate(form.fechaReformaFontaneria)}
                 </span>
               )}
@@ -501,10 +498,10 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
                     set("fechaReformaSaneamiento", e.target.value)
                   }
                   className="input-field"
-                  style={{ fontSize: 12, padding: "4px 8px", width: 160 }}
+                  style={{ width: 180 }}
                 />
               ) : (
-                <span style={{ fontSize: 12 }}>
+                <span className="text-sm">
                   {formatDate(form.fechaReformaSaneamiento)}
                 </span>
               )}
@@ -527,10 +524,10 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
                     set("fechaReformaElectricidad", e.target.value)
                   }
                   className="input-field"
-                  style={{ fontSize: 12, padding: "4px 8px", width: 160 }}
+                  style={{ width: 180 }}
                 />
               ) : (
-                <span style={{ fontSize: 12 }}>
+                <span className="text-sm">
                   {formatDate(form.fechaReformaElectricidad)}
                 </span>
               )}
@@ -555,11 +552,11 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
                     value={form.fechaProximaITE}
                     onChange={(e) => set("fechaProximaITE", e.target.value)}
                     className="input-field"
-                    style={{ fontSize: 12, padding: "4px 8px", width: 160 }}
+                    style={{ width: 180 }}
                   />
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span style={{ fontSize: 12 }}>
+                    <span className="text-sm">
                       {formatDate(form.fechaProximaITE)}
                     </span>
                     {iteExpired && (

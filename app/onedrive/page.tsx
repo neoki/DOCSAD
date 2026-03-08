@@ -100,23 +100,23 @@ export default function OneDrivePage() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <p style={{ color: "#94a3b8", fontSize: 13 }}>Cargando...</p>
+      <div className="flex items-center justify-center" style={{ height: "60vh" }}>
+        <p className="text-sm text-slate-400">Cargando...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <p style={{ color: "#EF4444", fontSize: 13 }}>{error}</p>
+      <div className="flex items-center justify-center" style={{ height: "60vh" }}>
+        <p className="text-sm text-red-500">{error}</p>
       </div>
     );
   }
 
   return (
     <div style={{ maxWidth: 960 }}>
-      <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>OneDrive</h1>
+      <h1 className="page-title" style={{ marginBottom: 16 }}>OneDrive</h1>
 
       <div
         className="card"
@@ -131,13 +131,13 @@ export default function OneDrivePage() {
       >
         <span style={{ fontSize: 32 }}>☁️</span>
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 15, fontWeight: 700 }}>
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: 16, fontWeight: 700 }}>
               {connected ? "OneDrive conectado" : "OneDrive no conectado"}
             </span>
             {connected && <span className="badge-completado">Conectado</span>}
           </div>
-          <p style={{ fontSize: 12, color: "#64748b", margin: "4px 0 0" }}>
+          <p style={{ fontSize: 14, color: "#64748b", margin: "4px 0 0" }}>
             {connected
               ? "Tu carpeta de OneDrive está sincronizada."
               : "Configura las credenciales de Azure para conectar tu carpeta de OneDrive"}
@@ -147,7 +147,7 @@ export default function OneDrivePage() {
           <Link
             href="/ajustes"
             style={{
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 600,
               color: "#2563eb",
               textDecoration: "none",
@@ -165,7 +165,7 @@ export default function OneDrivePage() {
         </span>
       </div>
 
-      <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12, display: "flex", alignItems: "center", gap: 4 }}>
+      <div className="flex items-center gap-1" style={{ fontSize: 13, color: "#64748b", marginBottom: 12 }}>
         <span style={{ fontWeight: 600 }}>OneDrive</span>
         <span style={{ color: "#cbd5e1" }}>&gt;</span>
         <span style={{ fontWeight: 600 }}>DocFincas</span>
@@ -175,17 +175,15 @@ export default function OneDrivePage() {
 
       {successMsg && (
         <div
+          className="flex items-center gap-2"
           style={{
             background: "#f0fdf4",
             border: "1px solid #bbf7d0",
             borderRadius: 8,
             padding: "10px 14px",
-            fontSize: 12,
+            fontSize: 14,
             color: "#166534",
             marginBottom: 12,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
           }}
         >
           <span>✅</span>
@@ -194,10 +192,10 @@ export default function OneDrivePage() {
       )}
 
       <div className="card" style={{ padding: 0, overflow: "hidden", marginBottom: 16 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
-            <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
-              <th style={{ padding: "8px 12px", width: 32, textAlign: "center" }}>
+            <tr>
+              <th className="table-header" style={{ width: 40, textAlign: "center" }}>
                 <input
                   type="checkbox"
                   checked={
@@ -205,19 +203,19 @@ export default function OneDrivePage() {
                     selected.size === files.filter((f) => !imported.has(f.id)).length
                   }
                   onChange={toggleAll}
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: "pointer", width: 16, height: 16 }}
                 />
               </th>
-              <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 600, color: "#475569" }}>
+              <th className="table-header" style={{ textAlign: "left" }}>
                 Nombre
               </th>
-              <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 600, color: "#475569", width: 80 }}>
+              <th className="table-header" style={{ textAlign: "left", width: 90 }}>
                 Tamaño
               </th>
-              <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 600, color: "#475569", width: 100 }}>
+              <th className="table-header" style={{ textAlign: "left", width: 110 }}>
                 Modificado
               </th>
-              <th style={{ padding: "8px 12px", textAlign: "left", fontWeight: 600, color: "#475569", width: 180 }}>
+              <th className="table-header" style={{ textAlign: "left", width: 200 }}>
                 Comunidad
               </th>
             </tr>
@@ -228,51 +226,44 @@ export default function OneDrivePage() {
               return (
                 <tr
                   key={file.id}
+                  className="table-row"
                   style={{
-                    borderBottom: "1px solid #f1f5f9",
                     background: selected.has(file.id) ? "#eff6ff" : "transparent",
                     opacity: isImported ? 0.7 : 1,
                   }}
                 >
-                  <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                  <td className="table-cell" style={{ textAlign: "center" }}>
                     {isImported ? (
-                      <span style={{ color: "#22c55e", fontSize: 16 }}>✓</span>
+                      <span style={{ color: "#22c55e", fontSize: 18 }}>✓</span>
                     ) : (
                       <input
                         type="checkbox"
                         checked={selected.has(file.id)}
                         onChange={() => toggleSelect(file.id)}
-                        style={{ cursor: "pointer" }}
+                        style={{ cursor: "pointer", width: 16, height: 16 }}
                       />
                     )}
                   </td>
-                  <td style={{ padding: "8px 12px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <td className="table-cell">
+                    <div className="flex items-center gap-2">
                       <span>{fileIcon(file.type)}</span>
                       <span style={{ fontWeight: 500 }}>{file.name}</span>
                       {isImported && <span className="badge-completado">Importado</span>}
                     </div>
                   </td>
-                  <td style={{ padding: "8px 12px", color: "#64748b" }}>{file.size}</td>
-                  <td style={{ padding: "8px 12px", color: "#64748b" }}>{file.modified}</td>
-                  <td style={{ padding: "8px 12px" }}>
+                  <td className="table-cell" style={{ color: "#64748b" }}>{file.size}</td>
+                  <td className="table-cell" style={{ color: "#64748b" }}>{file.modified}</td>
+                  <td className="table-cell">
                     {isImported ? (
-                      <span style={{ fontSize: 11, color: "#64748b" }}>
+                      <span style={{ fontSize: 13, color: "#64748b" }}>
                         {comunidades.find((c) => c.id === assignments[file.id])?.nombre || "—"}
                       </span>
                     ) : (
                       <select
                         value={assignments[file.id] || ""}
                         onChange={(e) => assignCommunity(file.id, e.target.value)}
-                        style={{
-                          width: "100%",
-                          fontSize: 11,
-                          padding: "4px 6px",
-                          border: "1px solid #e2e8f0",
-                          borderRadius: 6,
-                          background: "#fff",
-                          color: "#0f172a",
-                        }}
+                        className="input-field"
+                        style={{ fontSize: 14, padding: "6px 10px" }}
                       >
                         <option value="">Seleccionar...</option>
                         {comunidades.map((c) => (
@@ -290,17 +281,16 @@ export default function OneDrivePage() {
         </table>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+      <div className="flex items-center gap-3" style={{ marginBottom: 24 }}>
         <button
           className="btn-primary"
           disabled={!canImport || importing}
           onClick={handleImport}
-          style={{ fontSize: 13, padding: "8px 20px" }}
         >
           {importing ? "Importando..." : "Importar seleccionados"}
         </button>
         {selected.size > 0 && (
-          <span style={{ fontSize: 12, color: "#64748b" }}>
+          <span style={{ fontSize: 14, color: "#64748b" }}>
             {selected.size} archivo{selected.size !== 1 ? "s" : ""} seleccionado{selected.size !== 1 ? "s" : ""}
           </span>
         )}
@@ -308,16 +298,14 @@ export default function OneDrivePage() {
 
       {!connected && (
         <div
+          className="flex items-center gap-2"
           style={{
             background: "#eff6ff",
             border: "1px solid #bfdbfe",
             borderRadius: 8,
-            padding: "10px 14px",
-            fontSize: 12,
+            padding: "12px 16px",
+            fontSize: 14,
             color: "#1e40af",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
           }}
         >
           <span>ℹ️</span>

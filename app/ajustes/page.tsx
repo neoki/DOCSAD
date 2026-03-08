@@ -160,8 +160,8 @@ export default function AjustesPage() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <p style={{ color: "#94a3b8", fontSize: 14 }}>Cargando configuración...</p>
+      <div className="flex items-center justify-center" style={{ height: "60vh" }}>
+        <p className="text-sm text-slate-400">Cargando configuración...</p>
       </div>
     );
   }
@@ -170,12 +170,12 @@ export default function AjustesPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>Ajustes</h1>
-      <p style={{ color: "#64748b", fontSize: 14, marginBottom: 28 }}>
+      <h1 className="page-title" style={{ marginBottom: 4 }}>Ajustes</h1>
+      <p className="page-subtitle" style={{ marginBottom: 28 }}>
         Configuración de modelos de IA y conexiones externas
       </p>
 
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Modelos de IA</h2>
+      <h2 className="section-title">Modelos de IA</h2>
       <div
         style={{
           display: "grid",
@@ -196,33 +196,33 @@ export default function AjustesPage() {
                 position: "relative",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div className="flex items-center gap-3" style={{ marginBottom: 16 }}>
                 <div
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 10,
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
                     background: prov.color,
                     color: "#fff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: 800,
-                    fontSize: 18,
+                    fontSize: 20,
                     flexShrink: 0,
                   }}
                 >
                   {prov.initial}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{prov.name}</div>
-                  <div style={{ color: "#64748b", fontSize: 12 }}>{prov.description}</div>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>{prov.name}</div>
+                  <div style={{ color: "#64748b", fontSize: 14 }}>{prov.description}</div>
                 </div>
                 <button
                   onClick={() => updateProvider(prov.id, "active", true)}
                   style={{
-                    width: 20,
-                    height: 20,
+                    width: 24,
+                    height: 24,
                     borderRadius: "50%",
                     border: `2px solid ${isActive ? prov.color : "#cbd5e1"}`,
                     background: isActive ? prov.color : "#fff",
@@ -235,26 +235,26 @@ export default function AjustesPage() {
                   title={isActive ? "Modelo activo" : "Activar este modelo"}
                 >
                   {isActive && (
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff" }} />
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff" }} />
                   )}
                 </button>
               </div>
 
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
                 API Key
               </label>
-              <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+              <div className="flex gap-2" style={{ marginBottom: 12 }}>
                 <input
                   type={showKeys[prov.id] ? "text" : "password"}
                   className="input-field"
                   placeholder="sk-..."
                   value={cfg?.apiKey || ""}
                   onChange={(e) => updateProvider(prov.id, "apiKey", e.target.value)}
-                  style={{ flex: 1, fontSize: 13 }}
+                  style={{ flex: 1 }}
                 />
                 <button
                   className="btn-secondary"
-                  style={{ padding: "6px 10px", fontSize: 12 }}
+                  style={{ padding: "8px 12px" }}
                   onClick={() => setShowKeys((prev) => ({ ...prev, [prov.id]: !prev[prov.id] }))}
                 >
                   {showKeys[prov.id] ? (
@@ -272,14 +272,14 @@ export default function AjustesPage() {
                 </button>
               </div>
 
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
                 Modelo
               </label>
               <select
                 className="input-field"
                 value={cfg?.model || prov.models[0]}
                 onChange={(e) => updateProvider(prov.id, "model", e.target.value)}
-                style={{ marginBottom: 12, fontSize: 13 }}
+                style={{ marginBottom: 12 }}
               >
                 {prov.models.map((m) => (
                   <option key={m} value={m}>
@@ -288,15 +288,15 @@ export default function AjustesPage() {
                 ))}
               </select>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div className="flex items-center gap-2">
                 <button
                   className="btn-secondary"
-                  style={{ fontSize: 12, padding: "6px 12px" }}
+                  style={{ padding: "8px 16px" }}
                   onClick={() => testConnection(prov.id)}
                   disabled={testing[prov.id]}
                 >
                   {testing[prov.id] ? (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <span className="inline-flex items-center gap-2">
                       <svg width="14" height="14" viewBox="0 0 24 24" style={{ animation: "spin 1s linear infinite" }}>
                         <circle cx="12" cy="12" r="10" stroke="#94a3b8" strokeWidth="3" fill="none" strokeDasharray="31.4" strokeLinecap="round" />
                       </svg>
@@ -309,7 +309,7 @@ export default function AjustesPage() {
                 {testResult[prov.id] && (
                   <span
                     style={{
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: 600,
                       color: testResult[prov.id].includes("correctamente") ? "#16a34a" : "#dc2626",
                     }}
@@ -327,9 +327,9 @@ export default function AjustesPage() {
                     right: 16,
                     background: prov.color,
                     color: "#fff",
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: 700,
-                    padding: "2px 10px",
+                    padding: "3px 12px",
                     borderRadius: "0 0 6px 6px",
                   }}
                 >
@@ -341,14 +341,14 @@ export default function AjustesPage() {
         })}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
+      <div className="flex items-center gap-3" style={{ marginBottom: 40 }}>
         <button className="btn-primary" onClick={saveAll} disabled={saving} style={{ minWidth: 180 }}>
           {saving ? "Guardando..." : "Guardar configuración"}
         </button>
         {saveMsg && (
           <span
             style={{
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: 600,
               color: saveMsg.includes("correctamente") ? "#16a34a" : "#dc2626",
             }}
@@ -358,9 +358,9 @@ export default function AjustesPage() {
         )}
       </div>
 
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Conexión OneDrive</h2>
+      <h2 className="section-title">Conexión OneDrive</h2>
       <div
-        className="card"
+        className="card-static"
         style={{ borderLeft: "4px solid #3b82f6", maxWidth: 720 }}
       >
         <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Configuración de OneDrive</h3>
@@ -378,9 +378,9 @@ export default function AjustesPage() {
             <code
               style={{
                 background: "#f1f5f9",
-                padding: "2px 8px",
-                borderRadius: 4,
-                fontSize: 12,
+                padding: "3px 10px",
+                borderRadius: 6,
+                fontSize: 13,
                 fontFamily: "monospace",
               }}
             >
@@ -395,50 +395,37 @@ export default function AjustesPage() {
           </li>
           <li>
             Configura las siguientes variables de entorno en Replit Secrets:
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+            <div className="flex flex-wrap gap-2" style={{ marginTop: 8 }}>
               {[
                 "MICROSOFT_CLIENT_ID",
                 "MICROSOFT_CLIENT_SECRET",
                 "MICROSOFT_TENANT_ID",
+                "ONEDRIVE_FOLDER_PATH",
               ].map((v) => (
                 <span
                   key={v}
                   style={{
-                    background: "#f1f5f9",
-                    border: "1px solid #e2e8f0",
+                    background: "#eef2ff",
+                    border: "1px solid #c7d2fe",
                     borderRadius: 6,
-                    padding: "3px 10px",
-                    fontSize: 12,
+                    padding: "4px 12px",
+                    fontSize: 13,
                     fontFamily: "monospace",
                     fontWeight: 600,
-                    color: "#334155",
+                    color: "#4338ca",
                   }}
                 >
                   {v}
                 </span>
               ))}
-              <span
-                style={{
-                  background: "#f1f5f9",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 6,
-                  padding: "3px 10px",
-                  fontSize: 12,
-                  fontFamily: "monospace",
-                  fontWeight: 600,
-                  color: "#334155",
-                }}
-              >
-                ONEDRIVE_FOLDER_PATH
-              </span>
             </div>
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+            <div style={{ fontSize: 13, color: "#64748b", marginTop: 6 }}>
               (ruta de la carpeta a sincronizar, ej: /DocFincas)
             </div>
           </li>
         </ol>
 
-        <p style={{ fontSize: 13, color: "#3b82f6", fontWeight: 600, marginTop: 12 }}>
+        <p style={{ fontSize: 14, color: "#3b82f6", fontWeight: 600, marginTop: 12 }}>
           Una vez configuradas las credenciales, la página de OneDrive se activará automáticamente.
         </p>
       </div>

@@ -49,7 +49,7 @@ interface Props {
 
 function BarChartIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
       <rect x="1" y="8" width="3" height="7" rx="1" fill="currentColor" opacity="0.7"/>
       <rect x="6" y="4" width="3" height="11" rx="1" fill="currentColor"/>
       <rect x="11" y="1" width="3" height="14" rx="1" fill="currentColor" opacity="0.85"/>
@@ -59,7 +59,7 @@ function BarChartIcon() {
 
 function BuildingIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
       <rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
       <rect x="5" y="4" width="2" height="2" rx="0.5" fill="currentColor"/>
       <rect x="9" y="4" width="2" height="2" rx="0.5" fill="currentColor"/>
@@ -72,7 +72,7 @@ function BuildingIcon() {
 
 function CheckCircleIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
       <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
       <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
@@ -81,7 +81,7 @@ function CheckCircleIcon() {
 
 function DocIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
       <path d="M4 1h5.5L13 4.5V14a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.3" fill="none"/>
       <path d="M9 1v4h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
       <line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" strokeWidth="1" opacity="0.5"/>
@@ -92,7 +92,7 @@ function DocIcon() {
 
 function PhoneIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
       <rect x="4" y="1" width="8" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
       <line x1="6" y1="12" x2="10" y2="12" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
     </svg>
@@ -107,7 +107,7 @@ function FilterIcon() {
   );
 }
 
-function CircularProgress({ value, size = 64, strokeWidth = 5, color }: { value: number; size?: number; strokeWidth?: number; color: string }) {
+function CircularProgress({ value, size = 72, strokeWidth = 5, color }: { value: number; size?: number; strokeWidth?: number; color: string }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
@@ -126,7 +126,7 @@ function CircularProgress({ value, size = 64, strokeWidth = 5, color }: { value:
         strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
-      <text x={size / 2} y={size / 2} textAnchor="middle" dominantBaseline="central" fontSize="13" fontWeight="700" fill="#1e293b">
+      <text x={size / 2} y={size / 2} textAnchor="middle" dominantBaseline="central" fontSize="15" fontWeight="700" fill="#1e293b">
         {value}%
       </text>
     </svg>
@@ -215,41 +215,21 @@ export default function DashboardClient({ comunidades, categorias, totalComunida
 
   return (
     <div>
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0 }}>Dashboard</h1>
-        <p style={{ fontSize: 12, color: "#94a3b8", margin: "4px 0 0" }}>Resumen general del estado documental y operativo</p>
+      <div className="mb-5">
+        <h1 className="page-title">Dashboard</h1>
+        <p className="page-subtitle">Resumen general del estado documental y operativo</p>
       </div>
 
-      <div style={{ display: "flex", gap: 0, marginBottom: 24, borderBottom: "2px solid #e2e8f0" }}>
+      <div className="flex mb-6" style={{ borderBottom: "2px solid #e2e8f0" }}>
         <button
           onClick={() => setTab("documental")}
-          style={{
-            padding: "8px 20px",
-            fontSize: 13,
-            fontWeight: 600,
-            border: "none",
-            background: "none",
-            cursor: "pointer",
-            color: tab === "documental" ? "#4F7CFF" : "#64748b",
-            borderBottom: tab === "documental" ? "2px solid #4F7CFF" : "2px solid transparent",
-            marginBottom: -2,
-          }}
+          className={`tab-btn ${tab === "documental" ? "active" : ""}`}
         >
           Documental
         </button>
         <button
           onClick={() => setTab("operativo")}
-          style={{
-            padding: "8px 20px",
-            fontSize: 13,
-            fontWeight: 600,
-            border: "none",
-            background: "none",
-            cursor: "pointer",
-            color: tab === "operativo" ? "#4F7CFF" : "#64748b",
-            borderBottom: tab === "operativo" ? "2px solid #4F7CFF" : "2px solid transparent",
-            marginBottom: -2,
-          }}
+          className={`tab-btn ${tab === "operativo" ? "active" : ""}`}
         >
           Operativo
         </button>
@@ -303,38 +283,38 @@ function DocumentalTab({
 
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 20 }}>
+      <div className="grid grid-cols-4 gap-4 mb-5">
         {kpis.map((k) => (
-          <div key={k.label} className="card" style={{ padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: k.color + "18", color: k.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div key={k.label} className="kpi-card">
+            <div className="kpi-icon" style={{ background: k.color + "18", color: k.color }}>
               {k.icon}
             </div>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", lineHeight: 1 }}>{k.value}</div>
-              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{k.label}</div>
+              <div className="kpi-value">{k.value}</div>
+              <div className="kpi-label">{k.label}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-        <div className="card" style={{ padding: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+      <div className="grid grid-cols-2 gap-4 mb-5">
+        <div className="card">
+          <div className="section-label mb-3">
             Ranking por completitud
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="flex flex-col gap-2">
             {comunidades.map((c) => {
               const color = getCompletitudColor(c.completitud);
               return (
-                <Link key={c.id} href={`/comunidades/${c.id}`} style={{ textDecoration: "none" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "#334155", minWidth: 140, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <Link key={c.id} href={`/comunidades/${c.id}`} className="no-underline">
+                  <div className="flex items-center gap-3">
+                    <div className="text-xs font-semibold text-slate-700 min-w-[140px] whitespace-nowrap overflow-hidden text-ellipsis">
                       {c.nombre}
                     </div>
-                    <div style={{ flex: 1, height: 8, background: "#f1f5f9", borderRadius: 4, overflow: "hidden" }}>
-                      <div style={{ width: `${c.completitud}%`, height: "100%", background: color, borderRadius: 4, transition: "width 0.3s" }} />
+                    <div className="flex-1 h-2.5 bg-slate-100 rounded overflow-hidden">
+                      <div className="h-full rounded transition-all duration-300" style={{ width: `${c.completitud}%`, background: color }} />
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color, minWidth: 36, textAlign: "right" }}>
+                    <div className="text-xs font-bold min-w-[36px] text-right" style={{ color }}>
                       {c.completitud}%
                     </div>
                   </div>
@@ -344,23 +324,23 @@ function DocumentalTab({
           </div>
         </div>
 
-        <div className="card" style={{ padding: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+        <div className="card">
+          <div className="section-label mb-3">
             Estado por categoría documental
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="flex flex-col gap-3">
             {categorias.map((cat) => {
               const applicable = cat.total - cat.noAplica;
               const pct = applicable > 0 ? Math.round((cat.completados / applicable) * 100) : 0;
               return (
                 <div key={cat.key}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: cat.color, display: "inline-block", flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#334155", flex: 1 }}>{cat.label}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b" }}>{pct}%</span>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-2 h-2 rounded-full inline-block flex-shrink-0" style={{ background: cat.color }} />
+                    <span className="text-xs font-semibold text-slate-700 flex-1">{cat.label}</span>
+                    <span className="text-xs font-bold text-slate-500">{pct}%</span>
                   </div>
-                  <div style={{ height: 6, background: "#f1f5f9", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: cat.color, borderRadius: 3, transition: "width 0.3s" }} />
+                  <div className="h-2 bg-slate-100 rounded overflow-hidden">
+                    <div className="h-full rounded transition-all duration-300" style={{ width: `${pct}%`, background: cat.color }} />
                   </div>
                 </div>
               );
@@ -369,20 +349,20 @@ function DocumentalTab({
         </div>
       </div>
 
-      <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+      <div className="section-label mb-3">
         Comunidades
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14 }}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))" }}>
         {comunidades.map((c) => {
           const color = getCompletitudColor(c.completitud);
           return (
-            <Link key={c.id} href={`/comunidades/${c.id}`} style={{ textDecoration: "none" }}>
-              <div className="card" style={{ padding: 16, textAlign: "center", cursor: "pointer", transition: "box-shadow 0.2s" }}>
+            <Link key={c.id} href={`/comunidades/${c.id}`} className="no-underline">
+              <div className="card text-center cursor-pointer">
                 <CircularProgress value={c.completitud} color={color} />
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginTop: 8 }}>{c.nombre}</div>
-                <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 6 }}>
-                  <span style={{ fontSize: 10, color: "#F59E0B" }}>{c.pendientes} pend.</span>
-                  <span style={{ fontSize: 10, color: "#94a3b8" }}>{c.noAplica} N/A</span>
+                <div className="text-sm font-bold text-slate-900 mt-2">{c.nombre}</div>
+                <div className="flex justify-center gap-3 mt-1.5">
+                  <span className="text-xs text-warning">{c.pendientes} pend.</span>
+                  <span className="text-xs text-slate-400">{c.noAplica} N/A</span>
                 </div>
               </div>
             </Link>
@@ -412,8 +392,8 @@ function OperativoTab({
 }) {
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
-        <span style={{ color: "#64748b", display: "flex", alignItems: "center", gap: 4 }}>
+      <div className="flex items-center gap-2 flex-wrap mb-5">
+        <span className="text-slate-500 flex items-center gap-1">
           <FilterIcon />
         </span>
         {FILTER_PILLS.map((f) => {
@@ -422,16 +402,12 @@ function OperativoTab({
             <button
               key={f.key}
               onClick={() => toggleFilter(f.key)}
+              className="rounded-full text-xs font-semibold cursor-pointer transition-all duration-150"
               style={{
-                padding: "4px 12px",
-                borderRadius: 9999,
-                fontSize: 11,
-                fontWeight: 600,
+                padding: "5px 14px",
                 border: active ? "1px solid #4F7CFF" : "1px solid #e2e8f0",
                 background: active ? "#EFF6FF" : "#fff",
                 color: active ? "#4F7CFF" : "#64748b",
-                cursor: "pointer",
-                transition: "all 0.15s",
               }}
             >
               {f.label}
@@ -441,31 +417,23 @@ function OperativoTab({
         {activeFilters.size > 0 && (
           <button
             onClick={clearFilters}
-            style={{
-              padding: "4px 12px",
-              borderRadius: 9999,
-              fontSize: 11,
-              fontWeight: 600,
-              border: "none",
-              background: "none",
-              color: "#EF4444",
-              cursor: "pointer",
-            }}
+            className="rounded-full text-xs font-semibold border-none bg-transparent text-danger cursor-pointer"
+            style={{ padding: "5px 14px" }}
           >
             Limpiar filtros
           </button>
         )}
-        <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: "auto" }}>
+        <span className="text-xs text-slate-400 ml-auto">
           {filteredComunidades.length} / {totalComunidades} comunidades
         </span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <div className="card" style={{ padding: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="card">
+          <div className="section-label mb-3">
             Distribución operativa
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="flex flex-col gap-2">
             {DISTRIBUTION_METRICS.map((m) => {
               const count = distributionCounts[m.key] || 0;
               const pct = totalComunidades > 0 ? Math.round((count / totalComunidades) * 100) : 0;
@@ -478,26 +446,20 @@ function OperativoTab({
                       toggleFilter(m.key);
                     }
                   }}
+                  className="flex items-center gap-3 border-none rounded-md w-full text-left"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
                     background: isFilterActive ? "#EFF6FF" : "transparent",
-                    border: "none",
                     cursor: FILTER_PILLS.some((f) => f.key === m.key) ? "pointer" : "default",
-                    padding: "2px 0",
-                    borderRadius: 6,
-                    width: "100%",
-                    textAlign: "left",
+                    padding: "3px 0",
                   }}
                 >
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "#334155", minWidth: 130, whiteSpace: "nowrap" }}>
+                  <span className="text-xs font-semibold text-slate-700 min-w-[140px] whitespace-nowrap" style={{ fontSize: "13px" }}>
                     {m.label}
                   </span>
-                  <div style={{ flex: 1, height: 7, background: "#f1f5f9", borderRadius: 4, overflow: "hidden" }}>
-                    <div style={{ width: `${pct}%`, height: "100%", background: "#4F7CFF", borderRadius: 4, transition: "width 0.3s" }} />
+                  <div className="flex-1 h-2 bg-slate-100 rounded overflow-hidden">
+                    <div className="h-full bg-primary rounded transition-all duration-300" style={{ width: `${pct}%` }} />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#4F7CFF", minWidth: 24, textAlign: "right" }}>
+                  <span className="text-xs font-bold text-primary min-w-[28px] text-right">
                     {count}
                   </span>
                 </button>
@@ -506,36 +468,28 @@ function OperativoTab({
           </div>
         </div>
 
-        <div className="card" style={{ padding: 16, maxHeight: 420, overflowY: "auto" }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+        <div className="card" style={{ maxHeight: 420, overflowY: "auto" }}>
+          <div className="section-label mb-3">
             Comunidades {activeFilters.size > 0 ? "(filtradas)" : ""}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="flex flex-col gap-3">
             {filteredComunidades.map((c) => (
-              <Link key={c.id} href={`/comunidades/${c.id}`} style={{ textDecoration: "none" }}>
-                <div
-                  className="card"
-                  style={{
-                    padding: "10px 14px",
-                    cursor: "pointer",
-                    transition: "box-shadow 0.15s",
-                  }}
-                >
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{c.nombre}</div>
-                  <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>
+              <Link key={c.id} href={`/comunidades/${c.id}`} className="no-underline">
+                <div className="card cursor-pointer" style={{ padding: "12px 16px" }}>
+                  <div className="text-sm font-bold text-slate-900">{c.nombre}</div>
+                  <div className="text-2xs text-slate-400 mt-0.5">
                     {c.nif} &middot; {c.direccion}
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+                  <div className="flex flex-wrap gap-1 mt-2">
                     {OP_TAG_LIST.map((t) => {
                       const val = c.operativa ? (c.operativa as Record<string, boolean>)[t.key] : false;
                       return (
                         <span
                           key={t.key}
+                          className="rounded-full font-semibold"
                           style={{
-                            padding: "1px 8px",
-                            borderRadius: 9999,
-                            fontSize: 9,
-                            fontWeight: 600,
+                            padding: "2px 10px",
+                            fontSize: "10px",
                             border: val ? `1px solid ${t.activeColor}` : "1px solid #e2e8f0",
                             background: val ? t.activeBg : "#f8fafc",
                             color: val ? t.activeColor : "#94a3b8",
@@ -550,7 +504,7 @@ function OperativoTab({
               </Link>
             ))}
             {filteredComunidades.length === 0 && (
-              <div style={{ textAlign: "center", padding: 24, color: "#94a3b8", fontSize: 12 }}>
+              <div className="text-center py-6 text-slate-400 text-xs">
                 No hay comunidades que coincidan con los filtros seleccionados
               </div>
             )}

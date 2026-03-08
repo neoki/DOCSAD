@@ -83,7 +83,7 @@ export default function ComunidadDetailPage() {
 
   if (loading) {
     return (
-      <div className="py-8 text-center text-gray-500" style={{ fontSize: 13 }}>
+      <div className="py-8 text-center text-gray-500 text-sm">
         Cargando...
       </div>
     );
@@ -91,7 +91,7 @@ export default function ComunidadDetailPage() {
 
   if (!comunidad) {
     return (
-      <div className="py-8 text-center text-red-500" style={{ fontSize: 13 }}>
+      <div className="py-8 text-center text-red-500 text-sm">
         Comunidad no encontrada.
       </div>
     );
@@ -126,25 +126,24 @@ export default function ComunidadDetailPage() {
       <Link
         href="/comunidades"
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600 mb-4"
-        style={{ fontSize: 13 }}
       >
         ← Volver a comunidades
       </Link>
 
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{comunidad.nombre}</h1>
-          <div className="flex items-center gap-3 mt-1 text-gray-500" style={{ fontSize: 12 }}>
+          <h1 className="page-title">{comunidad.nombre}</h1>
+          <div className="flex items-center gap-3 mt-1 text-gray-500 text-sm">
             <span>{comunidad.nif}</span>
             <span>·</span>
             <span>{comunidad.direccion}</span>
           </div>
         </div>
         <div className="flex gap-2">
-          <Link href="/subir" className="btn-primary" style={{ fontSize: 12, padding: "6px 14px" }}>
+          <Link href="/subir" className="btn-primary" style={{ textDecoration: "none" }}>
             Subir doc.
           </Link>
-          <button className="btn-secondary" style={{ fontSize: 12, padding: "6px 14px" }}>
+          <button className="btn-secondary">
             Editar datos básicos
           </button>
         </div>
@@ -154,22 +153,19 @@ export default function ComunidadDetailPage() {
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
-            className="card"
-            style={{
-              borderLeft: `4px solid ${kpi.color}`,
-              padding: "12px 14px",
-            }}
+            className="kpi-card"
+            style={{ borderLeft: `4px solid ${kpi.color}` }}
           >
-            <div className="font-bold text-lg text-gray-900">{kpi.value}</div>
-            <div className="text-gray-500" style={{ fontSize: 11 }}>
-              {kpi.label}
+            <div>
+              <div className="kpi-value">{kpi.value}</div>
+              <div className="kpi-label">{kpi.label}</div>
             </div>
           </div>
         ))}
       </div>
 
       {op && (
-        <div className="flex flex-wrap gap-1.5 mb-5">
+        <div className="flex flex-wrap gap-2 mb-5">
           {TAG_DEFS.map((tag) => {
             const active = Boolean(op[tag.key]);
             return (
@@ -203,12 +199,7 @@ export default function ComunidadDetailPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-2.5 font-medium border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "border-blue-600 text-blue-700"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
-              style={{ fontSize: 13 }}
+              className={`tab-btn ${activeTab === tab.id ? "active" : ""}`}
             >
               {tab.label}
             </button>

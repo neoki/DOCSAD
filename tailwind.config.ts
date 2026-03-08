@@ -42,17 +42,15 @@ const config: Config = {
         gasoleo: "#78716c",
         reformas: "#a855f7",
       },
+      fontSize: {
+        "2xs": ["10px", "14px"],
+      },
       borderRadius: {
         card: "14px",
       },
       boxShadow: {
         card: "0 1px 4px rgba(0,0,0,.06)",
-      },
-      fontSize: {
-        "2xs": ["10px", "14px"],
-        xs: ["11px", "16px"],
-        sm: ["12px", "18px"],
-        base: ["13px", "20px"],
+        "card-hover": "0 4px 16px rgba(0,0,0,.10)",
       },
     },
   },

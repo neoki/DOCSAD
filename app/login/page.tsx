@@ -33,24 +33,81 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo / Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-            <span className="text-3xl">🏢</span>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #2563eb 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: 420 }}>
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 72,
+              height: 72,
+              background: "rgba(255,255,255,0.15)",
+              backdropFilter: "blur(8px)",
+              borderRadius: 20,
+              marginBottom: 20,
+              border: "1px solid rgba(255,255,255,0.2)",
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                background: "linear-gradient(135deg, #fff 0%, #e2e8f0 100%)",
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 2,
+                padding: 7,
+              }}
+            >
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    background: "#4F7CFF",
+                    borderRadius: 1.5,
+                    opacity: [0.7, 0.85, 0.9, 0.75, 1, 0.8, 0.95, 0.7, 0.85][i],
+                  }}
+                />
+              ))}
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-white">DocFincas</h1>
-          <p className="text-blue-200 mt-2">Gestión documental de comunidades</p>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", marginBottom: 8 }}>
+            DocFincas
+          </h1>
+          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 16 }}>
+            Gestión documental de comunidades
+          </p>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Iniciar sesión</h2>
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 20,
+            padding: "36px 32px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+          }}
+        >
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", marginBottom: 28 }}>
+            Iniciar sesión
+          </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 8 }}>
                 Correo electrónico
               </label>
               <input
@@ -64,8 +121,8 @@ export default function LoginPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 8 }}>
                 Contraseña
               </label>
               <input
@@ -79,7 +136,17 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+              <div
+                style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: 10,
+                  padding: "10px 14px",
+                  color: "#dc2626",
+                  fontSize: 14,
+                  marginBottom: 20,
+                }}
+              >
                 {error}
               </div>
             )}
@@ -87,13 +154,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary py-3 text-base"
+              className="btn-primary"
+              style={{ width: "100%", padding: "14px 20px", fontSize: 15 }}
             >
               {loading ? "Iniciando sesión..." : "Iniciar sesión"}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
+          <p style={{ marginTop: 24, textAlign: "center", fontSize: 13, color: "#94a3b8" }}>
             Asesoría Díaz · Sistema interno de gestión
           </p>
         </div>

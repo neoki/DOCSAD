@@ -83,7 +83,7 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
     return true;
   });
 
-  if (loading) return <div className="text-gray-500" style={{ fontSize: 12 }}>Cargando checklist...</div>;
+  if (loading) return <div className="text-gray-500 text-sm">Cargando checklist...</div>;
 
   return (
     <div>
@@ -94,13 +94,13 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar documento..."
           className="input-field"
-          style={{ fontSize: 12, padding: "6px 10px", maxWidth: 240 }}
+          style={{ maxWidth: 260 }}
         />
         <select
           value={filterCategoria}
           onChange={(e) => setFilterCategoria(e.target.value)}
           className="input-field"
-          style={{ fontSize: 12, padding: "6px 10px", maxWidth: 220 }}
+          style={{ maxWidth: 240 }}
         >
           <option value="all">Todas las categorías</option>
           {categorias.map((cat) => (
@@ -113,7 +113,7 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
           value={filterEstado}
           onChange={(e) => setFilterEstado(e.target.value)}
           className="input-field"
-          style={{ fontSize: 12, padding: "6px 10px", maxWidth: 180 }}
+          style={{ maxWidth: 200 }}
         >
           <option value="all">Todos los estados</option>
           <option value="COMPLETADO">Completado</option>
@@ -122,31 +122,19 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
         </select>
       </div>
 
-      <div className="card p-0 overflow-hidden">
-        <table className="w-full" style={{ fontSize: 12 }}>
-          <thead className="bg-gray-50 border-b border-gray-200">
+      <div className="card-static p-0 overflow-hidden">
+        <table className="w-full">
+          <thead>
             <tr>
-              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
-                Categoría
-              </th>
-              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
-                Subcategoría
-              </th>
-              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
-                Documento
-              </th>
-              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
-                Estado
-              </th>
-              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
-                Última actualización
-              </th>
-              <th className="px-3 py-2 text-right font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
-                Acciones
-              </th>
+              <th className="table-header text-left">Categoría</th>
+              <th className="table-header text-left">Subcategoría</th>
+              <th className="table-header text-left">Documento</th>
+              <th className="table-header text-left">Estado</th>
+              <th className="table-header text-left">Última actualización</th>
+              <th className="table-header text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {filteredItems.map((item) => {
               const dt = DOC_TYPES.find((d) => d.id === item.docTypeId);
               if (!dt) return null;
@@ -165,38 +153,38 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
                   : "Pendiente";
 
               return (
-                <tr key={item.docTypeId} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-1.5">
+                <tr key={item.docTypeId} className="table-row">
+                  <td className="table-cell">
+                    <div className="flex items-center gap-2">
                       <span
-                        className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                        className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
                         style={{ background: cat?.color ?? "#94a3b8" }}
                       />
-                      <span className="text-gray-700" style={{ fontSize: 11 }}>
+                      <span className="text-xs text-gray-700">
                         {cat?.label ?? dt.categoria}
                       </span>
                     </div>
                   </td>
-                  <td className="px-3 py-2.5 text-gray-500" style={{ fontSize: 11 }}>
+                  <td className="table-cell text-xs text-gray-500">
                     {dt.subcategoria}
                   </td>
-                  <td className="px-3 py-2.5 font-semibold text-gray-900" style={{ fontSize: 12 }}>
+                  <td className="table-cell font-semibold text-gray-900">
                     {dt.label}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="table-cell">
                     <span className={estadoClass}>{estadoLabel}</span>
                   </td>
-                  <td className="px-3 py-2.5 text-gray-500" style={{ fontSize: 11 }}>
+                  <td className="table-cell text-xs text-gray-500">
                     {item.fecha
                       ? new Date(item.fecha).toLocaleDateString("es-ES")
                       : "—"}
                   </td>
-                  <td className="px-3 py-2.5 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                  <td className="table-cell text-right">
+                    <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => toggleEstado(item.docTypeId, "COMPLETADO")}
                         title="Marcar completado"
-                        className="px-2 py-1 rounded text-xs font-semibold transition-colors"
+                        className="px-2.5 py-1 rounded text-xs font-semibold transition-colors"
                         style={{
                           background:
                             item.estado === "COMPLETADO" ? "#dcfce7" : "#f8fafc",
@@ -212,7 +200,7 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
                       <button
                         onClick={() => toggleEstado(item.docTypeId, "NO_APLICA")}
                         title="Marcar no aplica"
-                        className="px-2 py-1 rounded text-xs font-semibold transition-colors"
+                        className="px-2.5 py-1 rounded text-xs font-semibold transition-colors"
                         style={{
                           background:
                             item.estado === "NO_APLICA" ? "#f1f5f9" : "#f8fafc",
@@ -227,7 +215,7 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
                       </button>
                       <a
                         href="/visor"
-                        className="px-2 py-1 rounded text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
+                        className="px-2.5 py-1 rounded text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
                         style={{ border: "1px solid #e2e8f0" }}
                       >
                         Ver
@@ -240,7 +228,7 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
           </tbody>
         </table>
         {filteredItems.length === 0 && (
-          <div className="py-8 text-center text-gray-400" style={{ fontSize: 12 }}>
+          <div className="py-8 text-center text-gray-400 text-sm">
             No se encontraron documentos con los filtros seleccionados.
           </div>
         )}

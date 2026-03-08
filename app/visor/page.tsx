@@ -25,16 +25,16 @@ export default function VisorPage() {
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
           </svg>
-          <span style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>
+          <span style={{ color: "#fff", fontSize: 16, fontWeight: 600 }}>
             acta_junta_ordinaria_2024.pdf
           </span>
           <span
             style={{
               background: "rgba(255,255,255,0.1)",
               color: "#94a3b8",
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: 600,
-              padding: "2px 8px",
+              padding: "2px 10px",
               borderRadius: 6,
             }}
           >
@@ -49,21 +49,21 @@ export default function VisorPage() {
               background: "rgba(255,255,255,0.1)",
               border: "none",
               color: "#fff",
-              width: 28,
-              height: 28,
+              width: 32,
+              height: 32,
               borderRadius: 6,
               cursor: zoom <= 50 ? "not-allowed" : "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: 700,
               opacity: zoom <= 50 ? 0.4 : 1,
             }}
           >
             −
           </button>
-          <span style={{ color: "#fff", fontSize: 12, fontWeight: 600, minWidth: 40, textAlign: "center" }}>
+          <span style={{ color: "#fff", fontSize: 14, fontWeight: 600, minWidth: 44, textAlign: "center" }}>
             {zoom}%
           </span>
           <button
@@ -73,14 +73,14 @@ export default function VisorPage() {
               background: "rgba(255,255,255,0.1)",
               border: "none",
               color: "#fff",
-              width: 28,
-              height: 28,
+              width: 32,
+              height: 32,
               borderRadius: 6,
               cursor: zoom >= 200 ? "not-allowed" : "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: 700,
               opacity: zoom >= 200 ? 0.4 : 1,
             }}
@@ -115,13 +115,13 @@ export default function VisorPage() {
           }}
         >
           <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <p style={{ fontSize: 11, color: "#64748b", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+            <p style={{ fontSize: 12, color: "#64748b", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
               Comunidad de Propietarios
             </p>
             <h1 style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", margin: "8px 0 4px" }}>
               C.P. Las Magnolias
             </h1>
-            <p style={{ fontSize: 10, color: "#94a3b8" }}>
+            <p style={{ fontSize: 12, color: "#94a3b8" }}>
               CIF H-12345678 · Av. de las Magnolias 12, Madrid
             </p>
           </div>
@@ -132,22 +132,22 @@ export default function VisorPage() {
             ACTA DE JUNTA GENERAL ORDINARIA
           </h2>
 
-          <p style={{ fontSize: 11, color: "#475569", marginBottom: 16, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 12, color: "#475569", marginBottom: 16, lineHeight: 1.6 }}>
             En Madrid, a 15 de marzo de 2024, siendo las 18:00 horas, se reúnen en primera
             convocatoria los propietarios de la Comunidad C.P. Las Magnolias.
           </p>
 
           <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Asistentes:</p>
-            <p style={{ fontSize: 11, color: "#475569", lineHeight: 1.6 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Asistentes:</p>
+            <p style={{ fontSize: 12, color: "#475569", lineHeight: 1.6 }}>
               Asisten 18 propietarios de un total de 24, representando el 72,5% de las cuotas
               de participación. Quórum suficiente para la celebración de la junta.
             </p>
           </div>
 
           <div style={{ marginBottom: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Orden del día:</p>
-            <ol style={{ fontSize: 11, color: "#475569", lineHeight: 1.8, paddingLeft: 20, margin: 0 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>Orden del día:</p>
+            <ol style={{ fontSize: 12, color: "#475569", lineHeight: 1.8, paddingLeft: 20, margin: 0 }}>
               <li>Lectura y aprobación del acta anterior</li>
               <li>Aprobación de las cuentas del ejercicio 2023</li>
               <li>Aprobación del presupuesto para el ejercicio 2024</li>
@@ -204,16 +204,16 @@ export default function VisorPage() {
         }}
       >
         <span style={{ fontSize: 18 }}>🧠</span>
-        <span style={{ color: "#94a3b8", fontSize: 12 }}>
+        <span style={{ color: "#94a3b8", fontSize: 14 }}>
           IA clasificó este documento como:
         </span>
         <span
           style={{
             background: "rgba(79,124,255,0.15)",
             color: "#4F7CFF",
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: 600,
-            padding: "3px 10px",
+            padding: "4px 12px",
             borderRadius: 9999,
           }}
         >
@@ -223,15 +223,15 @@ export default function VisorPage() {
           style={{
             background: "rgba(34,197,94,0.15)",
             color: "#22C55E",
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: 600,
-            padding: "3px 10px",
+            padding: "4px 12px",
             borderRadius: 9999,
           }}
         >
           98% confianza
         </span>
-        <span style={{ color: "#64748b", fontSize: 11 }}>
+        <span style={{ color: "#64748b", fontSize: 13 }}>
           Confirmada por usuario
         </span>
       </div>

@@ -39,22 +39,23 @@ export default function NuevaComunidadPage() {
     <div style={{ maxWidth: 640, margin: "0 auto" }}>
       <Link
         href="/comunidades"
-        style={{ color: "#4F7CFF", fontSize: 13, fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 16 }}
+        className="inline-flex items-center gap-1 text-sm text-primary font-semibold hover:text-blue-700 mb-4"
+        style={{ textDecoration: "none" }}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
         Volver a comunidades
       </Link>
 
       <div className="card">
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", marginBottom: 4 }}>Nueva comunidad</h1>
-        <p style={{ fontSize: 12, color: "#64748b", marginBottom: 24 }}>
+        <h1 className="page-title">Nueva comunidad</h1>
+        <p className="page-subtitle mb-6">
           Registra una nueva comunidad de propietarios. Se creará automáticamente el checklist documental con los 27 tipos de documento.
         </p>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="flex flex-col gap-4">
             <div>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+              <label className="section-label block mb-1.5">
                 Nombre de la comunidad *
               </label>
               <input
@@ -67,9 +68,9 @@ export default function NuevaComunidadPage() {
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                <label className="section-label block mb-1.5">
                   NIF *
                 </label>
                 <input
@@ -77,13 +78,12 @@ export default function NuevaComunidadPage() {
                   value={form.nif}
                   onChange={(e) => set("nif", e.target.value)}
                   placeholder="H28XXXXXX"
-                  className="input-field"
-                  style={{ fontFamily: "monospace" }}
+                  className="input-field font-mono"
                   required
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                <label className="section-label block mb-1.5">
                   Pisos
                 </label>
                 <input
@@ -98,7 +98,7 @@ export default function NuevaComunidadPage() {
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+              <label className="section-label block mb-1.5">
                 Dirección *
               </label>
               <input
@@ -113,14 +113,14 @@ export default function NuevaComunidadPage() {
           </div>
 
           {error && (
-            <p style={{ color: "#EF4444", fontSize: 12, marginTop: 12 }}>{error}</p>
+            <p className="text-danger text-xs mt-3">{error}</p>
           )}
 
-          <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+          <div className="flex gap-3 mt-6">
             <button type="submit" disabled={saving} className="btn-primary">
               {saving ? "Creando..." : "Crear comunidad"}
             </button>
-            <Link href="/comunidades" className="btn-secondary" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+            <Link href="/comunidades" className="btn-secondary inline-flex items-center" style={{ textDecoration: "none" }}>
               Cancelar
             </Link>
           </div>

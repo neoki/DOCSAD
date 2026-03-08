@@ -65,21 +65,26 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{ background: "#0f172a", width: 220, minHeight: "100vh" }}
+      style={{
+        background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
+        width: 240,
+        minHeight: "100vh",
+      }}
       className="fixed left-0 top-0 flex flex-col z-50"
     >
-      <div className="px-5 pt-6 pb-4">
-        <div className="flex items-center gap-2 mb-1">
+      <div className="px-5 pt-7 pb-6">
+        <div className="flex items-center gap-3 mb-1">
           <div
             style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
+              width: 36,
+              height: 36,
+              borderRadius: 10,
               background: "linear-gradient(135deg, #4F7CFF 0%, #8B5CF6 100%)",
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
               gap: 2,
-              padding: 5,
+              padding: 6,
+              boxShadow: "0 2px 8px rgba(79, 124, 255, 0.4)",
             }}
           >
             {Array.from({ length: 9 }).map((_, i) => (
@@ -88,8 +93,8 @@ export default function Sidebar() {
                 style={{
                   width: "100%",
                   height: "100%",
-                  background: "rgba(255,255,255,0.7)",
-                  borderRadius: 1,
+                  background: "rgba(255,255,255,0.8)",
+                  borderRadius: 1.5,
                 }}
               />
             ))}
@@ -98,7 +103,7 @@ export default function Sidebar() {
             style={{
               color: "#fff",
               fontWeight: 800,
-              fontSize: 18,
+              fontSize: 20,
               letterSpacing: "-0.02em",
             }}
           >
@@ -107,12 +112,12 @@ export default function Sidebar() {
         </div>
         <span
           style={{
-            color: "#64748b",
-            fontSize: 9,
+            color: "#475569",
+            fontSize: 10,
             fontWeight: 700,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
-            marginLeft: 42,
+            marginLeft: 48,
             display: "block",
             marginTop: -2,
           }}
@@ -121,7 +126,7 @@ export default function Sidebar() {
         </span>
       </div>
 
-      <nav className="flex-1 px-3 mt-2">
+      <nav className="flex-1 px-3 mt-1">
         {NAV_ITEMS.map((item) => {
           const isActive =
             pathname === item.href || pathname?.startsWith(item.href + "/");
@@ -132,31 +137,32 @@ export default function Sidebar() {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
-                padding: "10px 12px",
-                borderRadius: 10,
-                marginBottom: 2,
-                fontSize: 13,
+                gap: 12,
+                padding: "11px 14px",
+                borderRadius: 12,
+                marginBottom: 4,
+                fontSize: 14,
                 fontWeight: 600,
                 color: isActive ? "#fff" : "#94a3b8",
                 background: isActive ? "rgba(79,124,255,0.15)" : "transparent",
-                transition: "all 0.15s",
+                borderLeft: isActive ? "3px solid #4F7CFF" : "3px solid transparent",
+                transition: "all 0.2s",
                 textDecoration: "none",
               }}
             >
-              {item.icon}
+              <span style={{ opacity: isActive ? 1 : 0.7 }}>{item.icon}</span>
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-3 mb-2">
+      <div className="px-3 mb-3">
         <div
           style={{
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-            marginTop: 4,
-            paddingTop: 4,
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            marginTop: 8,
+            paddingTop: 8,
           }}
         >
           <Link
@@ -164,22 +170,25 @@ export default function Sidebar() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 10,
-              padding: "10px 12px",
-              borderRadius: 10,
-              marginBottom: 2,
-              fontSize: 13,
+              gap: 12,
+              padding: "11px 14px",
+              borderRadius: 12,
+              marginBottom: 4,
+              fontSize: 14,
               fontWeight: 600,
               color: pathname === "/ajustes" || pathname?.startsWith("/ajustes/") ? "#fff" : "#94a3b8",
               background: pathname === "/ajustes" || pathname?.startsWith("/ajustes/") ? "rgba(79,124,255,0.15)" : "transparent",
-              transition: "all 0.15s",
+              borderLeft: pathname === "/ajustes" || pathname?.startsWith("/ajustes/") ? "3px solid #4F7CFF" : "3px solid transparent",
+              transition: "all 0.2s",
               textDecoration: "none",
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
+            <span style={{ opacity: pathname === "/ajustes" || pathname?.startsWith("/ajustes/") ? 1 : 0.7 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            </span>
             Ajustes
           </Link>
         </div>
@@ -188,14 +197,14 @@ export default function Sidebar() {
       <div className="px-5 pb-5">
         <div
           style={{
-            borderTop: "1px solid rgba(255,255,255,0.08)",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
             paddingTop: 16,
           }}
         >
           <p
             style={{
               color: "#475569",
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: 700,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -204,7 +213,7 @@ export default function Sidebar() {
           >
             VERSIÓN PROTOTIPO
           </p>
-          <p style={{ color: "#64748b", fontSize: 10 }}>
+          <p style={{ color: "#64748b", fontSize: 11 }}>
             IA pendiente de configurar clave API
           </p>
         </div>

@@ -86,8 +86,8 @@ export default function ComunidadesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Comunidades</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="page-title">Comunidades</h1>
+          <p className="page-subtitle">
             {comunidades.length} comunidades registradas
           </p>
         </div>
@@ -106,47 +106,30 @@ export default function ComunidadesPage() {
         />
       </div>
 
-      <div className="card p-0 overflow-hidden" style={{ borderRadius: 14 }}>
+      <div className="card-static p-0 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Cargando...</div>
+          <div className="p-8 text-center text-gray-500 text-sm">Cargando...</div>
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-gray-500 text-sm">
             No se encontraron comunidades.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="w-full">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Comunidad
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    NIF
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dirección
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Completitud
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    GESFINCAS
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Videovig.
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Personal
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ITE
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  </th>
+                  <th className="table-header text-left">Comunidad</th>
+                  <th className="table-header text-left">NIF</th>
+                  <th className="table-header text-left">Dirección</th>
+                  <th className="table-header text-left">Completitud</th>
+                  <th className="table-header text-center">GESFINCAS</th>
+                  <th className="table-header text-center">Videovig.</th>
+                  <th className="table-header text-center">Personal</th>
+                  <th className="table-header text-center">ITE</th>
+                  <th className="table-header text-right"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody>
                 {filtered.map((c) => {
                   const pct = calcCompletitud(c.checklists);
                   const color = progressColor(pct);
@@ -156,22 +139,22 @@ export default function ComunidadesPage() {
                   return (
                     <tr
                       key={c.id}
-                      className="hover:bg-blue-50/40 transition-colors cursor-pointer"
+                      className="table-row cursor-pointer"
                       onClick={() => router.push(`/comunidades/${c.id}`)}
                     >
-                      <td className="px-4 py-3">
+                      <td className="table-cell">
                         <div className="font-semibold text-gray-900">{c.nombre}</div>
                         <div className="text-xs text-gray-500">{c.direccion}</div>
                       </td>
-                      <td className="px-4 py-3 font-mono text-gray-600 text-xs">
+                      <td className="table-cell font-mono text-gray-600 text-xs">
                         {c.nif}
                       </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs max-w-[200px] truncate">
+                      <td className="table-cell text-gray-600 text-xs max-w-[200px] truncate">
                         {c.direccion}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="table-cell">
                         <div className="flex items-center gap-2">
-                          <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="w-24 h-2.5 bg-gray-200 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all"
                               style={{
@@ -180,27 +163,27 @@ export default function ComunidadesPage() {
                               }}
                             />
                           </div>
-                          <span className="text-xs font-semibold" style={{ color }}>
+                          <span className="text-xs font-bold" style={{ color }}>
                             {pct}%
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="table-cell text-center">
                         <span className={op?.usaAgreGasfincas ? "badge-si" : "badge-no"}>
                           {op?.usaAgreGasfincas ? "Sí" : "No"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="table-cell text-center">
                         <span className={op?.tieneVideovigilancia ? "badge-si" : "badge-no"}>
                           {op?.tieneVideovigilancia ? "Sí" : "No"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="text-xs text-gray-700 font-medium">
+                      <td className="table-cell text-center">
+                        <span className="text-xs text-gray-700 font-semibold">
                           {personal} {personal === 1 ? "rol" : "roles"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="table-cell text-center">
                         {op?.obligadaITE ? (
                           <span className="text-xs">
                             <span className="badge-si">Sí</span>
@@ -214,10 +197,10 @@ export default function ComunidadesPage() {
                           <span className="badge-no">No</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="table-cell text-right">
                         <Link
                           href={`/comunidades/${c.id}`}
-                          className="text-primary hover:text-blue-700 text-xs font-semibold"
+                          className="text-primary hover:text-blue-700 text-sm font-semibold"
                           onClick={(e) => e.stopPropagation()}
                         >
                           Ver →

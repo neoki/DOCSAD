@@ -110,7 +110,7 @@ export default function SubirPage() {
           </svg>
         </div>
         <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Documento guardado correctamente</h2>
-        <p style={{ color: "#64748b", fontSize: 14, marginBottom: 24 }}>
+        <p className="page-subtitle" style={{ marginBottom: 24 }}>
           El checklist de la comunidad ha sido actualizado.
         </p>
         <button className="btn-primary" onClick={handleReset}>
@@ -122,8 +122,8 @@ export default function SubirPage() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Subir Documentos</h1>
-      <p style={{ color: "#64748b", fontSize: 13, marginBottom: 32 }}>
+      <h1 className="page-title" style={{ marginBottom: 4 }}>Subir Documentos</h1>
+      <p className="page-subtitle" style={{ marginBottom: 32 }}>
         Sube documentos y deja que la IA los clasifique automáticamente
       </p>
 
@@ -154,7 +154,7 @@ export default function SubirPage() {
                   i + 1
                 )}
               </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: step >= i ? "#0f172a" : "#94a3b8" }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: step >= i ? "#0f172a" : "#94a3b8" }}>
                 {label}
               </span>
             </div>
@@ -176,7 +176,7 @@ export default function SubirPage() {
 
       {step === 0 && (
         <div className="card" style={{ maxWidth: 560, margin: "0 auto" }}>
-          <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
+          <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>
             Comunidad
           </label>
           <select
@@ -193,7 +193,7 @@ export default function SubirPage() {
             ))}
           </select>
 
-          <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
+          <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>
             Documento
           </label>
           <div
@@ -222,8 +222,8 @@ export default function SubirPage() {
               }}
             />
             <svg
-              width="36"
-              height="36"
+              width="40"
+              height="40"
               viewBox="0 0 24 24"
               fill="none"
               stroke="#94a3b8"
@@ -243,7 +243,7 @@ export default function SubirPage() {
                 <p style={{ fontSize: 14, fontWeight: 600, color: "#475569", marginBottom: 4 }}>
                   Arrastra un archivo aquí o haz clic para seleccionar
                 </p>
-                <p style={{ fontSize: 12, color: "#94a3b8" }}>
+                <p style={{ fontSize: 13, color: "#94a3b8" }}>
                   PDF, DOCX, JPG, PNG — máx. {MAX_SIZE_MB}MB
                 </p>
               </>
@@ -308,7 +308,7 @@ export default function SubirPage() {
                 <p style={{ fontSize: 15, fontWeight: 700, color: "#1e3a5f" }}>
                   Sugerencia IA — {suggestion.confianza}% confianza
                 </p>
-                <p style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                <p style={{ fontSize: 14, color: "#64748b", marginTop: 2 }}>
                   El sistema ha analizado el contenido del documento y sugiere la siguiente clasificación
                 </p>
               </div>
@@ -320,7 +320,7 @@ export default function SubirPage() {
                   alignItems: "center",
                   padding: "4px 12px",
                   borderRadius: 9999,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 600,
                   background: catForDoc(suggestion.docType.categoria)?.color + "20",
                   color: catForDoc(suggestion.docType.categoria)?.color,
@@ -334,7 +334,7 @@ export default function SubirPage() {
                   alignItems: "center",
                   padding: "4px 12px",
                   borderRadius: 9999,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: 600,
                   background: "#f1f5f9",
                   color: "#334155",
@@ -346,7 +346,7 @@ export default function SubirPage() {
           </div>
 
           <div className="card">
-            <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 6 }}>
               Tipo de documento
             </label>
             <select
