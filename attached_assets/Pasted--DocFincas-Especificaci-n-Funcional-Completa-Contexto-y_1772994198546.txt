@@ -1,0 +1,316 @@
+# DocFincas — Especificación Funcional Completa
+
+## Contexto y Propósito
+
+DocFincas es una aplicación web de gestión documental diseñada para **administradores de fincas** (property management companies en España). Su propósito es controlar el estado documental y operativo de las comunidades de propietarios que administran.
+
+El problema que resuelve: un administrador de fincas gestiona decenas o cientos de comunidades de propietarios, cada una con obligaciones documentales complejas (escrituras, actas, seguros, contratos, prevención de riesgos, etc.). DocFincas centraliza el seguimiento de qué documentos tiene cada comunidad, cuáles faltan, y además registra información operativa clave de cada comunidad (si tiene portero, videovigilancia, si está obligada a ITE, etc.).
+
+Un diferenciador clave es que incorpora **clasificación automática por IA**: cuando se sube un documento PDF, la IA lo analiza y sugiere a qué tipo documental pertenece, con un porcentaje de confianza. El usuario confirma o corrige la clasificación.
+
+---
+
+## Estructura de Navegación
+
+La aplicación tiene un **sidebar lateral fijo** a la izquierda con fondo oscuro (#0f172a) y cuatro secciones principales:
+
+1. **Dashboard** — Vista global con métricas agregadas de todas las comunidades
+2. **Comunidades** — Listado tabular de todas las comunidades con búsqueda
+3. **Subir Docs.** — Flujo de carga y clasificación IA de documentos
+4. **Visor** — Vista previa de documentos PDF integrada
+
+El sidebar incluye:
+- Logo/marca "DocFincas" con subtítulo "GESTIÓN DOCUMENTAL" y un icono de rejilla con gradiente azul-violeta
+- Los 4 ítems de navegación con iconos (barra de gráfico, edificio, subida, ojo)
+- Un footer con "VERSIÓN PROTOTIPO" y nota "IA pendiente de configurar clave API"
+
+Al hacer clic en una comunidad (desde Dashboard o desde Comunidades), se navega a una **vista de detalle de comunidad** con tres pestañas internas: Checklist, Info. Operativa, Documentos.
+
+---
+
+## Modelo de Datos
+
+### Categorías Documentales
+
+Hay 6 categorías principales, cada una con un color asignado, subcategorías, y tipos de documento concretos:
+
+| Categoría | Color | Subcategorías → Documentos |
+|-----------|-------|---------------------------|
+| **Documentación Jurídica** | #4F7CFF (azul) | **Escrituras y Títulos**: Escritura de división horizontal, Nota simple registral, CIF comunidad · **Estatutos y Reglamentos**: Estatutos de la comunidad, Reglamento de régimen interno |
+| **Órganos de Gobierno** | #22C55E (verde) | **Actas de Juntas**: Acta junta ordinaria, Acta junta extraordinaria, Libro de actas · **Cargos y Representación**: Nombramiento presidente, Poder administrador |
+| **Contabilidad** | #F59E0B (ámbar) | **Presupuestos**: Presupuesto anual aprobado, Liquidación ejercicio anterior · **Cuentas Bancarias**: Certificado titularidad cuenta, Extractos bancarios |
+| **Seguros** | #EC4899 (rosa) | **Pólizas**: Póliza seguro multirriesgo, Póliza responsabilidad civil · **Siniestros**: Expedientes siniestros abiertos, Resoluciones siniestros |
+| **Contratos y Proveedores** | #8B5CF6 (violeta) | **Mantenimiento**: Contrato ascensor, Contrato limpieza, Contrato jardinería · **Suministros**: Contrato luz zonas comunes, Contrato agua |
+| **Prevención de Riesgos** | #EF4444 (rojo) | **Evaluaciones**: Evaluación riesgos laborales, Plan emergencia evacuación · **Formación**: Certificados formación PRL, Fichas de seguridad |
+
+En total son **24 tipos documentales** únicos. Cada comunidad tiene un checklist con estos 24 ítems, cada uno con estado: completado, pendiente, o no_aplica.
+
+### Datos Operativos de cada Comunidad
+
+Cada comunidad tiene un bloque de información operativa con estos campos:
+
+**Financiero y Seguros:**
+- `usaAgreGasfincas` (boolean) — Si usa el agregador financiero GESFINCAS
+- `somosCorredorSeguro` (boolean) — Si el administrador actúa como corredor de seguros
+- `corredorSeguroNombre` (texto) — Si no somos corredor, nombre del corredor externo
+- `numeroPolizaSeguro` (texto) — Número de póliza
+
+**Sistemas y Digitalización:**
+- `usaNuevoSistemaIncidencias` (boolean) — Si usa el nuevo sistema de gestión de incidencias
+- `tieneAppTuComunidad` (boolean) — Si tiene activa la app "Tu Comunidad" para vecinos
+
+**Personal de la Comunidad:**
+- `tienePortero` (boolean)
+- `tieneConserje` (boolean)
+- `tieneGarajista` (boolean)
+- `tieneLimpiadora` (boolean)
+- `tieneOtroPersonal` (boolean)
+- `descripcionOtroPersonal` (texto) — Solo visible si tieneOtroPersonal es true
+
+**Videovigilancia:**
+- `tieneVideovigilancia` (boolean)
+
+**Arrendamientos:**
+- `actuaComoArrendadora` (boolean) — Si la comunidad arrienda algún activo
+- `activoArrendadoDescripcion` (texto) — Descripción del activo arrendado
+
+**Gestión de Consumos:**
+- `gestionaConsumos` (boolean)
+- `empresaGestionConsumos` (texto) — Empresa que gestiona
+
+**Gasóleo:**
+- `gestionaPermisosGasoleo` (boolean) — Si gestiona permisos de descarga de gasóleo
+
+**Reformas de Instalaciones** (3 reformas posibles):
+- `reformaFontaneria` (boolean) + `fechaReformaFontaneria` (date)
+- `reformaSaneamiento` (boolean) + `fechaReformaSaneamiento` (date)
+- `reformaElectricidad` (boolean) + `fechaReformaElectricidad` (date)
+
+**ITE (Inspección Técnica de Edificios):**
+- `obligadaITE` (boolean)
+- `fechaProximaITE` (date) — Si la fecha está en el pasado, mostrar alerta "VENCIDA" en rojo
+
+### Comunidades de Ejemplo (5)
+
+**C001 — C.P. Las Magnolias**
+- NIF: H28123456
+- Dirección: C/ Magnolias 14, Madrid
+- 48 pisos
+- Operativa: Usa GESFINCAS, Corredor propio, Videovigilancia, Limpiadora, Portero, Reforma fontanería (2022-06-01), Obligada ITE (próxima: 2025-09-15), App Tu Comunidad activa
+
+**C002 — C.P. Torre Blanca**
+- NIF: H28234567
+- Dirección: Avda. Constitución 88, Madrid
+- 120 pisos
+- Operativa: Usa GESFINCAS, Corredor externo (Seguros Mapfre), Videovigilancia, Portero, Conserje, Limpiadora, Garajista, Reforma fontanería (2021-03-10), Reforma electricidad (2023-05-20), Obligada ITE (próxima: 2024-12-01 → VENCIDA), App Tu Comunidad, Arrendadora (local comercial planta baja), Gestiona consumos (Aqualia)
+
+**C003 — C.P. El Rosal**
+- NIF: H28345678
+- Dirección: C/ Rosal 5, Getafe
+- 24 pisos
+- Operativa: No usa GESFINCAS, Sin videovigilancia, Limpiadora, Corredor propio, Gestiona permisos gasóleo
+
+**C004 — C.P. Residencial Norte**
+- NIF: H28456789
+- Dirección: Pza. Mayor 3, Alcobendas
+- 76 pisos
+- Operativa: Usa GESFINCAS, Videovigilancia, Limpiadora, Otro personal (vigilante nocturno), Reforma saneamiento (2023-01-15), No obligada ITE, Corredor propio, Nuevo sistema incidencias
+
+**C005 — C.P. Los Pinos**
+- NIF: H28567890
+- Dirección: C/ Pinos 22, Leganés
+- 32 pisos
+- Operativa: No usa GESFINCAS, Sin videovigilancia, Sin limpiadora, Corredor externo (Allianz), Obligada ITE (próxima: 2026-03-01)
+
+### Documentos Subidos de Ejemplo (5)
+
+| ID | Comunidad | Tipo documental | Nombre archivo | Fecha | Tamaño | Confianza IA |
+|----|-----------|----------------|----------------|-------|--------|-------------|
+| D001 | C001 | Escritura de división horizontal | escritura_div_horizontal.pdf | 2024-03-15 | 2.4 MB | 97% |
+| D002 | C001 | CIF comunidad | CIF_comunidad_magnolias.pdf | 2024-03-16 | 0.3 MB | 94% |
+| D003 | C002 | Estatutos de la comunidad | estatutos_torre_blanca.pdf | 2024-04-01 | 1.8 MB | 89% |
+| D004 | C001 | Acta junta ordinaria | acta_junta_ordinaria_2023.pdf | 2024-01-20 | 0.9 MB | 98% |
+| D005 | C003 | Nombramiento presidente | nombramiento_presidente_2024.pdf | 2024-02-10 | 0.4 MB | 91% |
+
+### Generación de Checklists de Demo
+
+Los checklists de cada comunidad se generan pseudoaleatoriamente con una función seeded (basada en seno) para que sean consistentes. La distribución aproximada es: ~45% completado, ~15% no_aplica, ~40% pendiente. Los completados tienen fecha asignada, los no_aplica tienen justificación "No procede".
+
+---
+
+## Pantallas en Detalle
+
+### 1. Dashboard Global
+
+Tiene dos pestañas superiores: **Documental** y **Operativo**.
+
+#### Pestaña Documental:
+- **4 tarjetas KPI** en fila: Comunidades (total), Completitud media (%), Docs. pendientes (suma total), App Tu Comunidad (cuántas la tienen)
+- **Panel izquierdo**: Ranking por completitud documental — lista de comunidades ordenadas de mayor a menor % de completitud, con barras de progreso coloreadas (≥70% verde, ≥40% ámbar, <40% rojo). Clicable para ir al detalle.
+- **Panel derecho**: Estado por categoría documental — las 6 categorías con su punto de color, nombre, barra de progreso y porcentaje. Calcula el % global de cada categoría sumando completados vs pendientes de TODAS las comunidades.
+- **Grid de tarjetas**: Todas las comunidades como tarjetas con un gráfico circular SVG de progreso, nombre y conteo de pendientes/N.A. Clicables.
+
+#### Pestaña Operativo:
+- **Barra de filtros**: Botones pill clicables para filtrar: GESFINCAS, Corredor propio, Videovigilancia, Con personal, Arrendadora, Obligada ITE. Se activan/desactivan al clic. Botón "Limpiar filtros" aparece cuando hay filtros activos.
+- **Panel izquierdo**: Distribución operativa global — 10 mini barras de progreso mostrando cuántas comunidades tienen cada característica sobre el total. Las que tienen filterKey son clicables para activar filtro.
+  - Usa GESFINCAS, Corredor propio, Videovigilancia, Con personal laboral, Actúa como arrendadora, Obligada ITE, App Tu Comunidad, Gestiona consumos, Permisos gasóleo, Con alguna reforma
+- **Panel derecho**: Lista de comunidades (filtrada) como tarjetas horizontales con nombre, NIF, dirección, y una fila de "tags operativos" (pills coloreados) mostrando su estado en cada dimensión. Tags activos tienen fondo coloreado claro; inactivos son gris.
+
+### 2. Comunidades (Listado)
+
+- Barra superior con título, subtítulo con conteo, y botón "+ Nueva comunidad"
+- Barra de búsqueda que filtra por nombre, NIF o dirección
+- Tabla con columnas: ID (azul), Nombre (negrita), NIF (monospace), Dirección, Completitud (barra + %), GESFINCAS (Sí/No badge), Videovig. (Sí/No badge), Personal (X roles), ITE (Sí + fecha o No), botón "Ver →"
+- Filas clicables que navegan al detalle
+- Hover en filas cambia background
+
+### 3. Detalle de Comunidad
+
+**Cabecera:**
+- Botón "← Volver a comunidades"
+- Nombre grande, NIF y dirección debajo
+- Botones "Subir doc." (primario) y "Editar datos básicos"
+
+**5 tarjetas KPI** en fila con borde izquierdo coloreado:
+- Completitud (%), Completados (nº), Pendientes (nº), No aplica (nº), Reformas realizadas (X/3)
+
+**Tags operativos rápidos**: fila de pills mostrando el estado operativo resumido de la comunidad
+
+**3 pestañas**: Checklist, Info. Operativa, Documentos
+
+#### Pestaña Checklist:
+- Filtros: buscador de texto, dropdown de categoría, dropdown de estado
+- Tabla con columnas: Categoría (punto de color + nombre), Subcategoría, Documento (nombre en negrita), Estado (badge coloreado: verde/ámbar/gris), Última actualización (fecha o "—"), Acciones
+- Acciones por fila: botón "✓" (marcar completado, toggle), botón "N/A" (marcar no aplica, toggle), botón "Ver" (navega al visor). Los botones activos se resaltan con el color correspondiente.
+
+#### Pestaña Info. Operativa:
+- Botón "Editar información operativa" que activa modo edición
+- En modo edición: los campos boolean se convierten en toggles Sí/No clicables, los campos de texto en inputs, las fechas en inputs date. Botones "Guardar cambios" y "Cancelar".
+- Grid de 2 columnas con secciones (cards con borde superior coloreado):
+  - Financiero y Seguros (#EC4899)
+  - Sistemas y Digitalización (#4F7CFF)
+  - Personal de la Comunidad (#F59E0B)
+  - Videovigilancia (#8B5CF6)
+  - Arrendamientos (#EC4899)
+  - Gestión de Consumos (#06b6d4)
+  - Gasóleo (#78716c)
+  - Reformas de Instalaciones (#a855f7)
+  - ITE (#EF4444)
+- Cada sección muestra filas label-valor. Los campos condicionales (ej: nombre corredor solo si no somos corredor, descripción activo solo si arrendadora, fecha reforma solo si ha habido reforma) aparecen/desaparecen según el booleano padre.
+- En ITE: si la fecha próxima está en el pasado, mostrar "VENCIDA" en rojo.
+
+#### Pestaña Documentos:
+- Lista de documentos subidos para esa comunidad
+- Cada documento muestra: icono PDF, nombre archivo (negrita), tipo documental + fecha + tamaño (gris), badge "IA X%" en verde, botón "Ver →"
+- Si no hay documentos: mensaje centrado "No hay documentos subidos aún"
+
+### 4. Subir Documentos
+
+Flujo de 3 pasos con indicador visual (stepper con círculos numerados y líneas conectoras):
+
+**Paso 1 — Seleccionar:**
+- Dropdown para elegir comunidad
+- Zona de drop (dashed border) para arrastrar PDF. Texto "Arrastra un PDF o haz clic" y "PDF, DOCX, JPG, PNG — máx. 50 MB"
+- Botón "Simular subida (demo)" — deshabilitado hasta elegir comunidad
+
+**Paso 2 — Análisis IA:**
+- Pantalla de espera con icono robot 🤖
+- Texto "Analizando documento…" y "La IA está leyendo el contenido para sugerir la clasificación"
+- 3 puntos animados con bounce
+- Dura ~2.2 segundos (simulado)
+
+**Paso 3 — Confirmar:**
+- Card azul claro con sugerencia IA: icono cerebro 🧠, "Sugerencia IA — X% confianza", texto explicativo de por qué sugiere esa clasificación, badges con categoría y tipo documental
+- Dropdown con TODOS los tipos documentales agrupados por categoría (optgroup) para confirmar o corregir
+- Botones "Confirmar y guardar" (verde) y "Cancelar"
+- Al confirmar: actualiza el checklist de la comunidad (marca ese tipo como completado con fecha de hoy) y muestra pantalla de éxito con check verde grande y texto "Documento clasificado y registrado / El checklist ha sido actualizado automáticamente"
+- La sugerencia de ejemplo: docTypeId del tipo "Acta junta ordinaria", 96% confianza, razón: "El documento contiene el encabezado 'ACTA DE JUNTA GENERAL ORDINARIA', fecha de convocatoria, relación de asistentes y acuerdos adoptados."
+
+### 5. Visor de Documentos
+
+- Barra superior oscura (#1e293b) con icono archivo, nombre "acta_junta_ordinaria_2024.pdf", badge tamaño "0.9 MB", controles de zoom (−/+) con porcentaje
+- Área de visualización con fondo gris medio (#475569)
+- Documento renderizado como carta blanca centrada con sombra, con ancho responsivo al zoom
+- Contenido de ejemplo del acta:
+  - Encabezado centrado: "COMUNIDAD DE PROPIETARIOS LAS MAGNOLIAS" (small caps), "ACTA DE JUNTA GENERAL ORDINARIA" (título grande), "Celebrada el 15 de marzo de 2024"
+  - Línea separadora
+  - Texto con: ASISTENTES (32 propietarios, 67% cuotas), PRESIDENTE (D. Francisco García López), SECRETARIO/ADMINISTRADOR (Admin. Fincas XYZ)
+  - Punto 1: Aprobación del acta anterior — aprobada por unanimidad
+  - Punto 2: Aprobación del presupuesto 2024 — 48.600€, aprobado por mayoría
+  - Líneas placeholder grises simulando más contenido
+- Barra inferior con clasificación IA: icono cerebro, "IA clasificó este documento como:", badge "Acta junta ordinaria", badge "98% confianza", texto "Confirmada por usuario"
+
+---
+
+## Paleta de Colores y Estilo Visual
+
+**Fondo general**: #f8fafc (gris muy claro)
+**Sidebar**: #0f172a (azul muy oscuro, casi negro)
+**Cards/paneles**: #fff con border-radius 14px y box-shadow sutil (0 1px 4px rgba(0,0,0,.06))
+**Texto principal**: #0f172a / #1e293b
+**Texto secundario**: #94a3b8 / #64748b / #475569
+**Tipografía**: 'Lato', 'Segoe UI', sans-serif — pesos 500, 600, 700, 800, 900
+
+**Colores funcionales:**
+- Primario/Acción: #4F7CFF (azul)
+- Éxito/Completado: #22C55E (verde)
+- Alerta/Pendiente: #F59E0B (ámbar)
+- Error/Peligro: #EF4444 (rojo)
+- Seguros: #EC4899 (rosa)
+- Contratos: #8B5CF6 (violeta)
+- Consumos: #06b6d4 (cian)
+- Gasóleo: #78716c (gris cálido)
+- Reformas: #a855f7 (púrpura)
+
+**Badges de estado:**
+- Completado: fondo #dcfce7, texto #166534
+- Pendiente: fondo #fef3c7, texto #92400e
+- No aplica: fondo #f1f5f9, texto #475569
+
+**Badges Sí/No:**
+- Sí: fondo #dcfce7, texto #166534
+- No: fondo #fef2f2, texto #991b1b
+
+**Tags operativos (pills):**
+- Activo: fondo = color al 15% opacidad, borde = color al 40%, texto = color
+- Inactivo: fondo #f8fafc, borde #e2e8f0, texto #94a3b8
+
+---
+
+## Métricas y Cálculos
+
+**Completitud de una comunidad**: Se excluyen los ítems marcados como "no_aplica". La fórmula es: `completados / (total - no_aplica) * 100`, redondeado.
+
+**Completitud global del dashboard**: Media aritmética de los porcentajes de completitud de todas las comunidades.
+
+**Estado por categoría documental (dashboard)**: Para cada categoría, se suman los completados y pendientes de TODAS las comunidades para los tipos documentales de esa categoría. El porcentaje es `completados / (completados + pendientes) * 100`.
+
+**Conteo de personal**: Suma de booleans tienePortero + tieneConserje + tieneGarajista + tieneLimpiadora + tieneOtroPersonal.
+
+**Conteo de reformas**: Suma de booleans reformaFontaneria + reformaSaneamiento + reformaElectricidad (máximo 3).
+
+---
+
+## Interacciones Clave
+
+1. **Navegación sidebar** → Cambia la pantalla principal
+2. **Clic en comunidad** (desde dashboard o listado) → Navega a detalle de esa comunidad
+3. **Toggle estado en checklist** → Los botones ✓ y N/A son toggles: si el ítem ya está en ese estado, lo devuelve a "pendiente"
+4. **Edición operativa** → Modo lectura por defecto, botón activa modo edición, guardar persiste cambios
+5. **Flujo de subida** → 3 pasos secuenciales con transición automática del paso 2 al 3 tras el análisis IA
+6. **Filtros operativos** → Los filtros del dashboard operativo son toggles (clic activa/desactiva), se combinan AND, y filtran la lista de comunidades en tiempo real
+7. **Búsqueda** → Filtrado en tiempo real por texto en comunidades (nombre, NIF, dirección) y en checklist (nombre de documento)
+8. **Zoom visor** → Controles +/− que ajustan el ancho del documento entre 50% y 200%
+
+---
+
+## Notas de Diseño
+
+- Todas las cards y paneles usan border-radius generoso (12-16px)
+- Hover suaves en elementos clicables (cambio de sombra o borde)
+- Iconos SVG inline (no librería externa), trazo sin relleno, strokeWidth 2
+- Gráficos circulares SVG con animación de transición en el stroke-dashoffset
+- Barras de progreso con border-radius completo y colores condicionados al valor
+- Labels en uppercase con letter-spacing para secciones y encabezados de formulario
+- La interfaz es compacta: fuentes pequeñas (10-13px para la mayoría), buena densidad de información
+- Toda la app es single-page, sin routing real, solo estado React
