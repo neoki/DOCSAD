@@ -22,19 +22,21 @@ export async function GET(req: NextRequest) {
       }
     : {};
 
+  const all = searchParams.get("all") === "true";
+
   const [total, comunidades] = await Promise.all([
     prisma.comunidad.count({ where }),
     prisma.comunidad.findMany({
       where,
       include: {
         operativa: true,
+        checklists: all ? { select: { estado: true } } : false,
         _count: {
           select: { checklists: true, documentos: true, alertas: true },
         },
       },
       orderBy: { nombre: "asc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      ...(all ? {} : { skip: (page - 1) * pageSize, take: pageSize }),
     }),
   ]);
 
@@ -52,13 +54,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
   }
 
-  const DOC_TYPES = [
-    "estatutos", "acta_constitucion", "libro_actas", "cif_comunidad", "escrituras",
-    "seguro_comunidad", "seguro_certificado", "ite_certificado", "boletin_electrico",
-    "certificado_ascensor", "rgpd_registro", "rgpd_politica", "contrato_limpieza",
-    "contrato_mantenimiento", "contrato_jardineria", "presupuesto_anual",
-    "liquidacion_anual", "cuenta_corriente",
-  ];
+  const { DOC_TYPES } = await import("@/lib/doctypes");
+  const docTypeIds = DOC_TYPES.map((dt) => dt.id);
 
   const comunidad = await prisma.comunidad.create({
     data: {
@@ -71,7 +68,7 @@ export async function POST(req: NextRequest) {
       },
       checklists: {
         createMany: {
-          data: DOC_TYPES.map((docTypeId) => ({ docTypeId })),
+          data: docTypeIds.map((docTypeId) => ({ docTypeId })),
         },
       },
     },

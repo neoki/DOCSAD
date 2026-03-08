@@ -67,56 +67,111 @@ function toDateInput(val: string | null | undefined): string {
   return new Date(val).toISOString().split("T")[0];
 }
 
-function BoolField({
-  label,
-  checked,
+function formatDate(val: string | null | undefined): string {
+  if (!val) return "—";
+  return new Date(val).toLocaleDateString("es-ES");
+}
+
+function BoolToggle({
+  value,
   onChange,
+  editing,
 }: {
-  label: string;
-  checked: boolean;
+  value: boolean;
   onChange: (v: boolean) => void;
+  editing: boolean;
 }) {
+  if (!editing) {
+    return (
+      <span className={value ? "badge-si" : "badge-no"}>
+        {value ? "Sí" : "No"}
+      </span>
+    );
+  }
   return (
-    <label className="flex items-center gap-3 cursor-pointer group">
-      <div
-        onClick={() => onChange(!checked)}
-        className={`w-10 h-6 rounded-full transition-colors ${
-          checked ? "bg-blue-600" : "bg-gray-300"
-        } relative flex-shrink-0`}
+    <div className="flex gap-1">
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        className="px-3 py-1 rounded-full text-xs font-semibold transition-colors"
+        style={{
+          background: value ? "#dcfce7" : "#f8fafc",
+          color: value ? "#166534" : "#94a3b8",
+          border: `1px solid ${value ? "#86efac" : "#e2e8f0"}`,
+        }}
       >
-        <span
-          className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-            checked ? "translate-x-5" : "translate-x-1"
-          }`}
-        />
-      </div>
-      <span className="text-sm text-gray-700 group-hover:text-gray-900">{label}</span>
-    </label>
+        Sí
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        className="px-3 py-1 rounded-full text-xs font-semibold transition-colors"
+        style={{
+          background: !value ? "#fef2f2" : "#f8fafc",
+          color: !value ? "#991b1b" : "#94a3b8",
+          border: `1px solid ${!value ? "#fca5a5" : "#e2e8f0"}`,
+        }}
+      >
+        No
+      </button>
+    </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="card mb-4">
-      <h3 className="text-base font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">
+    <div className="flex items-center justify-between py-1.5">
+      <span className="text-gray-600" style={{ fontSize: 12 }}>
+        {label}
+      </span>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function SectionCard({
+  title,
+  color,
+  children,
+}: {
+  title: string;
+  color: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="card"
+      style={{
+        borderTop: `4px solid ${color}`,
+        padding: "14px 16px",
+      }}
+    >
+      <h4 className="font-semibold text-gray-800 mb-3" style={{ fontSize: 13 }}>
         {title}
-      </h3>
-      <div className="space-y-3">{children}</div>
+      </h4>
+      <div className="space-y-1">{children}</div>
     </div>
   );
 }
 
 export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
   const [form, setForm] = useState<Operativa>(defaultOperativa);
+  const [original, setOriginal] = useState<Operativa>(defaultOperativa);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const fetchOperativa = useCallback(async () => {
     const res = await fetch(`/api/comunidades/${comunidadId}/operativa`);
     if (res.ok) {
       const data = await res.json();
-      setForm({
+      const parsed = {
         ...data,
         corredorSeguroNombre: data.corredorSeguroNombre ?? "",
         numeroPolizaSeguro: data.numeroPolizaSeguro ?? "",
@@ -127,7 +182,9 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
         fechaReformaSaneamiento: toDateInput(data.fechaReformaSaneamiento),
         fechaReformaElectricidad: toDateInput(data.fechaReformaElectricidad),
         fechaProximaITE: toDateInput(data.fechaProximaITE),
-      });
+      };
+      setForm(parsed);
+      setOriginal(parsed);
     }
     setLoading(false);
   }, [comunidadId]);
@@ -148,129 +205,377 @@ export default function OperativaTab({ comunidadId }: { comunidadId: string }) {
       body: JSON.stringify(form),
     });
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setOriginal(form);
+    setEditing(false);
   }
 
-  if (loading) return <div className="text-gray-500 text-sm">Cargando operativa...</div>;
+  function handleCancel() {
+    setForm(original);
+    setEditing(false);
+  }
+
+  if (loading)
+    return (
+      <div className="text-gray-500" style={{ fontSize: 12 }}>
+        Cargando operativa...
+      </div>
+    );
+
+  const iteExpired =
+    form.obligadaITE &&
+    form.fechaProximaITE &&
+    new Date(form.fechaProximaITE) < new Date();
+
+  const textValue = (val: string) =>
+    val || <span className="text-gray-400">—</span>;
 
   return (
     <div>
-      <Section title="Sistema y Herramientas">
-        <BoolField label="Usa AgreGasfincas" checked={form.usaAgreGasfincas} onChange={(v) => set("usaAgreGasfincas", v)} />
-        <BoolField label="Somos corredor de seguro" checked={form.somosCorredorSeguro} onChange={(v) => set("somosCorredorSeguro", v)} />
-        {form.somosCorredorSeguro && (
-          <input
-            type="text"
-            value={form.corredorSeguroNombre}
-            onChange={(e) => set("corredorSeguroNombre", e.target.value)}
-            placeholder="Nombre del corredor de seguro"
-            className="input-field mt-2"
-          />
-        )}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Número de póliza de seguro</label>
-          <input
-            type="text"
-            value={form.numeroPolizaSeguro}
-            onChange={(e) => set("numeroPolizaSeguro", e.target.value)}
-            placeholder="POL-XXXX-XXX"
-            className="input-field"
-          />
-        </div>
-        <BoolField label="Usa nuevo sistema de incidencias" checked={form.usaNuevoSistemaIncidencias} onChange={(v) => set("usaNuevoSistemaIncidencias", v)} />
-        <BoolField label="Tiene app TuComunidad" checked={form.tieneAppTuComunidad} onChange={(v) => set("tieneAppTuComunidad", v)} />
-      </Section>
-
-      <Section title="Personal">
-        <div className="grid grid-cols-2 gap-3">
-          <BoolField label="Portero" checked={form.tienePortero} onChange={(v) => set("tienePortero", v)} />
-          <BoolField label="Conserje" checked={form.tieneConserje} onChange={(v) => set("tieneConserje", v)} />
-          <BoolField label="Garajista" checked={form.tieneGarajista} onChange={(v) => set("tieneGarajista", v)} />
-          <BoolField label="Limpiadora" checked={form.tieneLimpiadora} onChange={(v) => set("tieneLimpiadora", v)} />
-        </div>
-        <BoolField label="Otro personal" checked={form.tieneOtroPersonal} onChange={(v) => set("tieneOtroPersonal", v)} />
-        {form.tieneOtroPersonal && (
-          <input
-            type="text"
-            value={form.descripcionOtroPersonal}
-            onChange={(e) => set("descripcionOtroPersonal", e.target.value)}
-            placeholder="Descripción del otro personal"
-            className="input-field"
-          />
-        )}
-      </Section>
-
-      <Section title="Instalaciones y Legal">
-        <BoolField label="Videovigilancia" checked={form.tieneVideovigilancia} onChange={(v) => set("tieneVideovigilancia", v)} />
-        <BoolField label="Actúa como arrendadora" checked={form.actuaComoArrendadora} onChange={(v) => set("actuaComoArrendadora", v)} />
-        {form.actuaComoArrendadora && (
-          <input
-            type="text"
-            value={form.activoArrendadoDescripcion}
-            onChange={(e) => set("activoArrendadoDescripcion", e.target.value)}
-            placeholder="Descripción del activo arrendado"
-            className="input-field"
-          />
-        )}
-        <BoolField label="Gestiona consumos" checked={form.gestionaConsumos} onChange={(v) => set("gestionaConsumos", v)} />
-        {form.gestionaConsumos && (
-          <input
-            type="text"
-            value={form.empresaGestionConsumos}
-            onChange={(e) => set("empresaGestionConsumos", e.target.value)}
-            placeholder="Empresa de gestión de consumos"
-            className="input-field"
-          />
-        )}
-        <BoolField label="Gestiona permisos de gasóleo" checked={form.gestionaPermisosGasoleo} onChange={(v) => set("gestionaPermisosGasoleo", v)} />
-      </Section>
-
-      <Section title="Reformas">
-        <div className="space-y-4">
-          <div>
-            <BoolField label="Reforma fontanería" checked={form.reformaFontaneria} onChange={(v) => set("reformaFontaneria", v)} />
-            {form.reformaFontaneria && (
-              <input type="date" value={form.fechaReformaFontaneria} onChange={(e) => set("fechaReformaFontaneria", e.target.value)} className="input-field mt-2" />
-            )}
+      <div className="flex justify-end mb-4">
+        {!editing ? (
+          <button
+            onClick={() => setEditing(true)}
+            className="btn-secondary"
+            style={{ fontSize: 12, padding: "6px 14px" }}
+          >
+            Editar información operativa
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-primary"
+              style={{ fontSize: 12, padding: "6px 14px" }}
+            >
+              {saving ? "Guardando..." : "Guardar"}
+            </button>
+            <button
+              onClick={handleCancel}
+              className="btn-secondary"
+              style={{ fontSize: 12, padding: "6px 14px" }}
+            >
+              Cancelar
+            </button>
           </div>
-          <div>
-            <BoolField label="Reforma saneamiento" checked={form.reformaSaneamiento} onChange={(v) => set("reformaSaneamiento", v)} />
-            {form.reformaSaneamiento && (
-              <input type="date" value={form.fechaReformaSaneamiento} onChange={(e) => set("fechaReformaSaneamiento", e.target.value)} className="input-field mt-2" />
-            )}
-          </div>
-          <div>
-            <BoolField label="Reforma electricidad" checked={form.reformaElectricidad} onChange={(v) => set("reformaElectricidad", v)} />
-            {form.reformaElectricidad && (
-              <input type="date" value={form.fechaReformaElectricidad} onChange={(e) => set("fechaReformaElectricidad", e.target.value)} className="input-field mt-2" />
-            )}
-          </div>
-        </div>
-      </Section>
+        )}
+      </div>
 
-      <Section title="ITE - Inspección Técnica de Edificios">
-        <BoolField label="Obligada a ITE" checked={form.obligadaITE} onChange={(v) => set("obligadaITE", v)} />
-        {form.obligadaITE && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha próxima ITE</label>
-            <input
-              type="date"
-              value={form.fechaProximaITE}
-              onChange={(e) => set("fechaProximaITE", e.target.value)}
-              className="input-field"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <SectionCard title="Financiero y Seguros" color="#EC4899">
+          <Field label="Corredor propio">
+            <BoolToggle
+              value={form.somosCorredorSeguro}
+              onChange={(v) => set("somosCorredorSeguro", v)}
+              editing={editing}
             />
-          </div>
-        )}
-      </Section>
+          </Field>
+          {!form.somosCorredorSeguro && (
+            <Field label="Nombre corredor">
+              {editing ? (
+                <input
+                  type="text"
+                  value={form.corredorSeguroNombre}
+                  onChange={(e) => set("corredorSeguroNombre", e.target.value)}
+                  className="input-field"
+                  style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+                />
+              ) : (
+                <span style={{ fontSize: 12 }}>{textValue(form.corredorSeguroNombre)}</span>
+              )}
+            </Field>
+          )}
+          <Field label="Nº póliza seguro">
+            {editing ? (
+              <input
+                type="text"
+                value={form.numeroPolizaSeguro}
+                onChange={(e) => set("numeroPolizaSeguro", e.target.value)}
+                className="input-field"
+                style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+              />
+            ) : (
+              <span style={{ fontSize: 12 }}>{textValue(form.numeroPolizaSeguro)}</span>
+            )}
+          </Field>
+        </SectionCard>
 
-      <div className="flex items-center gap-3">
-        <button onClick={handleSave} disabled={saving} className="btn-primary">
-          {saving ? "Guardando..." : "Guardar cambios"}
-        </button>
-        {saved && (
-          <span className="text-green-600 text-sm font-medium">✓ Guardado correctamente</span>
-        )}
+        <SectionCard title="Sistemas y Digitalización" color="#4F7CFF">
+          <Field label="GESFINCAS">
+            <BoolToggle
+              value={form.usaAgreGasfincas}
+              onChange={(v) => set("usaAgreGasfincas", v)}
+              editing={editing}
+            />
+          </Field>
+          <Field label="Nuevo sist. incidencias">
+            <BoolToggle
+              value={form.usaNuevoSistemaIncidencias}
+              onChange={(v) => set("usaNuevoSistemaIncidencias", v)}
+              editing={editing}
+            />
+          </Field>
+          <Field label="App TuComunidad">
+            <BoolToggle
+              value={form.tieneAppTuComunidad}
+              onChange={(v) => set("tieneAppTuComunidad", v)}
+              editing={editing}
+            />
+          </Field>
+        </SectionCard>
+
+        <SectionCard title="Personal" color="#F59E0B">
+          <Field label="Portero">
+            <BoolToggle
+              value={form.tienePortero}
+              onChange={(v) => set("tienePortero", v)}
+              editing={editing}
+            />
+          </Field>
+          <Field label="Conserje">
+            <BoolToggle
+              value={form.tieneConserje}
+              onChange={(v) => set("tieneConserje", v)}
+              editing={editing}
+            />
+          </Field>
+          <Field label="Garajista">
+            <BoolToggle
+              value={form.tieneGarajista}
+              onChange={(v) => set("tieneGarajista", v)}
+              editing={editing}
+            />
+          </Field>
+          <Field label="Limpiadora">
+            <BoolToggle
+              value={form.tieneLimpiadora}
+              onChange={(v) => set("tieneLimpiadora", v)}
+              editing={editing}
+            />
+          </Field>
+          <Field label="Otro personal">
+            <BoolToggle
+              value={form.tieneOtroPersonal}
+              onChange={(v) => set("tieneOtroPersonal", v)}
+              editing={editing}
+            />
+          </Field>
+          {form.tieneOtroPersonal && (
+            <Field label="Descripción">
+              {editing ? (
+                <input
+                  type="text"
+                  value={form.descripcionOtroPersonal}
+                  onChange={(e) => set("descripcionOtroPersonal", e.target.value)}
+                  className="input-field"
+                  style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+                />
+              ) : (
+                <span style={{ fontSize: 12 }}>
+                  {textValue(form.descripcionOtroPersonal)}
+                </span>
+              )}
+            </Field>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Videovigilancia" color="#8B5CF6">
+          <Field label="Tiene videovigilancia">
+            <BoolToggle
+              value={form.tieneVideovigilancia}
+              onChange={(v) => set("tieneVideovigilancia", v)}
+              editing={editing}
+            />
+          </Field>
+        </SectionCard>
+
+        <SectionCard title="Arrendamientos" color="#EC4899">
+          <Field label="Actúa como arrendadora">
+            <BoolToggle
+              value={form.actuaComoArrendadora}
+              onChange={(v) => set("actuaComoArrendadora", v)}
+              editing={editing}
+            />
+          </Field>
+          {form.actuaComoArrendadora && (
+            <Field label="Activo arrendado">
+              {editing ? (
+                <input
+                  type="text"
+                  value={form.activoArrendadoDescripcion}
+                  onChange={(e) =>
+                    set("activoArrendadoDescripcion", e.target.value)
+                  }
+                  className="input-field"
+                  style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+                />
+              ) : (
+                <span style={{ fontSize: 12 }}>
+                  {textValue(form.activoArrendadoDescripcion)}
+                </span>
+              )}
+            </Field>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Gestión de Consumos" color="#06b6d4">
+          <Field label="Gestiona consumos">
+            <BoolToggle
+              value={form.gestionaConsumos}
+              onChange={(v) => set("gestionaConsumos", v)}
+              editing={editing}
+            />
+          </Field>
+          {form.gestionaConsumos && (
+            <Field label="Empresa">
+              {editing ? (
+                <input
+                  type="text"
+                  value={form.empresaGestionConsumos}
+                  onChange={(e) =>
+                    set("empresaGestionConsumos", e.target.value)
+                  }
+                  className="input-field"
+                  style={{ fontSize: 12, padding: "4px 8px", width: 180 }}
+                />
+              ) : (
+                <span style={{ fontSize: 12 }}>
+                  {textValue(form.empresaGestionConsumos)}
+                </span>
+              )}
+            </Field>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Gasóleo" color="#78716c">
+          <Field label="Permisos gasóleo">
+            <BoolToggle
+              value={form.gestionaPermisosGasoleo}
+              onChange={(v) => set("gestionaPermisosGasoleo", v)}
+              editing={editing}
+            />
+          </Field>
+        </SectionCard>
+
+        <SectionCard title="Reformas" color="#a855f7">
+          <Field label="Fontanería">
+            <BoolToggle
+              value={form.reformaFontaneria}
+              onChange={(v) => set("reformaFontaneria", v)}
+              editing={editing}
+            />
+          </Field>
+          {form.reformaFontaneria && (
+            <Field label="Fecha fontanería">
+              {editing ? (
+                <input
+                  type="date"
+                  value={form.fechaReformaFontaneria}
+                  onChange={(e) =>
+                    set("fechaReformaFontaneria", e.target.value)
+                  }
+                  className="input-field"
+                  style={{ fontSize: 12, padding: "4px 8px", width: 160 }}
+                />
+              ) : (
+                <span style={{ fontSize: 12 }}>
+                  {formatDate(form.fechaReformaFontaneria)}
+                </span>
+              )}
+            </Field>
+          )}
+          <Field label="Saneamiento">
+            <BoolToggle
+              value={form.reformaSaneamiento}
+              onChange={(v) => set("reformaSaneamiento", v)}
+              editing={editing}
+            />
+          </Field>
+          {form.reformaSaneamiento && (
+            <Field label="Fecha saneamiento">
+              {editing ? (
+                <input
+                  type="date"
+                  value={form.fechaReformaSaneamiento}
+                  onChange={(e) =>
+                    set("fechaReformaSaneamiento", e.target.value)
+                  }
+                  className="input-field"
+                  style={{ fontSize: 12, padding: "4px 8px", width: 160 }}
+                />
+              ) : (
+                <span style={{ fontSize: 12 }}>
+                  {formatDate(form.fechaReformaSaneamiento)}
+                </span>
+              )}
+            </Field>
+          )}
+          <Field label="Electricidad">
+            <BoolToggle
+              value={form.reformaElectricidad}
+              onChange={(v) => set("reformaElectricidad", v)}
+              editing={editing}
+            />
+          </Field>
+          {form.reformaElectricidad && (
+            <Field label="Fecha electricidad">
+              {editing ? (
+                <input
+                  type="date"
+                  value={form.fechaReformaElectricidad}
+                  onChange={(e) =>
+                    set("fechaReformaElectricidad", e.target.value)
+                  }
+                  className="input-field"
+                  style={{ fontSize: 12, padding: "4px 8px", width: 160 }}
+                />
+              ) : (
+                <span style={{ fontSize: 12 }}>
+                  {formatDate(form.fechaReformaElectricidad)}
+                </span>
+              )}
+            </Field>
+          )}
+        </SectionCard>
+
+        <SectionCard title="ITE" color="#EF4444">
+          <Field label="Obligada a ITE">
+            <BoolToggle
+              value={form.obligadaITE}
+              onChange={(v) => set("obligadaITE", v)}
+              editing={editing}
+            />
+          </Field>
+          {form.obligadaITE && (
+            <>
+              <Field label="Fecha próxima ITE">
+                {editing ? (
+                  <input
+                    type="date"
+                    value={form.fechaProximaITE}
+                    onChange={(e) => set("fechaProximaITE", e.target.value)}
+                    className="input-field"
+                    style={{ fontSize: 12, padding: "4px 8px", width: 160 }}
+                  />
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontSize: 12 }}>
+                      {formatDate(form.fechaProximaITE)}
+                    </span>
+                    {iteExpired && (
+                      <span
+                        className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: "#fef2f2", color: "#dc2626" }}
+                      >
+                        VENCIDA
+                      </span>
+                    )}
+                  </div>
+                )}
+              </Field>
+            </>
+          )}
+        </SectionCard>
       </div>
     </div>
   );

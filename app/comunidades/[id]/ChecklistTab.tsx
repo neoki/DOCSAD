@@ -12,28 +12,18 @@ type ChecklistItem = {
   justificacion: string;
 };
 
-const ESTADO_OPTIONS = [
-  { value: "COMPLETADO", label: "Completado", className: "badge-completado" },
-  { value: "PENDIENTE", label: "Pendiente", className: "badge-pendiente" },
-  { value: "NO_APLICA", label: "No aplica", className: "badge-no-aplica" },
-] as const;
-
 export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [search, setSearch] = useState("");
   const [filterEstado, setFilterEstado] = useState<string>("all");
   const [filterCategoria, setFilterCategoria] = useState<string>("all");
-  const [expanded, setExpanded] = useState<string | null>(null);
 
   const fetchChecklist = useCallback(async () => {
     const res = await fetch(`/api/comunidades/${comunidadId}/checklist`);
     if (res.ok) {
       const data = await res.json();
       const map = new Map(data.map((i: ChecklistItem) => [i.docTypeId, i]));
-
-      // Fill in any missing doc types
       const filled = DOC_TYPES.map((dt) => {
         const existing = map.get(dt.id) as ChecklistItem | undefined;
         return existing ?? {
@@ -54,178 +44,206 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
     fetchChecklist();
   }, [fetchChecklist]);
 
-  const updateItem = (docTypeId: string, field: keyof ChecklistItem, value: unknown) => {
-    setItems((prev) =>
-      prev.map((i) => (i.docTypeId === docTypeId ? { ...i, [field]: value } : i))
-    );
-  };
+  async function toggleEstado(docTypeId: string, targetEstado: "COMPLETADO" | "NO_APLICA") {
+    const item = items.find((i) => i.docTypeId === docTypeId);
+    if (!item) return;
+    const newEstado = item.estado === targetEstado ? "PENDIENTE" : targetEstado;
+    const newFecha = newEstado === "COMPLETADO" ? new Date().toISOString() : item.fecha;
 
-  async function handleSave() {
-    setSaving(true);
+    setItems((prev) =>
+      prev.map((i) =>
+        i.docTypeId === docTypeId ? { ...i, estado: newEstado, fecha: newFecha } : i
+      )
+    );
+
     await fetch(`/api/comunidades/${comunidadId}/checklist`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(items),
+      body: JSON.stringify([{ docTypeId, estado: newEstado, fecha: newFecha }]),
     });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    fetchChecklist();
   }
 
-  const categorias = Object.keys(CATEGORIAS) as (keyof typeof CATEGORIAS)[];
+  const categorias = Object.keys(CATEGORIAS);
 
   const filteredItems = items.filter((item) => {
     const dt = DOC_TYPES.find((d) => d.id === item.docTypeId);
     if (!dt) return false;
     if (filterEstado !== "all" && item.estado !== filterEstado) return false;
     if (filterCategoria !== "all" && dt.categoria !== filterCategoria) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const cat = CATEGORIAS[dt.categoria];
+      if (
+        !dt.label.toLowerCase().includes(q) &&
+        !dt.subcategoria.toLowerCase().includes(q) &&
+        !(cat && cat.label.toLowerCase().includes(q))
+      )
+        return false;
+    }
     return true;
   });
 
-  const stats = {
-    completado: items.filter((i) => i.estado === "COMPLETADO").length,
-    pendiente: items.filter((i) => i.estado === "PENDIENTE").length,
-    noAplica: items.filter((i) => i.estado === "NO_APLICA").length,
-  };
-
-  if (loading) return <div className="text-gray-500 text-sm">Cargando checklist...</div>;
+  if (loading) return <div className="text-gray-500" style={{ fontSize: 12 }}>Cargando checklist...</div>;
 
   return (
     <div>
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-green-600">{stats.completado}</div>
-          <div className="text-sm text-gray-500">Completados</div>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-yellow-600">{stats.pendiente}</div>
-          <div className="text-sm text-gray-500">Pendientes</div>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-gray-500">{stats.noAplica}</div>
-          <div className="text-sm text-gray-500">No aplica</div>
-        </div>
+      <div className="flex gap-3 mb-4 flex-wrap">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar documento..."
+          className="input-field"
+          style={{ fontSize: 12, padding: "6px 10px", maxWidth: 240 }}
+        />
+        <select
+          value={filterCategoria}
+          onChange={(e) => setFilterCategoria(e.target.value)}
+          className="input-field"
+          style={{ fontSize: 12, padding: "6px 10px", maxWidth: 220 }}
+        >
+          <option value="all">Todas las categorías</option>
+          {categorias.map((cat) => (
+            <option key={cat} value={cat}>
+              {CATEGORIAS[cat].label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filterEstado}
+          onChange={(e) => setFilterEstado(e.target.value)}
+          className="input-field"
+          style={{ fontSize: 12, padding: "6px 10px", maxWidth: 180 }}
+        >
+          <option value="all">Todos los estados</option>
+          <option value="COMPLETADO">Completado</option>
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="NO_APLICA">No aplica</option>
+        </select>
       </div>
 
-      {/* Filters */}
-      <div className="card mb-4">
-        <div className="flex gap-4 flex-wrap">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Estado</label>
-            <select
-              value={filterEstado}
-              onChange={(e) => setFilterEstado(e.target.value)}
-              className="input-field py-1.5 text-sm"
-            >
-              <option value="all">Todos</option>
-              {ESTADO_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Categoría</label>
-            <select
-              value={filterCategoria}
-              onChange={(e) => setFilterCategoria(e.target.value)}
-              className="input-field py-1.5 text-sm"
-            >
-              <option value="all">Todas</option>
-              {categorias.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORIAS[cat]}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
+      <div className="card p-0 overflow-hidden">
+        <table className="w-full" style={{ fontSize: 12 }}>
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
+                Categoría
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
+                Subcategoría
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
+                Documento
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
+                Estado
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
+                Última actualización
+              </th>
+              <th className="px-3 py-2 text-right font-medium text-gray-500 uppercase" style={{ fontSize: 10 }}>
+                Acciones
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {filteredItems.map((item) => {
+              const dt = DOC_TYPES.find((d) => d.id === item.docTypeId);
+              if (!dt) return null;
+              const cat = CATEGORIAS[dt.categoria];
+              const estadoClass =
+                item.estado === "COMPLETADO"
+                  ? "badge-completado"
+                  : item.estado === "NO_APLICA"
+                  ? "badge-no-aplica"
+                  : "badge-pendiente";
+              const estadoLabel =
+                item.estado === "COMPLETADO"
+                  ? "Completado"
+                  : item.estado === "NO_APLICA"
+                  ? "No aplica"
+                  : "Pendiente";
 
-      {/* Checklist items */}
-      <div className="space-y-2">
-        {filteredItems.map((item) => {
-          const dt = DOC_TYPES.find((d) => d.id === item.docTypeId);
-          if (!dt) return null;
-          const isExpanded = expanded === item.docTypeId;
-          const estadoClass = item.estado === "COMPLETADO" ? "badge-completado" : item.estado === "NO_APLICA" ? "badge-no-aplica" : "badge-pendiente";
-
-          return (
-            <div key={item.docTypeId} className="card p-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <button
-                  onClick={() => setExpanded(isExpanded ? null : item.docTypeId)}
-                  className="text-gray-400 hover:text-gray-600 text-lg"
-                >
-                  {isExpanded ? "▼" : "▶"}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-800 text-sm">{dt.label}</div>
-                  <div className="text-xs text-gray-400 capitalize">{CATEGORIAS[dt.categoria as keyof typeof CATEGORIAS]}</div>
-                </div>
-                <select
-                  value={item.estado}
-                  onChange={(e) => updateItem(item.docTypeId, "estado", e.target.value)}
-                  className={`text-xs font-medium px-2 py-1 rounded-full border-0 ${estadoClass}`}
-                  style={{ appearance: "auto" }}
-                >
-                  {ESTADO_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {isExpanded && (
-                <div className="mt-4 space-y-3 pl-8 border-t border-gray-100 pt-3">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Fecha del documento</label>
-                    <input
-                      type="date"
-                      value={item.fecha ? item.fecha.split("T")[0] : ""}
-                      onChange={(e) => updateItem(item.docTypeId, "fecha", e.target.value || null)}
-                      className="input-field text-sm py-1.5"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Observaciones</label>
-                    <textarea
-                      value={item.observaciones}
-                      onChange={(e) => updateItem(item.docTypeId, "observaciones", e.target.value)}
-                      rows={2}
-                      className="input-field text-sm"
-                      placeholder="Observaciones sobre este documento..."
-                    />
-                  </div>
-                  {item.estado === "NO_APLICA" && (
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Justificación (No aplica)</label>
-                      <textarea
-                        value={item.justificacion}
-                        onChange={(e) => updateItem(item.docTypeId, "justificacion", e.target.value)}
-                        rows={2}
-                        className="input-field text-sm"
-                        placeholder="Motivo por el que no aplica..."
+              return (
+                <tr key={item.docTypeId} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ background: cat?.color ?? "#94a3b8" }}
                       />
+                      <span className="text-gray-700" style={{ fontSize: 11 }}>
+                        {cat?.label ?? dt.categoria}
+                      </span>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Save */}
-      <div className="flex items-center gap-3 mt-6">
-        <button onClick={handleSave} disabled={saving} className="btn-primary">
-          {saving ? "Guardando..." : "Guardar checklist"}
-        </button>
-        {saved && <span className="text-green-600 text-sm font-medium">✓ Guardado</span>}
+                  </td>
+                  <td className="px-3 py-2.5 text-gray-500" style={{ fontSize: 11 }}>
+                    {dt.subcategoria}
+                  </td>
+                  <td className="px-3 py-2.5 font-semibold text-gray-900" style={{ fontSize: 12 }}>
+                    {dt.label}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span className={estadoClass}>{estadoLabel}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-gray-500" style={{ fontSize: 11 }}>
+                    {item.fecha
+                      ? new Date(item.fecha).toLocaleDateString("es-ES")
+                      : "—"}
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => toggleEstado(item.docTypeId, "COMPLETADO")}
+                        title="Marcar completado"
+                        className="px-2 py-1 rounded text-xs font-semibold transition-colors"
+                        style={{
+                          background:
+                            item.estado === "COMPLETADO" ? "#dcfce7" : "#f8fafc",
+                          color:
+                            item.estado === "COMPLETADO" ? "#166534" : "#94a3b8",
+                          border: `1px solid ${
+                            item.estado === "COMPLETADO" ? "#86efac" : "#e2e8f0"
+                          }`,
+                        }}
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={() => toggleEstado(item.docTypeId, "NO_APLICA")}
+                        title="Marcar no aplica"
+                        className="px-2 py-1 rounded text-xs font-semibold transition-colors"
+                        style={{
+                          background:
+                            item.estado === "NO_APLICA" ? "#f1f5f9" : "#f8fafc",
+                          color:
+                            item.estado === "NO_APLICA" ? "#475569" : "#94a3b8",
+                          border: `1px solid ${
+                            item.estado === "NO_APLICA" ? "#94a3b8" : "#e2e8f0"
+                          }`,
+                        }}
+                      >
+                        N/A
+                      </button>
+                      <a
+                        href="/visor"
+                        className="px-2 py-1 rounded text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors"
+                        style={{ border: "1px solid #e2e8f0" }}
+                      >
+                        Ver
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {filteredItems.length === 0 && (
+          <div className="py-8 text-center text-gray-400" style={{ fontSize: 12 }}>
+            No se encontraron documentos con los filtros seleccionados.
+          </div>
+        )}
       </div>
     </div>
   );

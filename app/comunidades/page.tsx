@@ -1,163 +1,236 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import AuthGuard from "@/components/AuthGuard";
+
+type ChecklistItem = {
+  estado: string;
+};
+
+type Operativa = {
+  usaAgreGasfincas: boolean;
+  tieneVideovigilancia: boolean;
+  tienePortero: boolean;
+  tieneConserje: boolean;
+  tieneGarajista: boolean;
+  tieneLimpiadora: boolean;
+  tieneOtroPersonal: boolean;
+  obligadaITE: boolean;
+  fechaProximaITE: string | null;
+};
 
 type Comunidad = {
   id: string;
   nombre: string;
   nif: string;
   direccion: string;
-  pisos: number;
-  _count: { checklists: number; documentos: number; alertas: number };
+  operativa: Operativa | null;
+  checklists: ChecklistItem[];
 };
 
-export default function ComunidadesPage() {
-  const [comunidades, setComunidades] = useState<Comunidad[]>([]);
-  const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const pageSize = 10;
+function calcCompletitud(checklists: ChecklistItem[]): number {
+  if (!checklists || checklists.length === 0) return 0;
+  const completados = checklists.filter((c) => c.estado === "COMPLETADO").length;
+  const noAplica = checklists.filter((c) => c.estado === "NO_APLICA").length;
+  const denom = checklists.length - noAplica;
+  if (denom <= 0) return 100;
+  return Math.round((completados / denom) * 100);
+}
 
-  const fetchComunidades = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({
-      search,
-      page: String(page),
-      pageSize: String(pageSize),
-    });
-    const res = await fetch(`/api/comunidades?${params}`);
-    const data = await res.json();
-    setComunidades(data.comunidades ?? []);
-    setTotal(data.total ?? 0);
-    setLoading(false);
-  }, [search, page]);
+function personalCount(op: Operativa | null): number {
+  if (!op) return 0;
+  return (
+    (op.tienePortero ? 1 : 0) +
+    (op.tieneConserje ? 1 : 0) +
+    (op.tieneGarajista ? 1 : 0) +
+    (op.tieneLimpiadora ? 1 : 0) +
+    (op.tieneOtroPersonal ? 1 : 0)
+  );
+}
+
+function progressColor(pct: number): string {
+  if (pct >= 70) return "#22C55E";
+  if (pct >= 40) return "#F59E0B";
+  return "#EF4444";
+}
+
+export default function ComunidadesPage() {
+  const router = useRouter();
+  const [comunidades, setComunidades] = useState<Comunidad[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchComunidades();
-  }, [fetchComunidades]);
+    (async () => {
+      setLoading(true);
+      const res = await fetch("/api/comunidades?all=true&pageSize=1000");
+      const data = await res.json();
+      setComunidades(data.comunidades ?? []);
+      setLoading(false);
+    })();
+  }, []);
 
-  const totalPages = Math.ceil(total / pageSize);
+  const filtered = useMemo(() => {
+    if (!search.trim()) return comunidades;
+    const q = search.toLowerCase();
+    return comunidades.filter(
+      (c) =>
+        c.nombre.toLowerCase().includes(q) ||
+        c.nif.toLowerCase().includes(q) ||
+        c.direccion.toLowerCase().includes(q)
+    );
+  }, [comunidades, search]);
 
   return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Comunidades</h1>
-              <p className="text-gray-500 mt-1">{total} comunidades registradas</p>
-            </div>
-            <Link href="/comunidades/nueva" className="btn-primary">
-              + Nueva comunidad
-            </Link>
-          </div>
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Comunidades</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {comunidades.length} comunidades registradas
+          </p>
+        </div>
+        <button className="btn-primary opacity-50 cursor-not-allowed" disabled>
+          + Nueva comunidad
+        </button>
+      </div>
 
-          {/* Search */}
-          <div className="card mb-6">
-            <input
-              type="text"
-              placeholder="Buscar por nombre, NIF o dirección..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="input-field"
-            />
-          </div>
+      <div className="card mb-6">
+        <input
+          type="text"
+          placeholder="Buscar por nombre, NIF o dirección..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input-field"
+        />
+      </div>
 
-          {/* List */}
-          <div className="card p-0 overflow-hidden">
-            {loading ? (
-              <div className="p-8 text-center text-gray-500">Cargando...</div>
-            ) : comunidades.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                No se encontraron comunidades.{" "}
-                <Link href="/comunidades/nueva" className="text-blue-600 hover:underline">
-                  Crear la primera
-                </Link>
-              </div>
-            ) : (
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Comunidad
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      NIF
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Pisos
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Docs
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {comunidades.map((c) => (
-                    <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{c.nombre}</div>
-                        <div className="text-sm text-gray-500">{c.direccion}</div>
+      <div className="card p-0 overflow-hidden" style={{ borderRadius: 14 }}>
+        {loading ? (
+          <div className="p-8 text-center text-gray-500">Cargando...</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            No se encontraron comunidades.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Comunidad
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    NIF
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Dirección
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Completitud
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    GESFINCAS
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Videovig.
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Personal
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ITE
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filtered.map((c) => {
+                  const pct = calcCompletitud(c.checklists);
+                  const color = progressColor(pct);
+                  const personal = personalCount(c.operativa);
+                  const op = c.operativa;
+
+                  return (
+                    <tr
+                      key={c.id}
+                      className="hover:bg-blue-50/40 transition-colors cursor-pointer"
+                      onClick={() => router.push(`/comunidades/${c.id}`)}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="font-semibold text-gray-900">{c.nombre}</div>
+                        <div className="text-xs text-gray-500">{c.direccion}</div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{c.nif}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{c.pisos}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        <span className="badge-completado">{c._count.documentos} docs</span>
+                      <td className="px-4 py-3 font-mono text-gray-600 text-xs">
+                        {c.nif}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 py-3 text-gray-600 text-xs max-w-[200px] truncate">
+                        {c.direccion}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor: color,
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold" style={{ color }}>
+                            {pct}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={op?.usaAgreGasfincas ? "badge-si" : "badge-no"}>
+                          {op?.usaAgreGasfincas ? "Sí" : "No"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={op?.tieneVideovigilancia ? "badge-si" : "badge-no"}>
+                          {op?.tieneVideovigilancia ? "Sí" : "No"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="text-xs text-gray-700 font-medium">
+                          {personal} {personal === 1 ? "rol" : "roles"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {op?.obligadaITE ? (
+                          <span className="text-xs">
+                            <span className="badge-si">Sí</span>
+                            {op.fechaProximaITE && (
+                              <span className="text-gray-500 ml-1">
+                                {new Date(op.fechaProximaITE).toLocaleDateString("es-ES")}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="badge-no">No</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
                         <Link
                           href={`/comunidades/${c.id}`}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          className="text-primary hover:text-blue-700 text-xs font-semibold"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          Ver detalle →
+                          Ver →
                         </Link>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-gray-500">
-                Mostrando {(page - 1) * pageSize + 1} -{" "}
-                {Math.min(page * pageSize, total)} de {total}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="btn-secondary text-sm py-1 px-3"
-                >
-                  ← Anterior
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="btn-secondary text-sm py-1 px-3"
-                >
-                  Siguiente →
-                </button>
-              </div>
-            </div>
-          )}
-        </main>
+        )}
       </div>
-    </AuthGuard>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { DOC_TYPES, getDocTypeLabel } from "@/lib/doctypes";
+import { useState, useEffect, useCallback } from "react";
+import { getDocTypeLabel } from "@/lib/doctypes";
 
 type Documento = {
   id: string;
@@ -22,11 +22,6 @@ function formatSize(bytes: number): string {
 export default function DocumentosTab({ comunidadId }: { comunidadId: string }) {
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [uploadForm, setUploadForm] = useState({ docTypeId: "", nombre: "" });
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadError, setUploadError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchDocumentos = useCallback(async () => {
     const res = await fetch(`/api/comunidades/${comunidadId}/documentos`);
@@ -40,187 +35,91 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
     fetchDocumentos();
   }, [fetchDocumentos]);
 
-  async function handleUpload(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedFile) return;
-    setUploadError("");
-    setUploading(true);
+  if (loading)
+    return (
+      <div className="text-gray-500" style={{ fontSize: 12 }}>
+        Cargando documentos...
+      </div>
+    );
 
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-    formData.append("docTypeId", uploadForm.docTypeId);
-    formData.append("nombre", uploadForm.nombre || selectedFile.name);
-
-    const res = await fetch(`/api/comunidades/${comunidadId}/documentos`, {
-      method: "POST",
-      body: formData,
-    });
-
-    setUploading(false);
-
-    if (!res.ok) {
-      const data = await res.json();
-      setUploadError(data.error ?? "Error al subir el archivo");
-      return;
-    }
-
-    setUploadForm({ docTypeId: "", nombre: "" });
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    fetchDocumentos();
+  if (documentos.length === 0) {
+    return (
+      <div className="card py-16 text-center">
+        <div className="text-gray-400 mb-2" style={{ fontSize: 32 }}>
+          📄
+        </div>
+        <p className="text-gray-500" style={{ fontSize: 13 }}>
+          No hay documentos subidos aún
+        </p>
+      </div>
+    );
   }
 
-  if (loading) return <div className="text-gray-500 text-sm">Cargando documentos...</div>;
-
   return (
-    <div className="space-y-6">
-      {/* Upload form */}
-      <div className="card">
-        <h3 className="text-base font-semibold text-gray-800 mb-4">Subir documento</h3>
-        <form onSubmit={handleUpload} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de documento
-              </label>
-              <select
-                value={uploadForm.docTypeId}
-                onChange={(e) => setUploadForm((f) => ({ ...f, docTypeId: e.target.value }))}
-                className="input-field"
-                required
-              >
-                <option value="">Seleccionar tipo...</option>
-                {DOC_TYPES.map((dt) => (
-                  <option key={dt.id} value={dt.id}>
-                    {dt.label}
-                  </option>
-                ))}
-              </select>
+    <div className="space-y-2">
+      {documentos.map((doc) => (
+        <div
+          key={doc.id}
+          className="card flex items-center gap-3"
+          style={{ padding: "10px 14px" }}
+        >
+          <div
+            className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ background: "#fef2f2", color: "#ef4444" }}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-gray-900 truncate" style={{ fontSize: 13 }}>
+              {doc.nombre}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre (opcional)
-              </label>
-              <input
-                type="text"
-                value={uploadForm.nombre}
-                onChange={(e) => setUploadForm((f) => ({ ...f, nombre: e.target.value }))}
-                placeholder="Nombre descriptivo del documento"
-                className="input-field"
-              />
+            <div className="text-gray-500 truncate" style={{ fontSize: 11 }}>
+              {getDocTypeLabel(doc.docTypeId)} ·{" "}
+              {new Date(doc.uploadedAt).toLocaleDateString("es-ES")} ·{" "}
+              {formatSize(doc.sizeBytes)}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Archivo (máx. 50MB)
-            </label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              required
-            />
-          </div>
-
-          {uploadError && (
-            <div className="text-red-600 text-sm">{uploadError}</div>
+          {doc.aiConfianza != null && (
+            <span
+              className="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: "#dcfce7", color: "#166534" }}
+            >
+              IA {doc.aiConfianza}%
+            </span>
           )}
 
-          <button type="submit" disabled={uploading || !selectedFile} className="btn-primary">
-            {uploading ? "Subiendo..." : "Subir documento"}
-          </button>
-        </form>
-      </div>
-
-      {/* Document list */}
-      <div className="card p-0 overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-800">
-            Documentos ({documentos.length})
-          </h3>
+          {doc.rutaArchivo ? (
+            <a
+              href="/visor"
+              className="flex-shrink-0 font-semibold text-blue-600 hover:text-blue-800"
+              style={{ fontSize: 12 }}
+            >
+              Ver →
+            </a>
+          ) : (
+            <span className="flex-shrink-0 text-gray-400" style={{ fontSize: 12 }}>
+              Sin archivo
+            </span>
+          )}
         </div>
-        {documentos.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm">
-            No hay documentos subidos aún.
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Documento
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Tipo
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Tamaño
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  IA
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Subido
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {documentos.map((doc) => (
-                <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-gray-800 text-sm">{doc.nombre}</div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    {getDocTypeLabel(doc.docTypeId)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    {formatSize(doc.sizeBytes)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {doc.aiConfianza != null ? (
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          doc.aiConfianza >= 90
-                            ? "bg-green-100 text-green-800"
-                            : doc.aiConfianza >= 70
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {doc.aiConfianza}%
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-xs">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {new Date(doc.uploadedAt).toLocaleDateString("es-ES")}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {doc.rutaArchivo ? (
-                      <a
-                        href={`/api/files${doc.rutaArchivo}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        Ver →
-                      </a>
-                    ) : (
-                      <span className="text-gray-400 text-sm">Sin archivo</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      ))}
     </div>
   );
 }

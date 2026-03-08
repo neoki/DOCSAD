@@ -3,44 +3,75 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-const DOC_TYPES = [
-  { id: "estatutos", label: "Estatutos de la Comunidad", categoria: "juridico" },
-  { id: "acta_constitucion", label: "Acta de Constitución", categoria: "juridico" },
-  { id: "libro_actas", label: "Libro de Actas", categoria: "juridico" },
-  { id: "cif_comunidad", label: "CIF de la Comunidad", categoria: "juridico" },
-  { id: "escrituras", label: "Escrituras del Edificio", categoria: "juridico" },
-  { id: "seguro_comunidad", label: "Póliza de Seguro", categoria: "seguros" },
-  { id: "seguro_certificado", label: "Último Recibo Seguro", categoria: "seguros" },
-  { id: "ite_certificado", label: "Certificado ITE", categoria: "tecnico" },
-  { id: "boletin_electrico", label: "Boletín Eléctrico", categoria: "tecnico" },
-  { id: "certificado_ascensor", label: "Certificado Ascensor", categoria: "tecnico" },
-  { id: "rgpd_registro", label: "Registro Actividades RGPD", categoria: "legal" },
-  { id: "rgpd_politica", label: "Política de Privacidad", categoria: "legal" },
-  { id: "contrato_limpieza", label: "Contrato Limpieza", categoria: "contratos" },
-  { id: "contrato_mantenimiento", label: "Contrato Mantenimiento", categoria: "contratos" },
-  { id: "contrato_jardineria", label: "Contrato Jardinería", categoria: "contratos" },
-  { id: "presupuesto_anual", label: "Presupuesto Anual", categoria: "financiero" },
-  { id: "liquidacion_anual", label: "Liquidación Anual", categoria: "financiero" },
-  { id: "cuenta_corriente", label: "Cuenta Corriente", categoria: "financiero" },
+const DOC_TYPE_IDS = [
+  "escritura_division",
+  "nota_simple",
+  "cif_comunidad",
+  "estatutos",
+  "reglamento_interno",
+  "acta_ordinaria",
+  "acta_extraordinaria",
+  "libro_actas",
+  "nombramiento_presidente",
+  "poder_administrador",
+  "presupuesto_anual",
+  "liquidacion_ejercicio",
+  "certificado_cuenta",
+  "extractos_bancarios",
+  "poliza_multirriesgo",
+  "poliza_rc",
+  "expedientes_siniestros",
+  "resoluciones_siniestros",
+  "contrato_ascensor",
+  "contrato_limpieza",
+  "contrato_jardineria",
+  "contrato_luz",
+  "contrato_agua",
+  "evaluacion_riesgos",
+  "plan_emergencia",
+  "certificados_prl",
+  "fichas_seguridad",
 ];
 
-function genChecklist(comunidadId: string) {
-  return DOC_TYPES.map((dt) => ({
-    comunidadId,
-    docTypeId: dt.id,
-    estado: EstadoChecklist.PENDIENTE as EstadoChecklist,
-    fecha: null,
-    observaciones: "",
-    justificacion: "",
-  }));
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+
+function genChecklist(communityIndex: number) {
+  const rng = seededRandom(communityIndex * 31337 + 42);
+  return DOC_TYPE_IDS.map((docTypeId) => {
+    const r = rng();
+    let estado: EstadoChecklist;
+    let fecha: Date | null = null;
+    if (r < 0.45) {
+      estado = EstadoChecklist.COMPLETADO;
+      const daysAgo = Math.floor(rng() * 365);
+      fecha = new Date(Date.now() - daysAgo * 86400000);
+    } else if (r < 0.60) {
+      estado = EstadoChecklist.NO_APLICA;
+    } else {
+      estado = EstadoChecklist.PENDIENTE;
+    }
+    return {
+      docTypeId,
+      estado,
+      fecha,
+      observaciones: "",
+      justificacion: "",
+    };
+  });
 }
 
 const COMUNIDADES_INIT = [
   {
-    nombre: "Comunidad Calle Mayor 12",
-    nif: "H28123456",
-    direccion: "Calle Mayor 12, Madrid 28001",
-    pisos: 24,
+    nombre: "C.P. Las Magnolias",
+    nif: "H28111001",
+    direccion: "C/ Las Magnolias 14, Madrid 28036",
+    pisos: 32,
     operativa: {
       usaAgreGasfincas: true,
       somosCorredorSeguro: true,
@@ -71,49 +102,15 @@ const COMUNIDADES_INIT = [
     },
   },
   {
-    nombre: "Residencial Los Pinos",
-    nif: "H28234567",
-    direccion: "Avda. de los Pinos 45, Madrid 28020",
-    pisos: 36,
+    nombre: "C.P. Torre Blanca",
+    nif: "H28111002",
+    direccion: "Avda. Torre Blanca 7, Madrid 28020",
+    pisos: 48,
     operativa: {
       usaAgreGasfincas: true,
       somosCorredorSeguro: false,
       corredorSeguroNombre: null,
       numeroPolizaSeguro: null,
-      usaNuevoSistemaIncidencias: false,
-      tieneAppTuComunidad: false,
-      tienePortero: false,
-      tieneConserje: true,
-      tieneGarajista: true,
-      tieneLimpiadora: true,
-      tieneOtroPersonal: true,
-      descripcionOtroPersonal: "Jardinero externo",
-      tieneVideovigilancia: true,
-      actuaComoArrendadora: true,
-      activoArrendadoDescripcion: "Local comercial planta baja",
-      gestionaConsumos: false,
-      empresaGestionConsumos: null,
-      gestionaPermisosGasoleo: true,
-      reformaFontaneria: false,
-      fechaReformaFontaneria: null,
-      reformaSaneamiento: true,
-      fechaReformaSaneamiento: new Date("2018-09-10"),
-      reformaElectricidad: false,
-      fechaReformaElectricidad: null,
-      obligadaITE: true,
-      fechaProximaITE: new Date("2024-06-30"),
-    },
-  },
-  {
-    nombre: "Edificio Gran Vía 88",
-    nif: "H28345678",
-    direccion: "Gran Vía 88, Madrid 28013",
-    pisos: 48,
-    operativa: {
-      usaAgreGasfincas: false,
-      somosCorredorSeguro: true,
-      corredorSeguroNombre: "Mapfre Intermediación",
-      numeroPolizaSeguro: "POL-2023-445",
       usaNuevoSistemaIncidencias: true,
       tieneAppTuComunidad: true,
       tienePortero: true,
@@ -122,9 +119,9 @@ const COMUNIDADES_INIT = [
       tieneLimpiadora: true,
       tieneOtroPersonal: false,
       descripcionOtroPersonal: null,
-      tieneVideovigilancia: false,
-      actuaComoArrendadora: false,
-      activoArrendadoDescripcion: null,
+      tieneVideovigilancia: true,
+      actuaComoArrendadora: true,
+      activoArrendadoDescripcion: "Local comercial planta baja",
       gestionaConsumos: true,
       empresaGestionConsumos: "Iberdrola Clientes",
       gestionaPermisosGasoleo: false,
@@ -139,12 +136,12 @@ const COMUNIDADES_INIT = [
     },
   },
   {
-    nombre: "Urbanización El Roble",
-    nif: "H28456789",
-    direccion: "C/ El Roble 7, Pozuelo de Alarcón 28224",
+    nombre: "C.P. El Rosal",
+    nif: "H28111003",
+    direccion: "C/ El Rosal 22, Pozuelo de Alarcón 28224",
     pisos: 16,
     operativa: {
-      usaAgreGasfincas: true,
+      usaAgreGasfincas: false,
       somosCorredorSeguro: true,
       corredorSeguroNombre: "AXA Seguros",
       numeroPolizaSeguro: "POL-2024-789",
@@ -173,9 +170,9 @@ const COMUNIDADES_INIT = [
     },
   },
   {
-    nombre: "Complejo Residencial Alameda",
-    nif: "H28567890",
-    direccion: "Paseo de la Alameda 23, Alcobendas 28100",
+    nombre: "C.P. Residencial Norte",
+    nif: "H28111004",
+    direccion: "Paseo del Norte 45, Alcobendas 28100",
     pisos: 60,
     operativa: {
       usaAgreGasfincas: true,
@@ -206,65 +203,97 @@ const COMUNIDADES_INIT = [
       fechaProximaITE: new Date("2025-09-30"),
     },
   },
+  {
+    nombre: "C.P. Los Pinos",
+    nif: "H28111005",
+    direccion: "Avda. de los Pinos 3, Madrid 28045",
+    pisos: 24,
+    operativa: {
+      usaAgreGasfincas: true,
+      somosCorredorSeguro: true,
+      corredorSeguroNombre: "Mapfre Intermediación",
+      numeroPolizaSeguro: "POL-2023-445",
+      usaNuevoSistemaIncidencias: false,
+      tieneAppTuComunidad: false,
+      tienePortero: false,
+      tieneConserje: true,
+      tieneGarajista: true,
+      tieneLimpiadora: true,
+      tieneOtroPersonal: true,
+      descripcionOtroPersonal: "Jardinero externo",
+      tieneVideovigilancia: true,
+      actuaComoArrendadora: false,
+      activoArrendadoDescripcion: null,
+      gestionaConsumos: false,
+      empresaGestionConsumos: null,
+      gestionaPermisosGasoleo: true,
+      reformaFontaneria: false,
+      fechaReformaFontaneria: null,
+      reformaSaneamiento: true,
+      fechaReformaSaneamiento: new Date("2018-09-10"),
+      reformaElectricidad: false,
+      fechaReformaElectricidad: null,
+      obligadaITE: true,
+      fechaProximaITE: new Date("2024-06-30"),
+    },
+  },
 ];
 
 const DOCS_SUBIDOS = [
   {
     comunidadIdx: 0,
     docTypeId: "estatutos",
-    nombre: "Estatutos Comunidad Calle Mayor 12.pdf",
+    nombre: "Estatutos_CP_Las_Magnolias.pdf",
     rutaArchivo: null,
     sizeBytes: 245760,
     aiConfianza: 95,
   },
   {
     comunidadIdx: 0,
-    docTypeId: "seguro_comunidad",
-    nombre: "Poliza_Seguro_2024.pdf",
+    docTypeId: "poliza_multirriesgo",
+    nombre: "Poliza_Seguro_Magnolias_2024.pdf",
     rutaArchivo: null,
     sizeBytes: 512000,
     aiConfianza: 88,
   },
   {
     comunidadIdx: 1,
-    docTypeId: "ite_certificado",
-    nombre: "ITE_Los_Pinos_2023.pdf",
+    docTypeId: "acta_ordinaria",
+    nombre: "Acta_Junta_Ordinaria_TorreBlanca_2024.pdf",
     rutaArchivo: null,
-    sizeBytes: 189440,
-    aiConfianza: 92,
+    sizeBytes: 921600,
+    aiConfianza: 98,
   },
   {
-    comunidadIdx: 2,
-    docTypeId: "libro_actas",
-    nombre: "Libro_Actas_Gran_Via_2024.pdf",
-    rutaArchivo: null,
-    sizeBytes: 1048576,
-    aiConfianza: 79,
-  },
-  {
-    comunidadIdx: 4,
+    comunidadIdx: 3,
     docTypeId: "presupuesto_anual",
-    nombre: "Presupuesto_Alameda_2024.xlsx",
+    nombre: "Presupuesto_Residencial_Norte_2024.xlsx",
     rutaArchivo: null,
     sizeBytes: 98304,
     aiConfianza: null,
+  },
+  {
+    comunidadIdx: 4,
+    docTypeId: "libro_actas",
+    nombre: "Libro_Actas_Los_Pinos_2024.pdf",
+    rutaArchivo: null,
+    sizeBytes: 1048576,
+    aiConfianza: 79,
   },
 ];
 
 async function main() {
   console.log("Seeding database...");
 
-  // Check if already seeded
-  const existingUser = await prisma.user.findUnique({
-    where: { email: "admin@asesoriadiaz.com" },
-  });
+  console.log("Wiping existing data...");
+  await prisma.documento.deleteMany();
+  await prisma.checklist.deleteMany();
+  await prisma.alerta.deleteMany();
+  await prisma.operativa.deleteMany();
+  await prisma.comunidad.deleteMany();
+  await prisma.user.deleteMany();
+  console.log("Existing data wiped.");
 
-  if (existingUser) {
-    console.log("Database already seeded, skipping...");
-    return;
-  }
-
-  // Create admin user
   const passwordHash = await bcrypt.hash("Admin1234", 12);
   await prisma.user.create({
     data: {
@@ -276,11 +305,12 @@ async function main() {
   });
   console.log("Admin user created");
 
-  // Create communities with their operativas and checklists
   const createdComunidades: { id: string }[] = [];
 
-  for (const comunidadData of COMUNIDADES_INIT) {
+  for (let i = 0; i < COMUNIDADES_INIT.length; i++) {
+    const comunidadData = COMUNIDADES_INIT[i];
     const { operativa, ...comunidad } = comunidadData;
+    const checklistItems = genChecklist(i);
 
     const created = await prisma.comunidad.create({
       data: {
@@ -290,13 +320,7 @@ async function main() {
         },
         checklists: {
           createMany: {
-            data: genChecklist("placeholder").map((c) => ({
-              docTypeId: c.docTypeId,
-              estado: c.estado,
-              fecha: c.fecha,
-              observaciones: c.observaciones,
-              justificacion: c.justificacion,
-            })),
+            data: checklistItems,
           },
         },
       },
@@ -306,7 +330,6 @@ async function main() {
     console.log(`Created comunidad: ${created.id} - ${comunidad.nombre}`);
   }
 
-  // Create sample documents
   for (const doc of DOCS_SUBIDOS) {
     const comunidad = createdComunidades[doc.comunidadIdx];
     if (!comunidad) continue;
