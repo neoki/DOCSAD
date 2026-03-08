@@ -91,9 +91,9 @@ export default function ComunidadesPage() {
             {comunidades.length} comunidades registradas
           </p>
         </div>
-        <button className="btn-primary opacity-50 cursor-not-allowed" disabled>
+        <Link href="/comunidades/nueva" className="btn-primary" style={{ textDecoration: "none" }}>
           + Nueva comunidad
-        </button>
+        </Link>
       </div>
 
       <div className="card mb-6">
