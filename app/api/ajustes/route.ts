@@ -1,0 +1,91 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+function maskKey(key: string): string {
+  if (!key || key.length < 8) return key ? "****" : "";
+  return key.slice(0, 4) + "****" + key.slice(-4);
+}
+
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: "ai_config" },
+    });
+
+    if (!setting) {
+      return NextResponse.json({});
+    }
+
+    const config = JSON.parse(setting.value);
+    if (config.providers) {
+      for (const id of Object.keys(config.providers)) {
+        if (config.providers[id].apiKey) {
+          config.providers[id].apiKeyMasked = maskKey(config.providers[id].apiKey);
+          config.providers[id].hasKey = true;
+          delete config.providers[id].apiKey;
+        } else {
+          config.providers[id].apiKeyMasked = "";
+          config.providers[id].hasKey = false;
+        }
+      }
+    }
+
+    return NextResponse.json(config);
+  } catch {
+    return NextResponse.json({});
+  }
+}
+
+export async function PUT(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Formato de datos inválido" }, { status: 400 });
+  }
+
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+  }
+
+  try {
+    const existing = await prisma.setting.findUnique({
+      where: { key: "ai_config" },
+    });
+
+    let mergedConfig = body;
+    if (existing && body.providers) {
+      const existingConfig = JSON.parse(existing.value);
+      if (existingConfig.providers) {
+        for (const id of Object.keys(body.providers)) {
+          if (body.providers[id].apiKey === "" && existingConfig.providers[id]?.apiKey) {
+            body.providers[id].apiKey = existingConfig.providers[id].apiKey;
+          }
+        }
+      }
+      mergedConfig = body;
+    }
+
+    await prisma.setting.upsert({
+      where: { key: "ai_config" },
+      update: { value: JSON.stringify(mergedConfig) },
+      create: { key: "ai_config", value: JSON.stringify(mergedConfig) },
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Error al guardar la configuración" }, { status: 500 });
+  }
+}
