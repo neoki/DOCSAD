@@ -1,0 +1,74 @@
+ur database (https://prisma.io)
+
+    Usage
+
+      $ prisma [command]
+
+    Commands
+
+                init   Set up Prisma for your app
+            generate   Generate artifacts (e.g. Prisma Client)
+                  db   Manage your database schema and lifecycle
+             migrate   Migrate your database
+              studio   Browse your data with Prisma Studio
+            validate   Validate your Prisma schema
+              format   Format your Prisma schema
+             version   Displays Prisma version info
+               debug   Displays Prisma debug info
+
+    Flags
+
+         --preview-feature   Run Preview Prisma commands
+         --help, -h          Show additional information about a command
+
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│  Optimize performance through connection pooling and caching with Prisma Accelerate  │
+│  and capture real-time events from your database with Prisma Pulse.                  │
+│  Learn more at https://pris.ly/cli/pdp                                               │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+
+    Examples
+
+      Set up a new Prisma project
+      $ prisma init
+
+      Generate artifacts (e.g. Prisma Client)
+      $ prisma generate
+
+      Browse your data
+      $ prisma studio
+
+      Create migrations from your Prisma schema, apply them to the database, generate artifacts (e.g. Prisma Client)
+      $ prisma migrate dev
+
+      Pull the schema from an existing database, updating the Prisma schema
+      $ prisma db pull
+
+      Push the Prisma schema state to the database
+      $ prisma db push
+
+      Validate your Prisma schema
+      $ prisma validate
+
+      Format your Prisma schema
+      $ prisma format
+
+      Display Prisma version info
+      $ prisma version
+
+      Display Prisma debug info
+      $ prisma debug
+
+
+Prisma schema loaded from prisma/schema.prisma
+
+Datasource "db": PostgreSQL database "neondb", schema "public" at "ep-delicate-salad-addlak3p.c-2.us-east-1.aws.neon.tech"
+
+
+1 migration found in prisma/migrations
+
+
+Error: P3009
+
+migrate found failed migrations in the target database, new migrations will not be applied. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve
+The `20240101000000_init` migration started at 2026-03-16 12:07:52.157515 UTC failed
