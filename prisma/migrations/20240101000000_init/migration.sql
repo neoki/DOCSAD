@@ -1,14 +1,23 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('ADMIN', 'USER');
+DO $$ BEGIN
+  CREATE TYPE "Role" AS ENUM ('ADMIN', 'USER');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "EstadoChecklist" AS ENUM ('COMPLETADO', 'PENDIENTE', 'NO_APLICA');
+DO $$ BEGIN
+  CREATE TYPE "EstadoChecklist" AS ENUM ('COMPLETADO', 'PENDIENTE', 'NO_APLICA');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "Urgencia" AS ENUM ('CRITICA', 'ALTA', 'MEDIA', 'BAJA');
+DO $$ BEGIN
+  CREATE TYPE "Urgencia" AS ENUM ('CRITICA', 'ALTA', 'MEDIA', 'BAJA');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateTable
-CREATE TABLE "users" (
+CREATE TABLE IF NOT EXISTS "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
@@ -20,7 +29,7 @@ CREATE TABLE "users" (
 );
 
 -- CreateTable
-CREATE TABLE "comunidades" (
+CREATE TABLE IF NOT EXISTS "comunidades" (
     "id" TEXT NOT NULL,
     "nombre" TEXT NOT NULL,
     "nif" TEXT NOT NULL,
@@ -33,7 +42,7 @@ CREATE TABLE "comunidades" (
 );
 
 -- CreateTable
-CREATE TABLE "operativas" (
+CREATE TABLE IF NOT EXISTS "operativas" (
     "id" TEXT NOT NULL,
     "comunidadId" TEXT NOT NULL,
     "usaAgreGasfincas" BOOLEAN NOT NULL DEFAULT false,
@@ -67,7 +76,7 @@ CREATE TABLE "operativas" (
 );
 
 -- CreateTable
-CREATE TABLE "checklists" (
+CREATE TABLE IF NOT EXISTS "checklists" (
     "id" TEXT NOT NULL,
     "comunidadId" TEXT NOT NULL,
     "docTypeId" TEXT NOT NULL,
@@ -80,7 +89,7 @@ CREATE TABLE "checklists" (
 );
 
 -- CreateTable
-CREATE TABLE "documentos" (
+CREATE TABLE IF NOT EXISTS "documentos" (
     "id" TEXT NOT NULL,
     "comunidadId" TEXT NOT NULL,
     "docTypeId" TEXT NOT NULL,
@@ -94,7 +103,7 @@ CREATE TABLE "documentos" (
 );
 
 -- CreateTable
-CREATE TABLE "alertas" (
+CREATE TABLE IF NOT EXISTS "alertas" (
     "id" TEXT NOT NULL,
     "comunidadId" TEXT NOT NULL,
     "tipo" TEXT NOT NULL,
@@ -107,23 +116,48 @@ CREATE TABLE "alertas" (
     CONSTRAINT "alertas_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+-- CreateTable
+CREATE TABLE IF NOT EXISTS "settings" (
+    "id" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "value" TEXT NOT NULL DEFAULT '',
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "settings_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateIndex
-CREATE UNIQUE INDEX "operativas_comunidadId_key" ON "operativas"("comunidadId");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_email_key" ON "users"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "checklists_comunidadId_docTypeId_key" ON "checklists"("comunidadId", "docTypeId");
+CREATE UNIQUE INDEX IF NOT EXISTS "operativas_comunidadId_key" ON "operativas"("comunidadId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "checklists_comunidadId_docTypeId_key" ON "checklists"("comunidadId", "docTypeId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX IF NOT EXISTS "settings_key_key" ON "settings"("key");
 
 -- AddForeignKey
-ALTER TABLE "operativas" ADD CONSTRAINT "operativas_comunidadId_fkey" FOREIGN KEY ("comunidadId") REFERENCES "comunidades"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "operativas" ADD CONSTRAINT "operativas_comunidadId_fkey" FOREIGN KEY ("comunidadId") REFERENCES "comunidades"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "checklists" ADD CONSTRAINT "checklists_comunidadId_fkey" FOREIGN KEY ("comunidadId") REFERENCES "comunidades"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "checklists" ADD CONSTRAINT "checklists_comunidadId_fkey" FOREIGN KEY ("comunidadId") REFERENCES "comunidades"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "documentos" ADD CONSTRAINT "documentos_comunidadId_fkey" FOREIGN KEY ("comunidadId") REFERENCES "comunidades"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "documentos" ADD CONSTRAINT "documentos_comunidadId_fkey" FOREIGN KEY ("comunidadId") REFERENCES "comunidades"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "alertas" ADD CONSTRAINT "alertas_comunidadId_fkey" FOREIGN KEY ("comunidadId") REFERENCES "comunidades"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "alertas" ADD CONSTRAINT "alertas_comunidadId_fkey" FOREIGN KEY ("comunidadId") REFERENCES "comunidades"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
