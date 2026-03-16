@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "bash"]
+modules = ["nodejs-20", "web", "bash", "postgresql-16"]
 [agent]
 expertMode = true
 
@@ -41,4 +41,4 @@ externalPort = 80
 deploymentTarget = "autoscale"
 publicDir = "public"
 run = ["npm", "run", "start"]
-build = ["npm", "run", "build"]
+build = ["bash", "-c", "prisma generate && prisma migrate deploy && tsx prisma/seed.ts && next build"]
