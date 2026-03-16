@@ -41,4 +41,4 @@ externalPort = 80
 deploymentTarget = "autoscale"
 publicDir = "public"
 run = ["npm", "run", "start"]
-build = ["bash", "-c", "prisma generate && prisma migrate deploy && tsx prisma/seed.ts && next build"]
+build = ["bash", "-c", "npx prisma generate && (npx prisma migrate resolve --applied 20240101000000_init 2>/dev/null || true) && npx prisma migrate deploy && tsx prisma/seed.ts && next build"]
