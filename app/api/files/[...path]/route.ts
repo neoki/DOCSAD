@@ -21,12 +21,13 @@ const MIME_TYPES: Record<string, string> = {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const filePath = path.join("/uploads", ...params.path);
+  const { path: pathSegments } = await params;
+  const filePath = path.join("/uploads", ...pathSegments);
 
   // Prevent path traversal
   const resolved = path.resolve(filePath);

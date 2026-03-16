@@ -5,13 +5,14 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { id } = await params;
   const checklists = await prisma.checklist.findMany({
-    where: { comunidadId: params.id },
+    where: { comunidadId: id },
     orderBy: { docTypeId: "asc" },
   });
 
@@ -20,11 +21,12 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { id } = await params;
   const body = await req.json();
   const updates: Array<{
     docTypeId: string;
@@ -39,12 +41,12 @@ export async function PUT(
       prisma.checklist.upsert({
         where: {
           comunidadId_docTypeId: {
-            comunidadId: params.id,
+            comunidadId: id,
             docTypeId: update.docTypeId,
           },
         },
         create: {
-          comunidadId: params.id,
+          comunidadId: id,
           docTypeId: update.docTypeId,
           estado: (update.estado as "COMPLETADO" | "PENDIENTE" | "NO_APLICA") ?? "PENDIENTE",
           fecha: update.fecha ? new Date(update.fecha) : null,

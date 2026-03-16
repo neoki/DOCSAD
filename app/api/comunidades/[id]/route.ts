@@ -5,13 +5,14 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { id } = await params;
   const comunidad = await prisma.comunidad.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       operativa: true,
       _count: { select: { checklists: true, documentos: true, alertas: true } },
@@ -25,16 +26,17 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { id } = await params;
   const body = await req.json();
   const { nombre, nif, direccion, pisos } = body;
 
   const comunidad = await prisma.comunidad.update({
-    where: { id: params.id },
+    where: { id },
     data: { nombre, nif, direccion, pisos },
   });
 
@@ -43,12 +45,13 @@ export async function PUT(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  await prisma.comunidad.delete({ where: { id: params.id } });
+  const { id } = await params;
+  await prisma.comunidad.delete({ where: { id } });
 
   return NextResponse.json({ success: true });
 }
