@@ -8,6 +8,8 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
+MICROSOFT_CLIENT_ID = "c04cd310-1525-46ab-9188-68f2bb0d036f"
+MICROSOFT_TENANT_ID = "85ebd406-be9e-42c0-b372-43e8fc3e96da"
 
 [workflows]
 runButton = "Project"
