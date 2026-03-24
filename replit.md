@@ -1,10 +1,10 @@
 # DocFincas
 
 ## Overview
-DocFincas is a document management system for community property management ("Gestión documental de comunidades de propietarios"). Built with Next.js 14, Prisma, PostgreSQL, NextAuth, and Tailwind CSS. Features a dark sidebar navigation, two-tab dashboard (Documental/Operativo), community detail with checklist/operativa/documents tabs, a 3-step document upload flow with simulated AI classification, a document viewer, OneDrive integration (demo mode), and an AI API configuration panel.
+DocFincas is a document management system for community property management ("Gestión documental de comunidades de propietarios"). Built with Next.js 15, Prisma, PostgreSQL, NextAuth, and Tailwind CSS. Features a dark sidebar navigation, two-tab dashboard (Documental/Operativo), community detail with checklist/operativa/documents tabs, a 3-step document upload flow with simulated AI classification, a document viewer, OneDrive integration (demo mode), and an AI API configuration panel.
 
 ## Architecture
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Database**: PostgreSQL via Prisma ORM (Replit built-in Postgres)
 - **Auth**: NextAuth v4 with Credentials provider, bcryptjs for password hashing
 - **Styling**: Tailwind CSS with PostCSS, Lato font
@@ -57,6 +57,6 @@ DocFincas is a document management system for community property management ("Ge
 ## Development
 - `npm run dev` — Start dev server on port 5000
 - `npm run build` — Production build
-- `npm run db:seed` — Seed database with demo data (5 communities)
+- `npm run db:seed` — Seed database with real community data (157 communities from Excel import)
 - `npx prisma db push` — Sync schema to database
 - `npx prisma generate` — Regenerate Prisma client
