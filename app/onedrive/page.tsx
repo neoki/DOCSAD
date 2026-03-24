@@ -32,6 +32,7 @@ export default function OneDrivePage() {
   const [currentPath, setCurrentPath] = useState("/");
   const [pathHistory, setPathHistory] = useState<string[]>([]);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [checkingConnection, setCheckingConnection] = useState(false);
 
   const loadFiles = useCallback(async (path: string) => {
     try {
@@ -48,6 +49,21 @@ export default function OneDrivePage() {
       setError("Error al cargar los archivos.");
     }
   }, []);
+
+  const recheckConnection = useCallback(async () => {
+    setCheckingConnection(true);
+    try {
+      const res = await fetch("/api/onedrive?status=true");
+      const data = await res.json();
+      if (data.connected && !connected) {
+        setConnected(true);
+        setLoading(true);
+        await loadFiles("/");
+        setLoading(false);
+      }
+    } catch {}
+    setCheckingConnection(false);
+  }, [connected, loadFiles]);
 
   useEffect(() => {
     Promise.all([
@@ -68,6 +84,13 @@ export default function OneDrivePage() {
         setLoading(false);
       });
   }, [loadFiles]);
+
+  useEffect(() => {
+    if (connected) return;
+    const onFocus = () => { recheckConnection(); };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [connected, recheckConnection]);
 
   const navigateToFolder = async (folder: OneDriveFile) => {
     const newPath = currentPath === "/" ? `/${folder.name}` : `${currentPath}/${folder.name}`;
@@ -245,18 +268,30 @@ export default function OneDrivePage() {
             {disconnecting ? "Desconectando..." : "Desconectar"}
           </button>
         ) : (
-          <a
-            href="/api/onedrive/auth"
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch("/api/onedrive/auth");
+                const data = await res.json();
+                if (data.authUrl) {
+                  window.open(data.authUrl, "_blank", "noopener,noreferrer");
+                }
+              } catch {
+                setError("Error al iniciar la conexión con OneDrive.");
+              }
+            }}
             style={{
               fontSize: 14,
               fontWeight: 600,
               color: "#2563eb",
-              textDecoration: "none",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
               whiteSpace: "nowrap",
             }}
           >
             Conectar OneDrive →
-          </a>
+          </button>
         )}
       </div>
 
@@ -440,19 +475,29 @@ export default function OneDrivePage() {
       )}
 
       {!connected && (
-        <div
-          className="flex items-center gap-2"
-          style={{
-            background: "#eff6ff",
-            border: "1px solid #bfdbfe",
-            borderRadius: 8,
-            padding: "12px 16px",
-            fontSize: 14,
-            color: "#1e40af",
-          }}
-        >
-          <span>ℹ️</span>
-          Conecta tu cuenta de OneDrive para navegar y importar documentos directamente.
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div
+            className="flex items-center gap-2"
+            style={{
+              background: "#eff6ff",
+              border: "1px solid #bfdbfe",
+              borderRadius: 8,
+              padding: "12px 16px",
+              fontSize: 14,
+              color: "#1e40af",
+            }}
+          >
+            <span>ℹ️</span>
+            Haz clic en "Conectar OneDrive" para abrir el login de Microsoft en una nueva pestaña. Después de autorizar, vuelve aquí y haz clic en "Verificar conexión".
+          </div>
+          <button
+            onClick={recheckConnection}
+            disabled={checkingConnection}
+            className="btn-primary"
+            style={{ alignSelf: "flex-start" }}
+          >
+            {checkingConnection ? "Verificando..." : "Verificar conexión"}
+          </button>
         </div>
       )}
     </div>

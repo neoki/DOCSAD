@@ -20,5 +20,5 @@ export async function GET() {
   });
 
   const authUrl = getAuthUrl(state);
-  return NextResponse.redirect(authUrl);
+  return NextResponse.json({ authUrl });
 }
