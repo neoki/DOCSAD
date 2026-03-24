@@ -30,7 +30,26 @@ export async function POST(
 
   const { id: comunidadId } = await params;
 
+  const contentType = req.headers.get("content-type") || "";
+
   try {
+    if (contentType.includes("application/json")) {
+      const body = await req.json();
+      const { nombre, oneDriveItemId, docTypeId, sizeBytes } = body;
+
+      const documento = await prisma.documento.create({
+        data: {
+          comunidadId,
+          docTypeId: docTypeId || "",
+          nombre: nombre || "Sin nombre",
+          rutaArchivo: oneDriveItemId ? `onedrive:${oneDriveItemId}` : null,
+          sizeBytes: sizeBytes || 0,
+        },
+      });
+
+      return NextResponse.json(documento, { status: 201 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const docTypeId = (formData.get("docTypeId") as string) ?? "";

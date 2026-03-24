@@ -37,7 +37,7 @@ DocFincas is a document management system for community property management ("Ge
 - User, Comunidad, Operativa, Checklist, Documento, Alerta, Setting (key-value for AI config)
 
 ## Features
-- **OneDrive Integration**: Browse OneDrive folders and import files to communities. Currently in demo mode with simulated files. To activate real connection, configure Azure AD credentials (see Ajustes page for setup instructions).
+- **OneDrive Integration**: Real OAuth 2.0 connection to Microsoft OneDrive via Graph API. Browse folders, preview files, and import document references to communities. OneDrive is the single source of truth — no files are copied to the server, only metadata is stored. Tokens stored in Settings table with auto-refresh. Routes: `/api/onedrive/auth` (initiate OAuth), `/api/onedrive/callback` (handle redirect), `/api/onedrive/disconnect` (remove tokens), `/api/onedrive/download` (get temporary download URL), `/api/onedrive` (list files/check status).
 - **AI Configuration**: Configure API keys for 5 AI providers (OpenAI GPT, Anthropic Claude, Google Gemini, Microsoft Copilot, Moonshot Kimi K2). Select active model for document classification. Test connection functionality.
 
 ## Environment Variables
