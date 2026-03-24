@@ -7,11 +7,16 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const itemId = new URL(req.url).searchParams.get("id");
-  if (!itemId) return NextResponse.json({ error: "Missing file id" }, { status: 400 });
+  const { searchParams } = new URL(req.url);
+  const driveId = searchParams.get("driveId");
+  const itemId = searchParams.get("id");
+
+  if (!driveId || !itemId) {
+    return NextResponse.json({ error: "Missing driveId or id" }, { status: 400 });
+  }
 
   try {
-    const downloadUrl = await getFileDownloadUrl(itemId);
+    const downloadUrl = await getFileDownloadUrl(driveId, itemId);
     return NextResponse.json({ downloadUrl });
   } catch (err) {
     console.error("Download URL error:", err);

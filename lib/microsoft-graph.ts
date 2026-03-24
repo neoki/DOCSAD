@@ -3,7 +3,7 @@ import { prisma } from "./prisma";
 const CLIENT_ID = process.env.MICROSOFT_CLIENT_ID!;
 const CLIENT_SECRET = process.env.MICROSOFT_CLIENT_SECRET!;
 const TENANT_ID = process.env.MICROSOFT_TENANT_ID!;
-const SCOPES = "Files.Read.All User.Read offline_access";
+const SCOPES = "Files.Read.All Sites.Read.All User.Read offline_access";
 
 export function getRedirectUri() {
   const base =
@@ -159,30 +159,66 @@ export interface OneDriveFile {
   type: string;
   downloadUrl?: string;
   isFolder: boolean;
+  driveId?: string;
 }
 
-export async function listFiles(folderPath?: string): Promise<OneDriveFile[]> {
-  const accessToken = await getValidAccessToken();
-  if (!accessToken) throw new Error("Not connected to OneDrive");
+export interface SharePointSite {
+  id: string;
+  name: string;
+  webUrl: string;
+}
 
-  let url: string;
-  if (folderPath && folderPath !== "/" && folderPath !== "") {
-    const cleanPath = folderPath.startsWith("/") ? folderPath : `/${folderPath}`;
-    url = `https://graph.microsoft.com/v1.0/me/drive/root:${encodeURI(cleanPath)}:/children?$top=200&$orderby=name`;
-  } else {
-    url = `https://graph.microsoft.com/v1.0/me/drive/root/children?$top=200&$orderby=name`;
-  }
+export interface SharePointDrive {
+  id: string;
+  name: string;
+  driveType: string;
+  webUrl: string;
+}
 
-  const res = await fetch(url, {
+async function graphGet(path: string, accessToken: string) {
+  const res = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
-
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`Graph API error: ${res.status} - ${err}`);
   }
+  return res.json();
+}
 
-  const data = await res.json();
+export async function listSharePointSites(): Promise<SharePointSite[]> {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const data = await graphGet("/sites?search=*&$top=100&$select=id,name,displayName,webUrl", accessToken);
+  return (data.value || []).map((s: Record<string, unknown>) => ({
+    id: s.id as string,
+    name: (s.displayName || s.name || "Sin nombre") as string,
+    webUrl: s.webUrl as string,
+  }));
+}
+
+export async function listDrives(siteId: string): Promise<SharePointDrive[]> {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const data = await graphGet(`/sites/${siteId}/drives?$select=id,name,driveType,webUrl`, accessToken);
+  return (data.value || []).map((d: Record<string, unknown>) => ({
+    id: d.id as string,
+    name: (d.name || "Sin nombre") as string,
+    driveType: (d.driveType || "") as string,
+    webUrl: (d.webUrl || "") as string,
+  }));
+}
+
+export async function listFiles(driveId: string, folderId?: string): Promise<OneDriveFile[]> {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const parentRef = folderId && folderId !== "root" ? `items/${folderId}` : "root";
+  const url = `/drives/${driveId}/${parentRef}/children?$top=200&$orderby=name`;
+
+  const data = await graphGet(url, accessToken);
   const items: OneDriveFile[] = (data.value || []).map((item: Record<string, unknown>) => {
     const lastModified = item.lastModifiedDateTime
       ? new Date(item.lastModifiedDateTime as string).toLocaleDateString("es-ES")
@@ -198,26 +234,21 @@ export async function listFiles(folderPath?: string): Promise<OneDriveFile[]> {
       type: isFolder ? "folder" : getFileExtension(item.name as string),
       downloadUrl: (item as Record<string, unknown>)["@microsoft.graph.downloadUrl"] as string | undefined,
       isFolder,
+      driveId,
     };
   });
 
   return items;
 }
 
-export async function getFileDownloadUrl(itemId: string): Promise<string> {
+export async function getFileDownloadUrl(driveId: string, itemId: string): Promise<string> {
   const accessToken = await getValidAccessToken();
-  if (!accessToken) throw new Error("Not connected to OneDrive");
+  if (!accessToken) throw new Error("Not connected");
 
-  const res = await fetch(
-    `https://graph.microsoft.com/v1.0/me/drive/items/${itemId}?select=id,@microsoft.graph.downloadUrl`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
+  const data = await graphGet(
+    `/drives/${driveId}/items/${itemId}?select=id,@microsoft.graph.downloadUrl`,
+    accessToken,
   );
-
-  if (!res.ok) {
-    throw new Error(`Failed to get download URL: ${res.status}`);
-  }
-
-  const data = await res.json();
   return data["@microsoft.graph.downloadUrl"];
 }
 

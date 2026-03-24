@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { isOneDriveConnected, listFiles } from "@/lib/microsoft-graph";
+import { isOneDriveConnected, listSharePointSites, listDrives, listFiles } from "@/lib/microsoft-graph";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -20,13 +20,34 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const folderPath = searchParams.get("path") || "/";
-    const files = await listFiles(folderPath);
-    return NextResponse.json({ files, connected: true });
+    const action = searchParams.get("action");
+
+    if (action === "sites") {
+      const sites = await listSharePointSites();
+      return NextResponse.json({ sites, connected: true });
+    }
+
+    if (action === "drives") {
+      const siteId = searchParams.get("siteId");
+      if (!siteId) return NextResponse.json({ error: "Missing siteId" }, { status: 400 });
+      const drives = await listDrives(siteId);
+      return NextResponse.json({ drives, connected: true });
+    }
+
+    if (action === "files") {
+      const driveId = searchParams.get("driveId");
+      if (!driveId) return NextResponse.json({ error: "Missing driveId" }, { status: 400 });
+      const folderId = searchParams.get("folderId") || undefined;
+      const files = await listFiles(driveId, folderId);
+      return NextResponse.json({ files, connected: true });
+    }
+
+    const sites = await listSharePointSites();
+    return NextResponse.json({ sites, connected: true });
   } catch (err) {
-    console.error("OneDrive list error:", err);
+    console.error("OneDrive/SharePoint error:", err);
     return NextResponse.json(
-      { error: "Error al acceder a OneDrive. Puede ser necesario reconectar.", files: [], connected: false },
+      { error: "Error al acceder a SharePoint. Puede ser necesario reconectar.", files: [], connected: false },
       { status: 500 }
     );
   }
