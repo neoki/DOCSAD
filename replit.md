@@ -19,11 +19,14 @@ DocFincas is a document management system for community property management ("Ge
   - `app/subir/` — 3-step document upload flow with simulated AI
   - `app/visor/` — Document viewer with zoom controls
   - `app/onedrive/` — OneDrive file browser with import flow
+  - `app/escaner/` — Scanner migration tool: classify & move ~21K files from Escáner folder to community subfolders
   - `app/ajustes/` — AI model configuration and OneDrive setup
   - `app/api/comunidades/[id]/sharepoint/` — SharePoint folder management (create, link, normalize, upload)
+  - `app/api/escaner/` — Scanner API: find folder, scan & classify files, move batches with server-side validation
   - `app/api/onedrive/` — OAuth flow, file listing, downloads
 - `components/` — Shared React components (Sidebar, AppShell)
-- `lib/microsoft-graph.ts` — Graph API: OAuth, tokens, sites/drives/files, folder creation, upload, 11-subfolder structure
+- `lib/microsoft-graph.ts` — Graph API: OAuth, tokens, sites/drives/files, folder creation, upload, move, recursive listing
+- `lib/scanner-classifier.ts` — File classification engine: NNN. prefix → community code, keyword → subfolder mapping
 - `lib/` — Utility modules (auth, prisma client, doctypes)
 - `prisma/` — Schema, seed data (171 communities), comunidades-gesfincas.json
 

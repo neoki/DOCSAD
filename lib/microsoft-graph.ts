@@ -423,6 +423,114 @@ export async function uploadFileToFolder(
   return res.json();
 }
 
+export async function listAllFilesRecursive(
+  driveId: string,
+  folderId: string,
+  maxItems: number = 5000,
+): Promise<{ id: string; name: string; path: string; size: number; isFolder: boolean }[]> {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const results: { id: string; name: string; path: string; size: number; isFolder: boolean }[] = [];
+
+  async function fetchChildren(parentId: string, parentPath: string) {
+    if (results.length >= maxItems) return;
+
+    let url: string | null = `/drives/${driveId}/items/${parentId}/children?$top=200&$select=id,name,size,folder,parentReference`;
+
+    while (url && results.length < maxItems) {
+      const data = await graphGet(url, accessToken!);
+
+      for (const item of data.value || []) {
+        const isFolder = !!item.folder;
+        const itemPath = parentPath ? `${parentPath}/${item.name}` : item.name;
+
+        results.push({
+          id: item.id,
+          name: item.name,
+          path: itemPath,
+          size: item.size || 0,
+          isFolder,
+        });
+
+        if (isFolder && results.length < maxItems) {
+          await fetchChildren(item.id, itemPath);
+        }
+      }
+
+      url = data["@odata.nextLink"]
+        ? data["@odata.nextLink"].replace("https://graph.microsoft.com/v1.0", "")
+        : null;
+    }
+  }
+
+  await fetchChildren(folderId, "");
+  return results;
+}
+
+export async function moveFile(
+  driveId: string,
+  itemId: string,
+  destinationFolderId: string,
+  newName?: string,
+): Promise<{ id: string; name: string; webUrl: string }> {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const body: Record<string, unknown> = {
+    parentReference: { driveId, id: destinationFolderId },
+  };
+  if (newName) body.name = newName;
+
+  const res = await fetch(
+    `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    },
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Move error: ${res.status} - ${err}`);
+  }
+  return res.json();
+}
+
+export async function getOrCreateSubfolder(
+  driveId: string,
+  parentFolderId: string,
+  subfolderName: string,
+): Promise<string> {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const children = await graphGet(
+    `/drives/${driveId}/items/${parentFolderId}/children?$filter=folder ne null&$select=id,name`,
+    accessToken,
+  );
+
+  const existing = (children.value || []).find(
+    (item: Record<string, unknown>) => item.name === subfolderName,
+  );
+  if (existing) return existing.id as string;
+
+  const created = await graphPost(
+    `/drives/${driveId}/items/${parentFolderId}/children`,
+    accessToken,
+    {
+      name: subfolderName,
+      folder: {},
+      "@microsoft.graph.conflictBehavior": "fail",
+    },
+  );
+  return created.id;
+}
+
 export async function disconnectOneDrive() {
   await prisma.setting.deleteMany({
     where: {
