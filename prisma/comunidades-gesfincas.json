@@ -6,7 +6,9 @@
     "nombre": "C.P. LINARES RIVAS, 27",
     "direccion": "AV LINARES RIVAS, 27",
     "cp": "15005",
-    "carpeta_onedrive": "002. C.P. LINARES RIVAS, 27"
+    "carpeta_onedrive": "002. C.P. LINARES RIVAS, 27",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000003",
@@ -15,7 +17,9 @@
     "nombre": "C.P. LINARES RIVAS, 12-14",
     "direccion": "AV LINARES RIVAS, 12-14",
     "cp": "15005",
-    "carpeta_onedrive": "003. C.P. LINARES RIVAS, 12-14"
+    "carpeta_onedrive": "003. C.P. LINARES RIVAS, 12-14",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000004",
@@ -24,7 +28,9 @@
     "nombre": "ESPACIO CORUÑA (LOCALES PLANTA 1º,2º Y 3º)",
     "direccion": "CL José Pascual López Cortón, 10",
     "cp": "15008",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000005",
@@ -33,7 +39,9 @@
     "nombre": "C.P. DURAN LORIGA, 11",
     "direccion": "CL DURAN LORIGA, 11",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "039. C.P. DURAN LORIGA, 9",
+    "match_method": "REVISAR",
+    "match_score": 90
   },
   {
     "codigo": "000006",
@@ -42,7 +50,9 @@
     "nombre": "C.P. PRIMO DE RIVERA, 2",
     "direccion": "AV PRIMO DE RIVERA, 2",
     "cp": "15006",
-    "carpeta_onedrive": "006. C.P. PRIMO DE RIVERA, 2"
+    "carpeta_onedrive": "006. C.P. PRIMO DE RIVERA, 2",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000008",
@@ -51,7 +61,9 @@
     "nombre": "C.P. DOCTOR FLEMING, 15",
     "direccion": "CL DOCTOR FLEMING, 15",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000009",
@@ -60,7 +72,9 @@
     "nombre": "C.P. PRIMO DE RIVERA, 3",
     "direccion": "CL PRIMO DE RIVERA, 3",
     "cp": "15006",
-    "carpeta_onedrive": "009. C.P. PRIMO DE RIVERA, 3"
+    "carpeta_onedrive": "009. C.P. PRIMO DE RIVERA, 3",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000010",
@@ -69,7 +83,9 @@
     "nombre": "C.P. LINARES RIVAS, 10-11",
     "direccion": "AV LINARES RIVAS, 10- 11",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "017. C.P. LINARES RIVAS, 18-21",
+    "match_method": "REVISAR",
+    "match_score": 89
   },
   {
     "codigo": "000011",
@@ -78,7 +94,9 @@
     "nombre": "C.P. TOURO, 2",
     "direccion": "CL Touro, 2",
     "cp": "15002",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000013",
@@ -87,7 +105,9 @@
     "nombre": "C.P. CUEVAS, 5",
     "direccion": "CL CUEVAS, 5",
     "cp": "15002",
-    "carpeta_onedrive": "013. C.P. CUEVAS, 5"
+    "carpeta_onedrive": "013. C.P. CUEVAS, 5",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000014",
@@ -96,7 +116,9 @@
     "nombre": "C.P. ALFREDO VICENTI, 32",
     "direccion": "CL Alfredo Vicenti, 32",
     "cp": "15004",
-    "carpeta_onedrive": "014. C.P. ALFREDO VICENTI, 32"
+    "carpeta_onedrive": "014. C.P. ALFREDO VICENTI, 32",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000015",
@@ -105,7 +127,9 @@
     "nombre": "C.P. ALFONSO MOLINA, 5",
     "direccion": "AV ALFONSO MOLINA, 5",
     "cp": "15005",
-    "carpeta_onedrive": "015. C.P. ALFONSO MOLINA 5"
+    "carpeta_onedrive": "015. C.P. ALFONSO MOLINA 5",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000016",
@@ -114,7 +138,9 @@
     "nombre": "C.P. CONCEPCION ARENAL, 2-4",
     "direccion": "CL CONCEPCION ARENAL, 2-4",
     "cp": "15006",
-    "carpeta_onedrive": "016 C.P. CONCEPCION ARENAL, 2-4"
+    "carpeta_onedrive": "016 C.P. CONCEPCION ARENAL, 2-4",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000017",
@@ -123,7 +149,9 @@
     "nombre": "C.P. LINARES RIVAS, 18-21",
     "direccion": "AV LINARES RIVAS, 18- 21",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "080. C.P. LINARES RIVAS, 1-2-3",
+    "match_method": "REVISAR",
+    "match_score": 89
   },
   {
     "codigo": "000018",
@@ -132,7 +160,9 @@
     "nombre": "C.P. MANUEL MURGUIA, 12",
     "direccion": "CL MANUEL MURGUIA, 12",
     "cp": "15011",
-    "carpeta_onedrive": "018. MANUEL MURGUIA, 12"
+    "carpeta_onedrive": "018. MANUEL MURGUIA, 12",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000019",
@@ -141,7 +171,9 @@
     "nombre": "C.P. MARQUES DE AMBOAGE, 12",
     "direccion": "CL MARQUES DE AMBOAGE, 12",
     "cp": "15006",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000020",
@@ -150,7 +182,9 @@
     "nombre": "C.P. PASTEUR, 11-13",
     "direccion": "CL PASTEUR, 11-13",
     "cp": "15008",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000021",
@@ -159,7 +193,9 @@
     "nombre": "C.P. PRINCIPE, 2-4",
     "direccion": "CL PRINCIPE, 2-4",
     "cp": "15001",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000022",
@@ -168,7 +204,9 @@
     "nombre": "C.P. PAYO GOMEZ, 1-3",
     "direccion": "CL PAYO GÓMEZ, 1 0",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000023",
@@ -177,7 +215,9 @@
     "nombre": "C.P. CIUDAD DE LUGO, 31-33",
     "direccion": "CL CIUDAD DE LUGO, 31-33",
     "cp": "15004",
-    "carpeta_onedrive": "023. C.P. CIUDAD DE LUGO, 31-33"
+    "carpeta_onedrive": "023. C.P. CIUDAD DE LUGO, 31-33",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000025",
@@ -186,7 +226,9 @@
     "nombre": "C.P. EDIFICIO OLIMPIA",
     "direccion": "RIAZOR 9/A. VICENTI 12-14",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "134. C.P. EDIFICIO GALERA",
+    "match_method": "REVISAR",
+    "match_score": 71
   },
   {
     "codigo": "000026",
@@ -195,7 +237,9 @@
     "nombre": "C.P. PRIMO DE RIVERA, 1",
     "direccion": "AV PRIMO DE RIVERA 1",
     "cp": "15006",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000027",
@@ -204,7 +248,9 @@
     "nombre": "MERCED, 71-73",
     "direccion": "CL Merced 71-73",
     "cp": "15009",
-    "carpeta_onedrive": "027. C.P. MERCED, 71-73"
+    "carpeta_onedrive": "027. C.P. MERCED, 71-73",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000028",
@@ -213,7 +259,9 @@
     "nombre": "C.P. ALAMEDA, 30-32/HUERTAS, 8",
     "direccion": "ALAMEDA, 30-32/HUERTAS, 8",
     "cp": "15003",
-    "carpeta_onedrive": "028. C.P. ALAMEDA, 30-32 HUERTAS, 8"
+    "carpeta_onedrive": "028. C.P. ALAMEDA, 30-32 HUERTAS, 8",
+    "match_method": "NOMBRE",
+    "match_score": 96
   },
   {
     "codigo": "000029",
@@ -222,7 +270,9 @@
     "nombre": "C.P. EDIFICIO GRANADA",
     "direccion": "CL CANTON GRANDE, 5",
     "cp": "15003",
-    "carpeta_onedrive": "029 C.P. EDIFICIO GRANADA"
+    "carpeta_onedrive": "029 C.P. EDIFICIO GRANADA",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000030",
@@ -231,7 +281,9 @@
     "nombre": "C.P. ARZOBISPO LAGO, 8",
     "direccion": "CL ARZOBISPO LAGO, 8",
     "cp": "15004",
-    "carpeta_onedrive": "030. C.P. ARZOBISPO LAGO, 8"
+    "carpeta_onedrive": "030. C.P. ARZOBISPO LAGO, 8",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000031",
@@ -240,7 +292,9 @@
     "nombre": "C.P. SAN LUCAS, 11",
     "direccion": "CL SAN LUCAS 11",
     "cp": "15007",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000032",
@@ -249,7 +303,9 @@
     "nombre": "C.P. MERCED, 77",
     "direccion": "CL MERCED, 77",
     "cp": "15009",
-    "carpeta_onedrive": "032. C.P. MERCED, 77"
+    "carpeta_onedrive": "032. C.P. MERCED, 77",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000033",
@@ -258,7 +314,9 @@
     "nombre": "C.P. ENRIQUE DEQUIDT, 9",
     "direccion": "CL ENRIQUE DEQUIDT 9",
     "cp": "15005",
-    "carpeta_onedrive": "033. C.P. ENRIQUE DEQUIDT, 9"
+    "carpeta_onedrive": "033. C.P. ENRIQUE DEQUIDT, 9",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000034",
@@ -267,7 +325,9 @@
     "nombre": "C.P. FONTAN, 1",
     "direccion": "CL FONTAN 1",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000036",
@@ -276,7 +336,9 @@
     "nombre": "C.P. REY ABDULLAH, 6-8",
     "direccion": "CL REY ABDULLAH, 6",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000037",
@@ -285,7 +347,9 @@
     "nombre": "C.P. PASEO DE LOS PUENTES, 2",
     "direccion": "PS PUENTES 2",
     "cp": "15004",
-    "carpeta_onedrive": "037 C.P. PASEO DE LOS PUENTES, 2"
+    "carpeta_onedrive": "037 C.P. PASEO DE LOS PUENTES, 2",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000038",
@@ -294,7 +358,9 @@
     "nombre": "C.P. RUA NUEVA, 2",
     "direccion": "CL RUA NUEVA, 2",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "012. C.P. RUA NUEVA, 25-27",
+    "match_method": "REVISAR",
+    "match_score": 85
   },
   {
     "codigo": "000039",
@@ -303,7 +369,9 @@
     "nombre": "C.P. DURAN LORIGA, 9",
     "direccion": "CL DURAN LORIGA, 9",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000040",
@@ -312,7 +380,9 @@
     "nombre": "C.P. PASEO DE LOS PUENTES, 4",
     "direccion": "PS PUENTES 4",
     "cp": "15004",
-    "carpeta_onedrive": "040. C.P. PASEO DE LOS PUENTES, 4"
+    "carpeta_onedrive": "040. C.P. PASEO DE LOS PUENTES, 4",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000041",
@@ -321,7 +391,9 @@
     "nombre": "C.P. SOCORRO, 2/PZ.JUAN NAYA, 5",
     "direccion": "SOCORRO,2/JUAN NAYA, 5",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000042",
@@ -330,7 +402,9 @@
     "nombre": "C.P. RAMON DE LA SAGRA, 14",
     "direccion": "CL RAMON DE LA SAGRA, 14",
     "cp": "15005",
-    "carpeta_onedrive": "042 C.P. RAMON DE LA SAGRA, 14"
+    "carpeta_onedrive": "042 C.P. RAMON DE LA SAGRA, 14",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000044",
@@ -339,7 +413,9 @@
     "nombre": "C.P. RAMON DE LA SAGRA, 6-8",
     "direccion": "CL RAMON DE LA SAGRA, 6-8",
     "cp": "15005",
-    "carpeta_onedrive": "044. RAMON DE LA SAGRA, 6-8"
+    "carpeta_onedrive": "044. RAMON DE LA SAGRA, 6-8",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000045",
@@ -348,7 +424,9 @@
     "nombre": "C.P. HUERTAS, 1-3",
     "direccion": "CL HUERTAS, 1-3",
     "cp": "15003",
-    "carpeta_onedrive": "045. C.P. HUERTAS, 1-3"
+    "carpeta_onedrive": "045. C.P. HUERTAS, 1-3",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000046",
@@ -357,7 +435,9 @@
     "nombre": "C.P. MENENDEZ PELAYO, 20",
     "direccion": "CL MENENDEZ PELAYO, 20",
     "cp": "15005",
-    "carpeta_onedrive": "046 C.P. MENENDEZ PELAYO, 20"
+    "carpeta_onedrive": "046 C.P. MENENDEZ PELAYO, 20",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000048",
@@ -366,7 +446,9 @@
     "nombre": "C.P. FERNANDO GONZALEZ, 7",
     "direccion": "CL FERNANDO GONZÁLEZ 7-9",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000049",
@@ -375,7 +457,9 @@
     "nombre": "C.P. CUESTA DE LA UNIÓN, 28",
     "direccion": "CL CUESTA DE LA UNIÓN 28",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000050",
@@ -384,7 +468,9 @@
     "nombre": "C.P. CAPITAN JUAN VARELA, 1-3",
     "direccion": "CL CAPITAN JUAN VARELA, 1-3",
     "cp": "15007",
-    "carpeta_onedrive": "050 C.P. CAPITAN JUAN VARELA, 1-3"
+    "carpeta_onedrive": "050 C.P. CAPITAN JUAN VARELA, 1-3",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000051",
@@ -393,7 +479,9 @@
     "nombre": "C.P. RIEGO DE AGUA, 31",
     "direccion": "CL RIEGO DE AGUA, 31",
     "cp": "15001",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000052",
@@ -402,7 +490,9 @@
     "nombre": "C.P. JUAN FLOREZ, 80-82 (S.1)",
     "direccion": "CL JUAN FLOREZ, 80-82",
     "cp": "15005",
-    "carpeta_onedrive": "001. C.P. JUAN FLOREZ, 80-82 E.DEQUIDT, 13-15"
+    "carpeta_onedrive": "001. C.P. JUAN FLOREZ, 80-82 E.DEQUIDT, 13-15",
+    "match_method": "NOMBRE",
+    "match_score": 71
   },
   {
     "codigo": "000053",
@@ -411,7 +501,9 @@
     "nombre": "C.P. CABANA, 13",
     "direccion": "CL CABANA 13",
     "cp": "15006",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "059. C.P. CABANA, 5-7",
+    "match_method": "REVISAR",
+    "match_score": 74
   },
   {
     "codigo": "000055",
@@ -420,7 +512,9 @@
     "nombre": "C.P. ALFREDO VICENTI, 17-19",
     "direccion": "CL ALFREDO VICENTI, 17-19",
     "cp": "15004",
-    "carpeta_onedrive": "055 C.P. ALFREDO VICENTI, 17-19"
+    "carpeta_onedrive": "055 C.P. ALFREDO VICENTI, 17-19",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000056",
@@ -429,7 +523,9 @@
     "nombre": "C.P. LINARES RIVAS, 28-30-32",
     "direccion": "AV LINARES RIVAS, 28-30-32",
     "cp": "15005",
-    "carpeta_onedrive": "056. C.P. LINARES RIVAS, 28-30-32"
+    "carpeta_onedrive": "056. C.P. LINARES RIVAS, 28-30-32",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000058",
@@ -438,7 +534,9 @@
     "nombre": "C.P. CHILE, 19-25",
     "direccion": "CL CHILE, 19-25",
     "cp": "15009",
-    "carpeta_onedrive": "058. C.P. CHILE, 19-25"
+    "carpeta_onedrive": "058. C.P. CHILE, 19-25",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000059",
@@ -447,7 +545,9 @@
     "nombre": "C.P. CABANA, 5-7",
     "direccion": "CL CABANA, 5-7",
     "cp": "15006",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000060",
@@ -456,7 +556,9 @@
     "nombre": "C.P. LINARES RIVAS, 33-34",
     "direccion": "AV LINARES RIVAS, 33-34",
     "cp": "15005",
-    "carpeta_onedrive": "060 LINARES RIVAS, 33-34"
+    "carpeta_onedrive": "060 LINARES RIVAS, 33-34",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000061",
@@ -465,7 +567,9 @@
     "nombre": "C.P. ORENSE, 10",
     "direccion": "PZ ORENSE 10",
     "cp": "15004",
-    "carpeta_onedrive": "061. C.P. ORENSE, 10"
+    "carpeta_onedrive": "061. C.P. ORENSE, 10",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000064",
@@ -474,7 +578,9 @@
     "nombre": "C.P. PASEO MARITIMO, 1",
     "direccion": "CL PASEO MARITIMO, 1",
     "cp": "15002",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000065",
@@ -483,7 +589,9 @@
     "nombre": "C.P. MARCIAL DEL ADALID, 17-19",
     "direccion": "CL MARCIAL DEL ADALID, 17-19",
     "cp": "15005",
-    "carpeta_onedrive": "065. MARCIAL DEL ADALID, 17-19"
+    "carpeta_onedrive": "065. MARCIAL DEL ADALID, 17-19",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000066",
@@ -492,7 +600,9 @@
     "nombre": "C.P. ORENSE, 7-8/FEDERICO TAPIA,7",
     "direccion": "PZ ORENSE 7-8",
     "cp": "15004",
-    "carpeta_onedrive": "066 C.P. ORENSE, 7-8 FEDERICO TAPIA,7"
+    "carpeta_onedrive": "066 C.P. ORENSE, 7-8 FEDERICO TAPIA,7",
+    "match_method": "NOMBRE",
+    "match_score": 96
   },
   {
     "codigo": "000067",
@@ -501,7 +611,9 @@
     "nombre": "C.P. PASCUAL VEIGA, 32",
     "direccion": "CL PASCUAL VEIGA, 32",
     "cp": "15010",
-    "carpeta_onedrive": "067. C.P. PASCUAL VEIGA, 32"
+    "carpeta_onedrive": "067. C.P. PASCUAL VEIGA, 32",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000069",
@@ -510,7 +622,9 @@
     "nombre": "C.P. PADRE FEIJOO, 11",
     "direccion": "CL PADRE FEIJOO, 11",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000070",
@@ -519,7 +633,9 @@
     "nombre": "C.P. JUAN FLOREZ, 64-66",
     "direccion": "CL JUAN FLOREZ 64",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000072",
@@ -528,7 +644,9 @@
     "nombre": "C.P. CANTON PEQUEÑO, 29/ALAMEDA, 2",
     "direccion": "CL CANTON PEQUEÑO, 29",
     "cp": "15003",
-    "carpeta_onedrive": "072. C.P. CANTON PEQUEÑO, 29, ALAMEDA, 2"
+    "carpeta_onedrive": "072. C.P. CANTON PEQUEÑO, 29, ALAMEDA, 2",
+    "match_method": "NOMBRE",
+    "match_score": 96
   },
   {
     "codigo": "000073",
@@ -537,7 +655,9 @@
     "nombre": "C.P. MAGISTRADO MANUEL ARTIME, 12",
     "direccion": "CL MAGISTRADO MANUEL ARTIME, 12",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000074",
@@ -546,7 +666,9 @@
     "nombre": "C.P. NOVOA SANTOS, 6-8",
     "direccion": "CL NOVOA SANTOS, 6-8",
     "cp": "15006",
-    "carpeta_onedrive": "074. C.P. NOVOA SANTOS, 6-8"
+    "carpeta_onedrive": "074. C.P. NOVOA SANTOS, 6-8",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000075",
@@ -555,7 +677,9 @@
     "nombre": "C.P. FERNANDEZ LATORRE, 5-9",
     "direccion": "CL FERNANDEZ LATORRE, 5-9",
     "cp": "15006",
-    "carpeta_onedrive": "075. C.P. FERNANDEZ LATORRE, 5-9"
+    "carpeta_onedrive": "075. C.P. FERNANDEZ LATORRE, 5-9",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000076",
@@ -564,7 +688,9 @@
     "nombre": "C.P. MANUEL AZAÑA, 54-56-58",
     "direccion": "CL MANUEL AZAÑA, 54-56-58",
     "cp": "15011",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000078",
@@ -573,7 +699,9 @@
     "nombre": "C.P. JUAN GONZÁLEZ RODRÍGUEZ, 12",
     "direccion": "CL JUAN GONZÁLEZ RODRÍGUEZ 12",
     "cp": "15011",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000079",
@@ -582,7 +710,9 @@
     "nombre": "C.P. FINISTERRE, 53",
     "direccion": "AV FINISTERRE, 53",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000080",
@@ -591,7 +721,9 @@
     "nombre": "C.P. LINARES RIVAS, 1-2-3",
     "direccion": "AV LINARES RIVAS, 1-2-3",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "010. LINARES RIVAS, 1",
+    "match_method": "REVISAR",
+    "match_score": 88
   },
   {
     "codigo": "000081",
@@ -600,7 +732,9 @@
     "nombre": "C.P. EMILIA PARDO BAZAN, 8-10",
     "direccion": "CL EMILIA PARDO BAZAN, 8-10",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "192. C.P. EMILIA PARDO BAZÁN, 20",
+    "match_method": "REVISAR",
+    "match_score": 91
   },
   {
     "codigo": "000082",
@@ -609,7 +743,9 @@
     "nombre": "C.P. EMILIA PARDO BAZAN, 18",
     "direccion": "CL EMILIA PARDO BAZAN, 18",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "084. C.P. EMILIA PARDO BAZAN, 32",
+    "match_method": "REVISAR",
+    "match_score": 90
   },
   {
     "codigo": "000083",
@@ -618,7 +754,9 @@
     "nombre": "C.P. PLA Y CANCELA, 37",
     "direccion": "CL PLA Y CANCELA, 37",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000084",
@@ -627,7 +765,9 @@
     "nombre": "C.P. EMILIA PARDO BAZAN, 32",
     "direccion": "CL EMILIA PARDO BAZAN, 32",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000086",
@@ -636,7 +776,9 @@
     "nombre": "C.P. RONDA DE NELLE, 30",
     "direccion": "RD NELLE 30",
     "cp": "15005",
-    "carpeta_onedrive": "086. C.P. RONDA DE NELLE, 30"
+    "carpeta_onedrive": "086. C.P. RONDA DE NELLE, 30",
+    "match_method": "NOMBRE",
+    "match_score": 100
   },
   {
     "codigo": "000087",
@@ -645,7 +787,9 @@
     "nombre": "C.P. ARCO, 13-15",
     "direccion": "CL ARCO, 13-15",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000089",
@@ -654,7 +798,9 @@
     "nombre": "C.P. MARIA PITA, 24",
     "direccion": "PZ MARIA PITA, 24",
     "cp": "15001",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "106. C.P. MARIA PITA, 9",
+    "match_method": "REVISAR",
+    "match_score": 88
   },
   {
     "codigo": "000090",
@@ -663,7 +809,9 @@
     "nombre": "ESPACIO CORUÑA",
     "direccion": "CL Barbadillo, 4",
     "cp": "28042",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000091",
@@ -672,7 +820,9 @@
     "nombre": "ESPACIO CORUÑA (PLANTA BAJA)",
     "direccion": "CL José Pascual López-Cortón, 10",
     "cp": "15008",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000092",
@@ -681,7 +831,9 @@
     "nombre": "ESPACIO CORUÑA (LOCALES PLANTA 1º,2º Y 3º)",
     "direccion": "CL José Pascual López Cortón, 10",
     "cp": "15008",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000093",
@@ -690,7 +842,9 @@
     "nombre": "ESPACIO CORUÑA (SÓTANO 1)",
     "direccion": "CL José Pasacual López-Cortón, 10",
     "cp": "15008",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000094",
@@ -699,7 +853,9 @@
     "nombre": "ESPACIO CORUÑA (GARAJES SÓTANO 2)",
     "direccion": "CL José Pascual López-Cortón, 10",
     "cp": "15008",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000096",
@@ -708,7 +864,9 @@
     "nombre": "C.P. MERCED, 75",
     "direccion": "CL MERCED, 75",
     "cp": "15009",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000097",
@@ -717,7 +875,9 @@
     "nombre": "C.P. ETIOPIA, 4-6",
     "direccion": "CL ETIOPIA, 4-6",
     "cp": "15172",
-    "carpeta_onedrive": "097. C.P. ETIOPIA 4-6-8"
+    "carpeta_onedrive": "097. C.P. ETIOPIA 4-6-8",
+    "match_method": "NOMBRE",
+    "match_score": 92
   },
   {
     "codigo": "000098",
@@ -726,7 +886,9 @@
     "nombre": "C.P. FERNANDO GONZALEZ, 6",
     "direccion": "CL FERNANDO GONZALEZ, 6",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000099",
@@ -735,7 +897,9 @@
     "nombre": "C.P. SAN AMARO, 27",
     "direccion": "CL SAN AMARO, 27",
     "cp": "15002",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000100",
@@ -744,7 +908,9 @@
     "nombre": "C.P. BARRIE DE LA MAZA, 17",
     "direccion": "CL BARRIE DE LA MAZA, 17",
     "cp": "15003",
-    "carpeta_onedrive": "100. C.P. BARRIE DE LA MAZA, 17"
+    "carpeta_onedrive": "100. C.P. BARRIE DE LA MAZA, 17",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000101",
@@ -753,7 +919,9 @@
     "nombre": "C.P. GARAJE BARRIÉ, 17 - SOCORRO, 30",
     "direccion": "CL BARRIE, 17",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000102",
@@ -762,7 +930,9 @@
     "nombre": "C.P. SAN SEBASTIAN, 19",
     "direccion": "CL SAN SEBASTIAN, 19",
     "cp": "15007",
-    "carpeta_onedrive": "102. C.P. SAN SEBASTIÁN, 19"
+    "carpeta_onedrive": "102. C.P. SAN SEBASTIÁN, 19",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000103",
@@ -771,7 +941,9 @@
     "nombre": "C.P. PADRE SARMIENTO, 18",
     "direccion": "CL PADRE SARMIENTO, 18",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000104",
@@ -780,7 +952,9 @@
     "nombre": "C.P. FINISTERRE, 22",
     "direccion": "CL FINISTERRE, 22",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000105",
@@ -789,7 +963,9 @@
     "nombre": "C.P. REAL,96",
     "direccion": "CL REAL, 96",
     "cp": "15003",
-    "carpeta_onedrive": "105. C.P. REAL 96"
+    "carpeta_onedrive": "105. C.P. REAL 96",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000106",
@@ -798,7 +974,9 @@
     "nombre": "C.P. MARIA PITA, 9",
     "direccion": "PZ MARIA PITA, 9",
     "cp": "15001",
-    "carpeta_onedrive": "106. C.P. MARIA PITA, 9"
+    "carpeta_onedrive": "106. C.P. MARIA PITA, 9",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000107",
@@ -807,7 +985,9 @@
     "nombre": "C.P. GAITEIRA, 33-35",
     "direccion": "CL GAITEIRA, 33-35",
     "cp": "15009",
-    "carpeta_onedrive": "107. C.P. GAITEIRA, 33-35"
+    "carpeta_onedrive": "107. C.P. GAITEIRA, 33-35",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000108",
@@ -816,7 +996,9 @@
     "nombre": "C.P. ALCALDE PUGA Y PARGA, 5",
     "direccion": "CL ALCALDE PUGA Y PARGA, 5",
     "cp": "15006",
-    "carpeta_onedrive": "108. C.P. ALCALDE PUGA Y PARGA, 5"
+    "carpeta_onedrive": "108. C.P. ALCALDE PUGA Y PARGA, 5",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000109",
@@ -825,7 +1007,9 @@
     "nombre": "C.P. REAL, 85",
     "direccion": "CL REAL, 85",
     "cp": "15003",
-    "carpeta_onedrive": "109. C.P. REAL, 85"
+    "carpeta_onedrive": "109. C.P. REAL, 85",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000110",
@@ -834,7 +1018,9 @@
     "nombre": "C.P. SANCHEZ BREGUA, 8 / PICAVIA, 8",
     "direccion": "CL SÁNCHEZ BREGUA 6-8",
     "cp": "15004",
-    "carpeta_onedrive": "110 SANCHEZ BREGUA, 8 PICAVIA, 8"
+    "carpeta_onedrive": "110 SANCHEZ BREGUA, 8 PICAVIA, 8",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000111",
@@ -843,7 +1029,9 @@
     "nombre": "C.P. AVENIDA DE OZA, 86",
     "direccion": "AV OZA 86",
     "cp": "15006",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000112",
@@ -852,7 +1040,9 @@
     "nombre": "C.P. SOCORRO, 2",
     "direccion": "CL SOCORRO, 30",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "112. C.P. SOCORRO, 30",
+    "match_method": "REVISAR",
+    "match_score": 100
   },
   {
     "codigo": "000113",
@@ -861,7 +1051,9 @@
     "nombre": "C.P. ALFONSO MOLINA, 4",
     "direccion": "AV ALFONSO MOLINA 4",
     "cp": "15006",
-    "carpeta_onedrive": "113. C.P. ALFONSO MOLINA, 4"
+    "carpeta_onedrive": "113. C.P. ALFONSO MOLINA, 4",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000114",
@@ -870,7 +1062,9 @@
     "nombre": "COMUNIDAD ESPECIAL DE SERVICIOS",
     "direccion": "AV LINARES RIVAS, 43-44-47 F.TAPIA",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000115",
@@ -879,7 +1073,9 @@
     "nombre": "C.P. CHARLES DARWIN, 15",
     "direccion": "CL CHARLES DARWIN, 15",
     "cp": "15172",
-    "carpeta_onedrive": "115. C.P. CHARLES DARWIN, 15"
+    "carpeta_onedrive": "115. C.P. CHARLES DARWIN, 15",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000116",
@@ -888,7 +1084,9 @@
     "nombre": "C.P. RAMON DE LA SAGRA, 1",
     "direccion": "CL RAMON DE LA SAGRA, 1",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000117",
@@ -897,7 +1095,9 @@
     "nombre": "C.P. GAITEIRA, 33-35 (GARAJES)",
     "direccion": "CL GAITEIRA, 33-35",
     "cp": "15009",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000118",
@@ -906,7 +1106,9 @@
     "nombre": "C.P. SANCHEZ BREGUA, 7",
     "direccion": "CL SANCHEZ BREGUA, 7",
     "cp": "15004",
-    "carpeta_onedrive": "118. SANCHEZ BREGUA, 7"
+    "carpeta_onedrive": "118. SANCHEZ BREGUA, 7",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000119",
@@ -915,7 +1117,9 @@
     "nombre": "C.P. RAMON DE LA SAGRA, 10",
     "direccion": "CL RAMON DE LA SAGRA, 10",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000120",
@@ -924,7 +1128,9 @@
     "nombre": "C.P. BUENOS AIRES, 8",
     "direccion": "CL BUENOS AIRES, 8",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000121",
@@ -933,7 +1139,9 @@
     "nombre": "C.P. EDIFICIO ARCO",
     "direccion": "AV PORTAZGO, 2-4-6",
     "cp": "15174",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000124",
@@ -942,7 +1150,9 @@
     "nombre": "C.P. NICARAGUA,12",
     "direccion": "CL NICARAGUA, 12",
     "cp": "15005",
-    "carpeta_onedrive": "124. C.P. NICARAGUA,12"
+    "carpeta_onedrive": "124. C.P. NICARAGUA,12",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000125",
@@ -951,7 +1161,9 @@
     "nombre": "C.P. ALFREDO VICENTI, 40",
     "direccion": "CL ALFREDO VICENTI, 40",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000126",
@@ -960,7 +1172,9 @@
     "nombre": "C.P. REAL, 29",
     "direccion": "CL REAL 29",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000127",
@@ -969,7 +1183,9 @@
     "nombre": "C.P. MIRADOR DE EIRIS",
     "direccion": "CL. FERRER, CL DABAN, CL. SOLIS",
     "cp": "15008",
-    "carpeta_onedrive": "127. C.P. MIRADOR DE EIRIS"
+    "carpeta_onedrive": "127. C.P. MIRADOR DE EIRIS",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000128",
@@ -978,7 +1194,9 @@
     "nombre": "C.P. CALVO SOTELO, 21",
     "direccion": "AV CALVO SOTELO, 21",
     "cp": "15004",
-    "carpeta_onedrive": "128. C.P. CALVO SOTELO, 21"
+    "carpeta_onedrive": "128. C.P. CALVO SOTELO, 21",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000130",
@@ -987,7 +1205,9 @@
     "nombre": "C.P.NOVOA SANTOS 1-3,POSE 2 Y EJERCITO 8",
     "direccion": "CL NOVOA SANTOS 1, EJERCITO 8, PIÑEIROS POSE  2",
     "cp": "15006",
-    "carpeta_onedrive": "130. C.P.NOVOA SANTOS 1-3,POSE 2 Y EJERCITO 8"
+    "carpeta_onedrive": "130. C.P.NOVOA SANTOS 1-3,POSE 2 Y EJERCITO 8",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000131",
@@ -996,7 +1216,9 @@
     "nombre": "C.P. RAMON Y CAJAL, 15-17",
     "direccion": "CL RAMON Y CAJAL, 15-17 (EDIFICIO BAHÍA)",
     "cp": "15006",
-    "carpeta_onedrive": "131. C.P. RAMON Y CAJAL, 15-17"
+    "carpeta_onedrive": "131. C.P. RAMON Y CAJAL, 15-17",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000132",
@@ -1005,7 +1227,9 @@
     "nombre": "C.P. ENRIQUE DEQUIDT, 3",
     "direccion": "CL ENRIQUE DEQUIDT 3",
     "cp": "15005",
-    "carpeta_onedrive": "132. C.P. ENRIQUE DEQUIDT, 3"
+    "carpeta_onedrive": "132. C.P. ENRIQUE DEQUIDT, 3",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000133",
@@ -1014,7 +1238,9 @@
     "nombre": "C.P. PLAZA DE LUGO 7-8",
     "direccion": "PZ LUGO, 7",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "189. PZ. DE LUGO, 11",
+    "match_method": "REVISAR",
+    "match_score": 73
   },
   {
     "codigo": "000134",
@@ -1023,7 +1249,9 @@
     "nombre": "C.P. EDIFICIO GALERA",
     "direccion": "CL SAN ANDRÉS 23",
     "cp": "15003",
-    "carpeta_onedrive": "134. C.P. EDIFICIO GALERA"
+    "carpeta_onedrive": "134. C.P. EDIFICIO GALERA",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000135",
@@ -1032,7 +1260,9 @@
     "nombre": "C.P. HERCULES, 83",
     "direccion": "AV HÉRCULES, 83",
     "cp": "15002",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000136",
@@ -1041,7 +1271,9 @@
     "nombre": "C.P. ALFONSO MOLINA, 6",
     "direccion": "AV ALFONSO MOLINA, 6",
     "cp": "15005",
-    "carpeta_onedrive": "136. C.P. ALFONSO MOLINA, 6"
+    "carpeta_onedrive": "136. C.P. ALFONSO MOLINA, 6",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000137",
@@ -1050,7 +1282,9 @@
     "nombre": "C.P. MIRADOR DE EIRIS (GARAJES)",
     "direccion": "CL. FERRER, CL DABAN, CL. SOLIS",
     "cp": "15008",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000138",
@@ -1059,7 +1293,9 @@
     "nombre": "C.P. JUANA DE VEGA,11",
     "direccion": "CL JUANA DE VEGA, 11",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "193. C.P. JUANA DE VEGA, 6",
+    "match_method": "REVISAR",
+    "match_score": 90
   },
   {
     "codigo": "000139",
@@ -1068,7 +1304,9 @@
     "nombre": "C.P. TABERNAS, 2",
     "direccion": "CL TABERNAS, 2",
     "cp": "15001",
-    "carpeta_onedrive": "139. C.P. TABERNAS, 2"
+    "carpeta_onedrive": "139. C.P. TABERNAS, 2",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000140",
@@ -1077,7 +1315,9 @@
     "nombre": "C.P. GALERA, 51",
     "direccion": "CL GALERA, 51",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000141",
@@ -1086,7 +1326,9 @@
     "nombre": "C.P. AVDA. EJERCITO, 12-14-16",
     "direccion": "AV EJERCITO, 12-14-16",
     "cp": "15006",
-    "carpeta_onedrive": "141. C.P. AVDA. EJERCITO, 12-14-16"
+    "carpeta_onedrive": "141. C.P. AVDA. EJERCITO, 12-14-16",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000142",
@@ -1095,7 +1337,9 @@
     "nombre": "C.P. CASTIÑEIRAS, 40-42",
     "direccion": "CL CASTIÑEIRAS,40-42",
     "cp": "15006",
-    "carpeta_onedrive": "142. C.P. CASTIÑEIRAS, 40-42"
+    "carpeta_onedrive": "142. C.P. CASTIÑEIRAS, 40-42",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000143",
@@ -1104,7 +1348,9 @@
     "nombre": "C.P. EDIFICIO LAS NIEVES",
     "direccion": "CL DURÁN LORIGA,2-4-6 y SANTA CATALINA,11-13",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000145",
@@ -1113,7 +1359,9 @@
     "nombre": "C.P. SARDIÑEIRA, 25",
     "direccion": "CL SARDIÑEIRA, 25",
     "cp": "15007",
-    "carpeta_onedrive": "145 C.P. SARDIÑEIRA, 25"
+    "carpeta_onedrive": "145 C.P. SARDIÑEIRA, 25",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000146",
@@ -1122,7 +1370,9 @@
     "nombre": "C.P. CARMEN, 26",
     "direccion": "CL CARMEN, 26",
     "cp": "15002",
-    "carpeta_onedrive": "146. C.P. CARMEN, 26"
+    "carpeta_onedrive": "146. C.P. CARMEN, 26",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000147",
@@ -1131,7 +1381,9 @@
     "nombre": "C.P. MAESTRANZA,28",
     "direccion": "CL MAESTRANZA, 28",
     "cp": "15001",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": "173. C.P. MAESTRANZA, 1",
+    "match_method": "REVISAR",
+    "match_score": 88
   },
   {
     "codigo": "000148",
@@ -1140,7 +1392,9 @@
     "nombre": "C.P.ZONA DEPORTIVA PRIVADA URB.ICARIA II",
     "direccion": "URB. ICARIA II Y III",
     "cp": "15179",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000149",
@@ -1149,7 +1403,9 @@
     "nombre": "C.P.NICARAGUA, 16",
     "direccion": "CL NICARAGUA, 16",
     "cp": "15005",
-    "carpeta_onedrive": "149. C.P. NICARAGUA, 16"
+    "carpeta_onedrive": "149. C.P. NICARAGUA, 16",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000151",
@@ -1158,7 +1414,9 @@
     "nombre": "C.P. GARAJES MARCIAL DEL ADALID, 1",
     "direccion": "CL MARCIAL DEL ADALID, 1",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000152",
@@ -1167,7 +1425,9 @@
     "nombre": "C.P. GARAJE CARACAS",
     "direccion": "CL CARACAS ESQ.TOURIÑANA, 22",
     "cp": "15140",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000153",
@@ -1176,7 +1436,9 @@
     "nombre": "C.P. FERROL, 10",
     "direccion": "CL FERROL, 10",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000154",
@@ -1185,7 +1447,9 @@
     "nombre": "C.P. HABITAT RESIDENCIAL PUENTE PASAJE,1",
     "direccion": "CL HABITAT PUENTE PASAJE, 1",
     "cp": "15172",
-    "carpeta_onedrive": "154. C.P. HABITAT RESIDENCIAL PUENTE PASAJE,1"
+    "carpeta_onedrive": "154. C.P. HABITAT RESIDENCIAL PUENTE PASAJE,1",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000155",
@@ -1194,7 +1458,9 @@
     "nombre": "C.P. ALFREDO VICENTI, 17-19 (GARAJE)",
     "direccion": "CL ALFREDO VICENTI, 17-19",
     "cp": "15004",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000156",
@@ -1203,7 +1469,9 @@
     "nombre": "C.P. CALVO SOTELO, 19",
     "direccion": "AV Calvo Sotelo, 19",
     "cp": "15004",
-    "carpeta_onedrive": "156. C.P. CALVO SOTELO, 19"
+    "carpeta_onedrive": "156. C.P. CALVO SOTELO, 19",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000158",
@@ -1212,7 +1480,9 @@
     "nombre": "C.P. MIRADOR DE EIRIS",
     "direccion": "CL. FERRER, CL DABAN, CL. SOLIS",
     "cp": "15008",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000159",
@@ -1221,7 +1491,9 @@
     "nombre": "C.P. FERNANDO MACIAS, 3",
     "direccion": "CL FERNANDO MACIAS, 3",
     "cp": "15004",
-    "carpeta_onedrive": "159. C.P. FERNANDO MACIAS, 3"
+    "carpeta_onedrive": "159. C.P. FERNANDO MACIAS, 3",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000160",
@@ -1230,7 +1502,9 @@
     "nombre": "C.P. SAN ANDRÉS, 125",
     "direccion": "CL SAN ANDRÉS, 125",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000161",
@@ -1239,7 +1513,9 @@
     "nombre": "C.P. MARÍA PITA, 12",
     "direccion": "CL MARIA PITA, 12",
     "cp": "15001",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000162",
@@ -1248,7 +1524,9 @@
     "nombre": "C.P. RAMON Y CAJAL 1-3, EJERCITO 2",
     "direccion": "CL RAMÓN Y CAJAL 1-3, EJÉRCITO 2",
     "cp": "15006",
-    "carpeta_onedrive": "162. C.P. RAMON Y CAJAL 1-3, EJERCITO 2"
+    "carpeta_onedrive": "162. C.P. RAMON Y CAJAL 1-3, EJERCITO 2",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000164",
@@ -1257,7 +1535,9 @@
     "nombre": "COMUNIDAD USUARIOS APARCAMIENTO PZ. VIGO",
     "direccion": "CL APARCAMIENTO PZA. DE VIGO",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000167",
@@ -1266,7 +1546,9 @@
     "nombre": "MANCOMUNIDAD GARAJE VIOÑO",
     "direccion": "CL F.1-3, R.F 7,E.F 4,E.F 2 Y PARCELA EL4",
     "cp": "15008",
-    "carpeta_onedrive": "167. MANCOMUNIDAD GARAJE VIOÑO"
+    "carpeta_onedrive": "167. MANCOMUNIDAD GARAJE VIOÑO",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000168",
@@ -1275,7 +1557,9 @@
     "nombre": "C.P. FEDERICO TAPIA, 33-35",
     "direccion": "CL FEDERICO TAPIA, 33",
     "cp": "15005",
-    "carpeta_onedrive": "168. FEDERICO TAPIA, 33"
+    "carpeta_onedrive": "168. FEDERICO TAPIA, 33",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000169",
@@ -1284,7 +1568,9 @@
     "nombre": "C.P. FALPERRA, 27",
     "direccion": "CL Falperra 27",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000170",
@@ -1293,7 +1579,9 @@
     "nombre": "C.P. TRAVESÍA DE HUERTAS, 5",
     "direccion": "TR HUERTAS 5",
     "cp": "15003",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000171",
@@ -1302,7 +1590,9 @@
     "nombre": "C.P. FRATERNIDAD, 1-3",
     "direccion": "CL FRATERNIDAD, 1-3",
     "cp": "15008",
-    "carpeta_onedrive": "171. C.P. FRATERNIDAD, 1-3"
+    "carpeta_onedrive": "171. C.P. FRATERNIDAD, 1-3",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000172",
@@ -1311,7 +1601,9 @@
     "nombre": "C.P. ENCICLOPEDIA FRANCESA, 4",
     "direccion": "LG PARCELA M4.A, POLÍGONO F8.01, S/N",
     "cp": "15008",
-    "carpeta_onedrive": "172. C.P. ENCICLOPEDIA FRANCESA, 4"
+    "carpeta_onedrive": "172. C.P. ENCICLOPEDIA FRANCESA, 4",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000173",
@@ -1320,7 +1612,9 @@
     "nombre": "C.P. MAESTRANZA, 1",
     "direccion": "CL MAESTRANZA 1",
     "cp": "15001",
-    "carpeta_onedrive": "173. C.P. MAESTRANZA, 1"
+    "carpeta_onedrive": "173. C.P. MAESTRANZA, 1",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000174",
@@ -1329,7 +1623,9 @@
     "nombre": "C.P. REVOLUCIÓN FRANCESA, 7",
     "direccion": "CL REVOLUCIÓN FRANCESA, 7",
     "cp": "15008",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000175",
@@ -1338,7 +1634,9 @@
     "nombre": "C.P. CALLE ESTANQUE, 22",
     "direccion": "CL ESTANQUE 22",
     "cp": "15679",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000176",
@@ -1347,7 +1645,9 @@
     "nombre": "C.P. ETIOPÍA, 8",
     "direccion": "CL ETIOPIA, 8",
     "cp": "15172",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000177",
@@ -1356,7 +1656,9 @@
     "nombre": "C.P. MIRAMAR, 2",
     "direccion": "CL MIRAMAR, 2",
     "cp": "15006",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000178",
@@ -1365,7 +1667,9 @@
     "nombre": "C.P. TRABAJO 4",
     "direccion": "CL TRABAJO 4",
     "cp": "15002",
-    "carpeta_onedrive": "178. C.P. TRABAJO 4"
+    "carpeta_onedrive": "178. C.P. TRABAJO 4",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000179",
@@ -1374,7 +1678,9 @@
     "nombre": "C.P. ALCALDE ASUNSOLO, 2",
     "direccion": "CL ALCALDE ASUNSOLO 2",
     "cp": "15007",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000180",
@@ -1383,7 +1689,9 @@
     "nombre": "C.P. LINARES RIVAS, 1-2-3 (GARAJE)",
     "direccion": "AV LINARES RIVAS, 1-2-3",
     "cp": "15005",
-    "carpeta_onedrive": "180. C.P. LINARES RIVAS, 1-2-3 (GARAJE)"
+    "carpeta_onedrive": "180. C.P. LINARES RIVAS, 1-2-3 (GARAJE)",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000181",
@@ -1392,7 +1700,9 @@
     "nombre": "C.P. AVDA. EJERCITO, 12-14-16",
     "direccion": "AV EJERCITO, 12-14-16",
     "cp": "15006",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000182",
@@ -1401,7 +1711,9 @@
     "nombre": "C.P. DIVISIÓN AZUL, 7",
     "direccion": "CL ANTÓN VILAR PONTE 7",
     "cp": "15005",
-    "carpeta_onedrive": "182. C.P. ANTÓN VILAR PONTE, 7"
+    "carpeta_onedrive": "182. C.P. ANTÓN VILAR PONTE, 7",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000183",
@@ -1410,7 +1722,9 @@
     "nombre": "C.P. PLA Y CANCELA, 37 (GARAJE)",
     "direccion": "CL PLA Y CANCELA, 37",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000184",
@@ -1419,7 +1733,9 @@
     "nombre": "C.P. FERNANDEZ LATORRE, 52",
     "direccion": "AV FERNANDEZ LATORRE, 52",
     "cp": "15006",
-    "carpeta_onedrive": "184. C.P. FERNANDEZ LATORRE, 52"
+    "carpeta_onedrive": "184. C.P. FERNANDEZ LATORRE, 52",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000185",
@@ -1428,7 +1744,9 @@
     "nombre": "SUBCOMUNIDAD TRASTEROS MAESTRANZA 1",
     "direccion": "CL MAESTRANZA 1",
     "cp": "15001",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000186",
@@ -1437,7 +1755,9 @@
     "nombre": "C.P. RAMÓN DE LA SAGRA 12",
     "direccion": "CL RAMÓN DE LA SAGRA 12",
     "cp": "15005",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000188",
@@ -1446,7 +1766,9 @@
     "nombre": "C.P. PANADERAS, 8-10",
     "direccion": "CL Panaderas 8-10",
     "cp": "15001",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000190",
@@ -1455,7 +1777,9 @@
     "nombre": "C.P. PLAZA DE ESPAÑA, 22",
     "direccion": "PZ DE ESPAÑA, 22",
     "cp": "15001",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000191",
@@ -1464,7 +1788,9 @@
     "nombre": "C.P. ORQUESTA SINFÓNICA DE GALICIA, 21",
     "direccion": "CL ORQUESTA SINFONICA DE GALICIA, 21",
     "cp": "15004",
-    "carpeta_onedrive": "191. C.P. ORQUESTA SINFÓNICA DE GALICIA, 21"
+    "carpeta_onedrive": "191. C.P. ORQUESTA SINFÓNICA DE GALICIA, 21",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000192",
@@ -1473,7 +1799,9 @@
     "nombre": "C.P. EMILIA PARDO BAZÁN, 20",
     "direccion": "CL Emilia Pardo Bazán 20",
     "cp": "15005",
-    "carpeta_onedrive": "192. C.P. EMILIA PARDO BAZÁN, 20"
+    "carpeta_onedrive": "192. C.P. EMILIA PARDO BAZÁN, 20",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000193",
@@ -1482,7 +1810,9 @@
     "nombre": "C.P. JUANA DE VEGA, 6",
     "direccion": "CL JUANA DE VEGA 6",
     "cp": "15004",
-    "carpeta_onedrive": "193. C.P. JUANA DE VEGA, 6"
+    "carpeta_onedrive": "193. C.P. JUANA DE VEGA, 6",
+    "match_method": "CODIGO",
+    "match_score": 100
   },
   {
     "codigo": "000196",
@@ -1491,7 +1821,9 @@
     "nombre": "C.P. MERCED, 75 (GARAJE)",
     "direccion": "CL MERCED, 75",
     "cp": "15009",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000197",
@@ -1500,7 +1832,9 @@
     "nombre": "C.P. ETIOPIA, 4-6-8 (GARAJE)",
     "direccion": "CL ETIOPIA, 4-6",
     "cp": "15172",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "000200",
@@ -1509,7 +1843,9 @@
     "nombre": "COMUNIDAD DE PRUEBA",
     "direccion": "COMUNIDAD DE PRUEBA",
     "cp": "15011",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "004329",
@@ -1518,7 +1854,9 @@
     "nombre": "GASALLA FERNANDEZ, MERCEDES",
     "direccion": "CL María de Molina 68",
     "cp": "28006",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "004373",
@@ -1527,7 +1865,9 @@
     "nombre": "COMUNIDAD PROP. ALFONSO MOLINA Nº 4",
     "direccion": "AV ALFONSO MOLINA 4",
     "cp": "15006",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   },
   {
     "codigo": "004417",
@@ -1536,6 +1876,8 @@
     "nombre": "COMUNIDAD HEREDITARIA JOSE ALVAREZ AREAS",
     "direccion": "Av. Conchiñas 13, 5ºB",
     "cp": "15010",
-    "carpeta_onedrive": null
+    "carpeta_onedrive": null,
+    "match_method": null,
+    "match_score": null
   }
 ]

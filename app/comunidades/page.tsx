@@ -12,6 +12,8 @@ type Comunidad = {
   direccion: string;
   cp: string;
   sharePointFolderName: string | null;
+  sharePointMatchMethod: string | null;
+  sharePointMatchScore: number | null;
   checklists: { estado: string }[];
 };
 
@@ -107,8 +109,9 @@ export default function ComunidadesPage() {
     return result;
   }, [comunidades, search, sortKey, sortDir]);
 
-  const conCarpeta = comunidades.filter((c) => c.sharePointFolderName).length;
-  const sinCarpeta = comunidades.length - conCarpeta;
+  const conCarpeta = comunidades.filter((c) => c.sharePointFolderName && c.sharePointMatchMethod !== "REVISAR").length;
+  const porRevisar = comunidades.filter((c) => c.sharePointMatchMethod === "REVISAR").length;
+  const sinCarpeta = comunidades.length - conCarpeta - porRevisar;
 
   return (
     <div>
@@ -119,6 +122,8 @@ export default function ComunidadesPage() {
             {comunidades.length} comunidades registradas
             {" · "}
             <span style={{ color: "#22C55E" }}>{conCarpeta} con documentos</span>
+            {" · "}
+            <span style={{ color: "#F59E0B" }}>{porRevisar} por revisar</span>
             {" · "}
             <span style={{ color: "#94a3b8" }}>{sinCarpeta} sin carpeta</span>
           </p>
@@ -194,6 +199,7 @@ export default function ComunidadesPage() {
                   const pct = calcCompletitud(c.checklists);
                   const color = progressColor(pct);
                   const hasFolder = !!c.sharePointFolderName;
+                  const isRevisar = c.sharePointMatchMethod === "REVISAR";
 
                   return (
                     <tr
@@ -215,7 +221,7 @@ export default function ComunidadesPage() {
                         {c.cp}
                       </td>
                       <td className="table-cell text-center">
-                        {hasFolder ? (
+                        {hasFolder && !isRevisar ? (
                           <span
                             title={c.sharePointFolderName || ""}
                             style={{
@@ -231,6 +237,24 @@ export default function ComunidadesPage() {
                           >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                               <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </span>
+                        ) : isRevisar ? (
+                          <span
+                            title={`Revisar: ${c.sharePointFolderName} (${c.sharePointMatchScore}%)`}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 28,
+                              height: 28,
+                              borderRadius: "50%",
+                              background: "#fef3c7",
+                              color: "#d97706",
+                            }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M12 9v4M12 17h.01M10.29 3.86l-8.6 14.86A2 2 0 003.41 21h17.18a2 2 0 001.72-2.98l-8.6-14.86a2 2 0 00-3.42 0z" />
                             </svg>
                           </span>
                         ) : (

@@ -60,6 +60,8 @@ type ComunidadInfo = {
   sharePointFolderName: string | null;
   sharePointDriveId: string | null;
   sharePointFolderId: string | null;
+  sharePointMatchMethod: string | null;
+  sharePointMatchScore: number | null;
 };
 
 export default function DocumentosTab({ comunidadId }: { comunidadId: string }) {
@@ -271,6 +273,7 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
   }
 
   if (hasFolderName && !hasFolder) {
+    const isRevisar = comunidad?.sharePointMatchMethod === "REVISAR";
     return (
       <div className="card-static py-12 text-center">
         <div className="text-gray-400 mb-2" style={{ fontSize: 32 }}>
@@ -279,6 +282,20 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
         <p className="text-gray-700 text-sm mb-1 font-semibold">
           Carpeta asignada: {comunidad?.sharePointFolderName}
         </p>
+        {isRevisar && (
+          <div
+            className="mx-auto mb-3 text-xs font-semibold rounded-lg"
+            style={{
+              maxWidth: 480,
+              padding: "10px 16px",
+              background: "#fef3c7",
+              color: "#92400e",
+              border: "1px solid #fde68a",
+            }}
+          >
+            ⚠ Coincidencia automática ({comunidad?.sharePointMatchScore}%) — Revisa que esta carpeta corresponde realmente a esta comunidad antes de vincular.
+          </div>
+        )}
         <p className="text-gray-500 text-xs mb-4">
           La carpeta existe en OneDrive pero no está vinculada todavía. Vincula la carpeta para ver los documentos.
         </p>

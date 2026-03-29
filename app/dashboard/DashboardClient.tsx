@@ -46,6 +46,7 @@ interface Props {
   totalPendientes: number;
   appTuComunidadCount: number;
   conDocumentacion: number;
+  porRevisar: number;
   sinDocumentacion: number;
   pctDigitalizacion: number;
 }
@@ -185,7 +186,7 @@ function CloudIcon() {
   );
 }
 
-export default function DashboardClient({ comunidades, categorias, totalComunidades, completitudMedia, totalPendientes, appTuComunidadCount, conDocumentacion, sinDocumentacion, pctDigitalizacion }: Props) {
+export default function DashboardClient({ comunidades, categorias, totalComunidades, completitudMedia, totalPendientes, appTuComunidadCount, conDocumentacion, porRevisar, sinDocumentacion, pctDigitalizacion }: Props) {
   const [tab, setTab] = useState<"documental" | "operativo">("documental");
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
 
@@ -255,6 +256,7 @@ export default function DashboardClient({ comunidades, categorias, totalComunida
           totalPendientes={totalPendientes}
           appTuComunidadCount={appTuComunidadCount}
           conDocumentacion={conDocumentacion}
+          porRevisar={porRevisar}
           sinDocumentacion={sinDocumentacion}
           pctDigitalizacion={pctDigitalizacion}
         />
@@ -273,6 +275,14 @@ export default function DashboardClient({ comunidades, categorias, totalComunida
   );
 }
 
+function WarningIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M12 9v4M12 17h.01M10.29 3.86l-8.6 14.86A2 2 0 003.41 21h17.18a2 2 0 001.72-2.98l-8.6-14.86a2 2 0 00-3.42 0z" />
+    </svg>
+  );
+}
+
 function DocumentalTab({
   comunidades,
   categorias,
@@ -281,6 +291,7 @@ function DocumentalTab({
   totalPendientes,
   appTuComunidadCount,
   conDocumentacion,
+  porRevisar,
   sinDocumentacion,
   pctDigitalizacion,
 }: {
@@ -291,19 +302,21 @@ function DocumentalTab({
   totalPendientes: number;
   appTuComunidadCount: number;
   conDocumentacion: number;
+  porRevisar: number;
   sinDocumentacion: number;
   pctDigitalizacion: number;
 }) {
   const kpis = [
     { label: "Comunidades", value: String(totalComunidades), icon: <BuildingIcon />, color: "#4F7CFF" },
     { label: "Con documentación", value: String(conDocumentacion), icon: <CloudIcon />, color: "#22C55E" },
-    { label: "Sin carpeta", value: String(sinDocumentacion), icon: <DocIcon />, color: "#F59E0B" },
+    { label: "Por revisar", value: String(porRevisar), icon: <WarningIcon />, color: "#F59E0B" },
+    { label: "Sin carpeta", value: String(sinDocumentacion), icon: <DocIcon />, color: "#94a3b8" },
     { label: "Digitalización", value: `${pctDigitalizacion}%`, icon: <BarChartIcon />, color: "#8B5CF6" },
   ];
 
   return (
     <div>
-      <div className="grid grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-5 gap-4 mb-5">
         {kpis.map((k) => (
           <div key={k.label} className="kpi-card">
             <div className="kpi-icon" style={{ background: k.color + "18", color: k.color }}>

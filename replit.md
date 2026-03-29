@@ -28,13 +28,16 @@ DocFincas is a document management system for community property management ("Ge
 - `prisma/` — Schema, seed data (171 communities), comunidades-gesfincas.json
 
 ## Database Models
-- **Comunidad**: codigo (unique Gesfincas code), idPersona, nombre, nif, direccion, cp, sharePointSiteId/DriveId/FolderId/FolderName
+- **Comunidad**: codigo (unique Gesfincas code), idPersona, nombre, nif, direccion, cp, sharePointSiteId/DriveId/FolderId/FolderName/MatchMethod/MatchScore
 - **User, Operativa, Checklist, Documento, Alerta, Setting**
 
 ## Community Data
 - 171 communities imported from Gesfincas (source of truth)
 - Each has a `codigo` (6-digit Gesfincas billing code, e.g. "000002")
-- `carpeta_onedrive` mapped to `sharePointFolderName` — 78 communities have folders, 93 don't
+- `carpeta_onedrive` mapped to `sharePointFolderName` — 78 confirmed, 14 pending review, 79 without folder
+- `sharePointMatchMethod`: NOMBRE (matched by name), CODIGO (matched by code), REVISAR (uncertain match requiring manual review)
+- `sharePointMatchScore`: 0-100 confidence percentage
+- REVISAR entries show warning indicators (amber) in listing + detail pages
 - Folder naming convention: `[codigo]. [nombre]` (e.g. "008. C.P. DOCTOR FLEMING, 15")
 
 ## SharePoint/OneDrive Integration

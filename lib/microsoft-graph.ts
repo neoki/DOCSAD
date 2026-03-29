@@ -358,6 +358,43 @@ export async function searchDriveForFolder(driveId: string, searchQuery: string)
     }));
 }
 
+export async function isDescendantFolder(
+  driveId: string,
+  folderId: string,
+  ancestorFolderId: string,
+): Promise<boolean> {
+  if (folderId === ancestorFolderId) return true;
+
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) return false;
+
+  let currentId = folderId;
+  const visited = new Set<string>();
+
+  while (currentId && currentId !== ancestorFolderId) {
+    if (visited.has(currentId)) return false;
+    visited.add(currentId);
+
+    try {
+      const res = await fetch(
+        `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${currentId}?$select=id,parentReference`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+      if (!res.ok) return false;
+
+      const item = await res.json();
+      const parentId = item.parentReference?.id;
+      if (!parentId) return false;
+      if (parentId === ancestorFolderId) return true;
+      currentId = parentId;
+    } catch {
+      return false;
+    }
+  }
+
+  return currentId === ancestorFolderId;
+}
+
 export async function uploadFileToFolder(
   driveId: string,
   folderId: string,

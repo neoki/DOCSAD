@@ -13,6 +13,8 @@ type GesfincasEntry = {
   direccion: string;
   cp: string;
   carpeta_onedrive: string | null;
+  match_method: string | null;
+  match_score: number | null;
 };
 
 async function main() {
@@ -35,6 +37,7 @@ async function main() {
   console.log(`Importing ${comunidades.length} communities from Gesfincas...`);
 
   let created = 0;
+  let updated = 0;
   let skipped = 0;
 
   for (const c of comunidades) {
@@ -43,7 +46,23 @@ async function main() {
     });
 
     if (existing) {
-      skipped++;
+      if (
+        existing.sharePointMatchMethod !== c.match_method ||
+        existing.sharePointMatchScore !== c.match_score ||
+        existing.sharePointFolderName !== (c.carpeta_onedrive || null)
+      ) {
+        await prisma.comunidad.update({
+          where: { codigo: c.codigo },
+          data: {
+            sharePointFolderName: c.carpeta_onedrive || null,
+            sharePointMatchMethod: c.match_method || null,
+            sharePointMatchScore: c.match_score ?? null,
+          },
+        });
+        updated++;
+      } else {
+        skipped++;
+      }
       continue;
     }
 
@@ -57,12 +76,14 @@ async function main() {
         cp: c.cp,
         pisos: 0,
         sharePointFolderName: c.carpeta_onedrive || null,
+        sharePointMatchMethod: c.match_method || null,
+        sharePointMatchScore: c.match_score ?? null,
       },
     });
     created++;
   }
 
-  console.log(`Done: ${created} created, ${skipped} skipped (already existed)`);
+  console.log(`Done: ${created} created, ${updated} updated, ${skipped} unchanged`);
 }
 
 main()

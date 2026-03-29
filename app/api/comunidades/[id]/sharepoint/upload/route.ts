@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { uploadFileToFolder } from "@/lib/microsoft-graph";
+import { uploadFileToFolder, isDescendantFolder } from "@/lib/microsoft-graph";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
@@ -34,7 +34,22 @@ export async function POST(
       return NextResponse.json({ error: "El archivo excede el tamaño máximo (50 MB)" }, { status: 400 });
     }
 
-    const targetFolderId = folderId || comunidad.sharePointFolderId;
+    let targetFolderId = comunidad.sharePointFolderId;
+
+    if (folderId && folderId !== comunidad.sharePointFolderId) {
+      const isValid = await isDescendantFolder(
+        comunidad.sharePointDriveId,
+        folderId,
+        comunidad.sharePointFolderId,
+      );
+      if (!isValid) {
+        return NextResponse.json(
+          { error: "La carpeta de destino no pertenece a esta comunidad" },
+          { status: 403 },
+        );
+      }
+      targetFolderId = folderId;
+    }
 
     const buffer = await file.arrayBuffer();
     const result = await uploadFileToFolder(

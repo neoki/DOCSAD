@@ -96,8 +96,9 @@ async function getDashboardData() {
   const totalPendientes = comunidadesData.reduce((sum, c) => sum + c.pendientes, 0);
   const appTuComunidadCount = comunidadesData.filter((c) => c.operativa?.tieneAppTuComunidad).length;
 
-  const conDocumentacion = comunidades.filter((c) => c.sharePointFolderName !== null).length;
-  const sinDocumentacion = totalComunidades - conDocumentacion;
+  const conDocumentacion = comunidades.filter((c) => c.sharePointFolderName !== null && c.sharePointMatchMethod !== "REVISAR").length;
+  const porRevisar = comunidades.filter((c) => c.sharePointMatchMethod === "REVISAR").length;
+  const sinDocumentacion = totalComunidades - conDocumentacion - porRevisar;
   const pctDigitalizacion = totalComunidades > 0 ? Math.round((conDocumentacion / totalComunidades) * 100) : 0;
 
   return {
@@ -108,6 +109,7 @@ async function getDashboardData() {
     totalPendientes,
     appTuComunidadCount,
     conDocumentacion,
+    porRevisar,
     sinDocumentacion,
     pctDigitalizacion,
   };
@@ -127,6 +129,7 @@ export default async function DashboardPage() {
       totalPendientes={data.totalPendientes}
       appTuComunidadCount={data.appTuComunidadCount}
       conDocumentacion={data.conDocumentacion}
+      porRevisar={data.porRevisar}
       sinDocumentacion={data.sinDocumentacion}
       pctDigitalizacion={data.pctDigitalizacion}
     />

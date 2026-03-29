@@ -52,6 +52,8 @@ model Comunidad {
   sharePointDriveId String?
   sharePointFolderId String?
   sharePointFolderName String?
+  sharePointMatchMethod String?
+  sharePointMatchScore Int?
 
   operativa  Operativa?
   checklists Checklist[]
