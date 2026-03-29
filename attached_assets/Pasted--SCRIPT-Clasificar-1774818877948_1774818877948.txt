@@ -1,0 +1,300 @@
+# ============================================================================
+# SCRIPT: Clasificar y distribuir archivos de escáner a carpetas de comunidades
+# ============================================================================
+# USO: 
+#   1. Ajusta $SourcePath y $DestPath abajo
+#   2. Ejecuta primero con -WhatIf para ver qué haría sin mover nada
+#   3. Cuando estés seguro, quita el -WhatIf
+#
+#   .\clasificar_escaner.ps1              → modo simulación (no mueve nada)
+#   .\clasificar_escaner.ps1 -Ejecutar    → modo real (mueve archivos)
+# ============================================================================
+
+param(
+    [switch]$Ejecutar
+)
+
+# ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
+$SourcePath = "F:\Escaner"                          # Carpeta de origen
+$DestPath   = "C:\Users\TuUsuario\SharePoint\DocFincas\COMUNIDADES"  # Carpeta destino (sincronizada con SharePoint)
+$LogFile    = "C:\Users\TuUsuario\Desktop\clasificacion_log.csv"
+
+# ─── REGLAS DE CLASIFICACIÓN ─────────────────────────────────────────────────
+# Orden importa: la primera regla que coincida gana
+$Reglas = @(
+    @{ Carpeta = "01_Actas";                  Patron = 'acta|actas|junta' }
+    @{ Carpeta = "02_Presupuestos_y_Cuentas"; Patron = 'presupuesto|balance|liquidaci|cuenta|derrama|reparto|cuota' }
+    @{ Carpeta = "03_Contratos";              Patron = 'contrato|convenio' }
+    @{ Carpeta = "04_Facturas";               Patron = 'factura|facturas|fra\.' }
+    @{ Carpeta = "05_Seguros";                Patron = 'seguro|poliza|p[oó]liza|siniestro' }
+    @{ Carpeta = "06_Certificados_e_Informes"; Patron = 'certificad|informe|ite\b|proyecto|memoria|plano|cee\b|eficiencia.energ' }
+    @{ Carpeta = "07_Recibos";                Patron = 'recibo|consumo|lectura|listado.recibo|cobro|impagad|moroso|morosidad' }
+    @{ Carpeta = "08_Correspondencia";        Patron = 'circular|carta|notificaci|convocatoria|buzon|correo' }
+    @{ Carpeta = "09_Documentacion_Legal";    Patron = 'escritura|divisi[oó]n.horizontal|estatuto|cif\b|dni\b|nif\b|permiso|tasa|licencia|subvenci|mandato|poder|nombramiento' }
+    @{ Carpeta = "10_Mantenimiento";          Patron = 'mantenimiento|albaran|reparaci|averia|obra|ascensor|limpieza|caldera|bomba|gasoleo|gas[oó]leo' }
+)
+$CarpetaDefault = "11_Otros"
+
+# ─── MAPEO CÓDIGO → CARPETA COMUNIDAD ────────────────────────────────────────
+# Este mapeo usa los códigos de Gesfincas (3 dígitos en el nombre del archivo)
+# y los asocia a la carpeta de destino en SharePoint
+# Formato: código del archivo → nombre de la carpeta en SharePoint
+$MapeoComunidades = @{
+    "001" = "001. C.P. JUAN FLOREZ, 80-82 E.DEQUIDT, 13-15"
+    "002" = "002. C.P. LINARES RIVAS, 27"
+    "003" = "003. C.P. LINARES RIVAS, 12-14"
+    "006" = "006. C.P. PRIMO DE RIVERA, 2"
+    "009" = "009. C.P. PRIMO DE RIVERA, 3"
+    "010" = "010. LINARES RIVAS, 1"
+    "012" = "012. C.P. RUA NUEVA, 25-27"
+    "013" = "013. C.P. CUEVAS, 5"
+    "014" = "014. C.P. ALFREDO VICENTI, 32"
+    "015" = "015. C.P. ALFONSO MOLINA 5"
+    "016" = "016 C.P. CONCEPCION ARENAL, 2-4"
+    "017" = "017. C.P. LINARES RIVAS, 18-21"
+    "018" = "018. MANUEL MURGUIA, 12"
+    "023" = "023. C.P. CIUDAD DE LUGO, 31-33"
+    "027" = "027. C.P. MERCED, 71-73"
+    "028" = "028. C.P. ALAMEDA, 30-32 HUERTAS, 8"
+    "029" = "029 C.P. EDIFICIO GRANADA"
+    "030" = "030. C.P. ARZOBISPO LAGO, 8"
+    "032" = "032. C.P. MERCED, 77"
+    "033" = "033. C.P. ENRIQUE DEQUIDT, 9"
+    "037" = "037 C.P. PASEO DE LOS PUENTES, 2"
+    "039" = "039. C.P. DURAN LORIGA, 9"
+    "040" = "040. C.P. PASEO DE LOS PUENTES, 4"
+    "042" = "042 C.P. RAMON DE LA SAGRA, 14"
+    "044" = "044. RAMON DE LA SAGRA, 6-8"
+    "045" = "045. C.P. HUERTAS, 1-3"
+    "046" = "046 C.P. MENENDEZ PELAYO, 20"
+    "050" = "050 C.P. CAPITAN JUAN VARELA, 1-3"
+    "055" = "055 C.P. ALFREDO VICENTI, 17-19"
+    "056" = "056. C.P. LINARES RIVAS, 28-30-32"
+    "058" = "058. C.P. CHILE, 19-25"
+    "059" = "059. C.P. CABANA, 5-7"
+    "060" = "060 LINARES RIVAS, 33-34"
+    "061" = "061. C.P. ORENSE, 10"
+    "065" = "065. MARCIAL DEL ADALID, 17-19"
+    "066" = "066 C.P. ORENSE, 7-8 FEDERICO TAPIA,7"
+    "067" = "067. C.P. PASCUAL VEIGA, 32"
+    "072" = "072. C.P. CANTON PEQUEÑO, 29, ALAMEDA, 2"
+    "074" = "074. C.P. NOVOA SANTOS, 6-8"
+    "075" = "075. C.P. FERNANDEZ LATORRE, 5-9"
+    "080" = "080. C.P. LINARES RIVAS, 1-2-3"
+    "084" = "084. C.P. EMILIA PARDO BAZAN, 32"
+    "086" = "086. C.P. RONDA DE NELLE, 30"
+    "097" = "097. C.P. ETIOPIA 4-6-8"
+    "100" = "100. C.P. BARRIE DE LA MAZA, 17"
+    "102" = "102. C.P. SAN SEBASTIAN, 19"
+    "105" = "105. C.P. REAL 96"
+    "106" = "106. C.P. MARIA PITA, 9"
+    "107" = "107. C.P. GAITEIRA, 33-35"
+    "108" = "108. C.P. ALCALDE PUGA Y PARGA, 5"
+    "109" = "109. C.P. REAL, 85"
+    "110" = "110 SANCHEZ BREGUA, 8 PICAVIA, 8"
+    "112" = "112. C.P. SOCORRO, 30"
+    "113" = "113. C.P. ALFONSO MOLINA, 4"
+    "115" = "115. C.P. CHARLES DARWIN, 15"
+    "118" = "118. SANCHEZ BREGUA, 7"
+    "124" = "124. C.P. NICARAGUA,12"
+    "127" = "127. C.P. MIRADOR DE EIRIS"
+    "128" = "128. C.P. CALVO SOTELO, 21"
+    "130" = "130. C.P.NOVOA SANTOS 1-3,POSE 2 Y EJERCITO 8"
+    "131" = "131. C.P. RAMON Y CAJAL, 15-17"
+    "132" = "132. C.P. ENRIQUE DEQUIDT, 3"
+    "134" = "134. C.P. EDIFICIO GALERA"
+    "136" = "136. C.P. ALFONSO MOLINA, 6"
+    "139" = "139. C.P. TABERNAS, 2"
+    "141" = "141. C.P. AVDA. EJERCITO, 12-14-16"
+    "142" = "142. C.P. CASTIÑEIRAS, 40-42"
+    "144" = "144. C.P. EDIFICIO GALERA (GARAJE)"
+    "145" = "145 C.P. SARDIÑEIRA, 25"
+    "146" = "146. C.P. CARMEN, 26"
+    "149" = "149. C.P. NICARAGUA, 16"
+    "154" = "154. C.P. HABITAT RESIDENCIAL PUENTE PASAJE,1"
+    "156" = "156. C.P. CALVO SOTELO, 19"
+    "159" = "159. C.P. FERNANDO MACIAS, 3"
+    "162" = "162. C.P. RAMON Y CAJAL 1-3, EJERCITO 2"
+    "167" = "167. MANCOMUNIDAD GARAJE VIOÑO"
+    "168" = "168. FEDERICO TAPIA, 33"
+    "171" = "171. C.P. FRATERNIDAD, 1-3"
+    "172" = "172. C.P. ENCICLOPEDIA FRANCESA, 4"
+    "173" = "173. C.P. MAESTRANZA, 1"
+    "178" = "178. C.P. TRABAJO 4"
+    "180" = "180. C.P. LINARES RIVAS, 1-2-3 (GARAJE)"
+    "182" = "182. C.P. ANTÓN VILAR PONTE, 7"
+    "184" = "184. C.P. FERNANDEZ LATORRE, 52"
+    "189" = "189. PZ. DE LUGO, 11"
+    "191" = "191. C.P. ORQUESTA SINFÓNICA DE GALICIA, 21"
+    "192" = "192. C.P. EMILIA PARDO BAZÁN, 20"
+    "193" = "193. C.P. JUANA DE VEGA, 6"
+    "198" = "198. FEDERICO TAPIA, 20"
+    "201" = "201. C.P. HABITAT, 3"
+}
+
+# ─── SUBCARPETAS ESTÁNDAR ────────────────────────────────────────────────────
+$Subcarpetas = @(
+    "01_Actas",
+    "02_Presupuestos_y_Cuentas",
+    "03_Contratos",
+    "04_Facturas",
+    "05_Seguros",
+    "06_Certificados_e_Informes",
+    "07_Recibos",
+    "08_Correspondencia",
+    "09_Documentacion_Legal",
+    "10_Mantenimiento",
+    "11_Otros"
+)
+
+# ─── FUNCIONES ───────────────────────────────────────────────────────────────
+function Clasificar-Archivo {
+    param([string]$NombreArchivo)
+    
+    $nombreLower = $NombreArchivo.ToLower()
+    
+    foreach ($regla in $Reglas) {
+        if ($nombreLower -match $regla.Patron) {
+            return $regla.Carpeta
+        }
+    }
+    return $CarpetaDefault
+}
+
+# ─── EJECUCIÓN ───────────────────────────────────────────────────────────────
+$archivos = Get-ChildItem -Path $SourcePath -File -Recurse | Where-Object {
+    $_.Name -match '^\d{3}\.'
+}
+
+Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "  CLASIFICADOR DE DOCUMENTOS ESCANEADOS" -ForegroundColor Cyan
+Write-Host "  Archivos encontrados: $($archivos.Count)" -ForegroundColor Cyan
+Write-Host "  Modo: $(if ($Ejecutar) {'EJECUCIÓN REAL'} else {'SIMULACIÓN'})" -ForegroundColor $(if ($Ejecutar) {'Red'} else {'Yellow'})
+Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor Cyan
+
+$log = @()
+$stats = @{}
+$sinCarpeta = @{}
+$procesados = 0
+$errores = 0
+
+foreach ($archivo in $archivos) {
+    $nombre = $archivo.Name
+    
+    # Extraer código de comunidad (3 dígitos al inicio)
+    if ($nombre -match '^(\d{3})\.') {
+        $codigo = $Matches[1]
+    } else {
+        continue
+    }
+    
+    # Buscar carpeta de comunidad
+    $carpetaComunidad = $MapeoComunidades[$codigo]
+    
+    if (-not $carpetaComunidad) {
+        # Código no mapeado — registrar para revisión
+        if (-not $sinCarpeta[$codigo]) { $sinCarpeta[$codigo] = 0 }
+        $sinCarpeta[$codigo]++
+        
+        $log += [PSCustomObject]@{
+            Archivo = $nombre
+            Codigo = $codigo
+            Comunidad = "SIN MAPEO"
+            Tipo = ""
+            Destino = ""
+            Estado = "SIN_MAPEO"
+        }
+        continue
+    }
+    
+    # Clasificar tipo de documento
+    $tipo = Clasificar-Archivo -NombreArchivo $nombre
+    
+    # Construir ruta destino
+    $rutaDestino = Join-Path $DestPath $carpetaComunidad $tipo
+    $archivoDestino = Join-Path $rutaDestino $nombre
+    
+    # Registrar estadísticas
+    $key = "$codigo|$tipo"
+    if (-not $stats[$key]) { $stats[$key] = 0 }
+    $stats[$key]++
+    
+    if ($Ejecutar) {
+        try {
+            # Crear carpeta si no existe
+            if (-not (Test-Path $rutaDestino)) {
+                New-Item -Path $rutaDestino -ItemType Directory -Force | Out-Null
+            }
+            
+            # Copiar archivo (no mover, por seguridad)
+            Copy-Item -Path $archivo.FullName -Destination $archivoDestino -Force
+            $procesados++
+            
+            $log += [PSCustomObject]@{
+                Archivo = $nombre
+                Codigo = $codigo
+                Comunidad = $carpetaComunidad
+                Tipo = $tipo
+                Destino = $archivoDestino
+                Estado = "OK"
+            }
+        }
+        catch {
+            $errores++
+            $log += [PSCustomObject]@{
+                Archivo = $nombre
+                Codigo = $codigo
+                Comunidad = $carpetaComunidad
+                Tipo = $tipo
+                Destino = $archivoDestino
+                Estado = "ERROR: $_"
+            }
+        }
+    }
+    else {
+        $procesados++
+        $log += [PSCustomObject]@{
+            Archivo = $nombre
+            Codigo = $codigo
+            Comunidad = $carpetaComunidad
+            Tipo = $tipo
+            Destino = $archivoDestino
+            Estado = "SIMULADO"
+        }
+    }
+}
+
+# ─── INFORME ─────────────────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor Green
+Write-Host "  RESULTADO" -ForegroundColor Green
+Write-Host "───────────────────────────────────────────────────────"
+Write-Host "  Clasificados:    $procesados"
+Write-Host "  Errores:         $errores"
+Write-Host "  Sin mapeo:       $($log | Where-Object Estado -eq 'SIN_MAPEO' | Measure-Object | Select-Object -ExpandProperty Count)"
+Write-Host ""
+
+if ($sinCarpeta.Count -gt 0) {
+    Write-Host "  CÓDIGOS SIN MAPEO (revisar manualmente):" -ForegroundColor Yellow
+    foreach ($k in $sinCarpeta.Keys | Sort-Object) {
+        Write-Host "    Código $k : $($sinCarpeta[$k]) archivos" -ForegroundColor Yellow
+    }
+}
+
+Write-Host ""
+Write-Host "  DISTRIBUCIÓN POR TIPO:" -ForegroundColor Cyan
+$tipoStats = @{}
+foreach ($k in $stats.Keys) {
+    $tipo = $k.Split('|')[1]
+    if (-not $tipoStats[$tipo]) { $tipoStats[$tipo] = 0 }
+    $tipoStats[$tipo] += $stats[$k]
+}
+foreach ($t in $tipoStats.Keys | Sort-Object) {
+    Write-Host "    $t : $($tipoStats[$t]) archivos"
+}
+
+# Guardar log
+$log | Export-Csv -Path $LogFile -NoTypeInformation -Encoding UTF8
+Write-Host ""
+Write-Host "  Log guardado en: $LogFile" -ForegroundColor Gray
+Write-Host "═══════════════════════════════════════════════════════" -ForegroundColor Green

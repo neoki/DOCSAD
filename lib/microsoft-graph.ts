@@ -3,7 +3,7 @@ import { prisma } from "./prisma";
 const CLIENT_ID = process.env.MICROSOFT_CLIENT_ID!;
 const CLIENT_SECRET = process.env.MICROSOFT_CLIENT_SECRET!;
 const TENANT_ID = process.env.MICROSOFT_TENANT_ID!;
-const SCOPES = "Files.Read.All Sites.Read.All User.Read offline_access";
+const SCOPES = "Files.ReadWrite.All Sites.Read.All User.Read offline_access";
 
 export function getRedirectUri() {
   const base =
@@ -250,6 +250,133 @@ export async function getFileDownloadUrl(driveId: string, itemId: string): Promi
     accessToken,
   );
   return data["@microsoft.graph.downloadUrl"];
+}
+
+export const STANDARD_SUBFOLDERS = [
+  "01_Actas",
+  "02_Presupuestos_y_Cuentas",
+  "03_Contratos",
+  "04_Facturas",
+  "05_Seguros",
+  "06_Certificados_e_Informes",
+  "07_Recibos",
+  "08_Correspondencia",
+  "09_Documentacion_Legal",
+  "10_Mantenimiento",
+  "11_Otros",
+];
+
+async function graphPost(path: string, accessToken: string, body: unknown) {
+  const res = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Graph API POST error: ${res.status} - ${err}`);
+  }
+  return res.json();
+}
+
+export async function createFolder(driveId: string, parentId: string | null, name: string) {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const parent = parentId ? `items/${parentId}` : "root";
+  return graphPost(`/drives/${driveId}/${parent}/children`, accessToken, {
+    name,
+    folder: {},
+    "@microsoft.graph.conflictBehavior": "fail",
+  });
+}
+
+export async function createCommunityFolderStructure(
+  driveId: string,
+  folderName: string,
+  parentId?: string,
+) {
+  const mainFolder = await createFolder(driveId, parentId || null, folderName);
+
+  const results: { name: string; id: string; error?: string }[] = [];
+  for (const sub of STANDARD_SUBFOLDERS) {
+    try {
+      const f = await createFolder(driveId, mainFolder.id, sub);
+      results.push({ name: sub, id: f.id });
+    } catch (err) {
+      results.push({ name: sub, id: "", error: String(err) });
+    }
+  }
+
+  return { mainFolder, subfolders: results };
+}
+
+export async function normalizeSubfolders(driveId: string, folderId: string) {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const existing = await listFiles(driveId, folderId);
+  const existingNames = new Set(existing.filter((f) => f.isFolder).map((f) => f.name));
+
+  const created: string[] = [];
+  for (const sub of STANDARD_SUBFOLDERS) {
+    if (!existingNames.has(sub)) {
+      try {
+        await createFolder(driveId, folderId, sub);
+        created.push(sub);
+      } catch {
+        // skip if conflict
+      }
+    }
+  }
+  return created;
+}
+
+export async function searchDriveForFolder(driveId: string, searchQuery: string) {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const data = await graphGet(
+    `/drives/${driveId}/root/search(q='${encodeURIComponent(searchQuery)}')?$filter=folder ne null&$top=20&$select=id,name,folder,parentReference`,
+    accessToken,
+  );
+  return (data.value || [])
+    .filter((item: Record<string, unknown>) => !!(item.folder))
+    .map((item: Record<string, unknown>) => ({
+      id: item.id as string,
+      name: item.name as string,
+    }));
+}
+
+export async function uploadFileToFolder(
+  driveId: string,
+  folderId: string,
+  fileName: string,
+  content: ArrayBuffer,
+) {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const res = await fetch(
+    `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${folderId}:/${encodeURIComponent(fileName)}:/content`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/octet-stream",
+      },
+      body: content,
+    },
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Upload error: ${res.status} - ${err}`);
+  }
+  return res.json();
 }
 
 export async function disconnectOneDrive() {

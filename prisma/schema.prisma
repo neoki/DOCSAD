@@ -45,6 +45,11 @@ model Comunidad {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
+  sharePointSiteId  String?
+  sharePointDriveId String?
+  sharePointFolderId String?
+  sharePointFolderName String?
+
   operativa  Operativa?
   checklists Checklist[]
   documentos Documento[]

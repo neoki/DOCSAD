@@ -1,0 +1,53 @@
+# DocFincas — Addendum: Estructura de carpetas en OneDrive
+
+## Añadir al prompt anterior (PROMPT_DocFincas_importar_gesfincas.md)
+
+### Estructura estándar de subcarpetas
+
+Cada carpeta de comunidad en OneDrive debe tener la siguiente estructura interna. La app debe crearla automáticamente cuando se pulse "Crear carpeta" para una comunidad que no tiene, y debe verificar/crear las subcarpetas que falten en comunidades que ya tienen carpeta.
+
+```
+[codigo]. [nombre comunidad]/
+├── 01_Actas/
+├── 02_Presupuestos_y_Cuentas/
+├── 03_Contratos/
+├── 04_Facturas/
+├── 05_Seguros/
+├── 06_Certificados_e_Informes/
+├── 07_Recibos/
+├── 08_Correspondencia/
+├── 09_Documentacion_Legal/
+├── 10_Mantenimiento/
+└── 11_Otros/
+```
+
+Contenido esperado de cada subcarpeta:
+- **01_Actas**: actas de juntas ordinarias y extraordinarias, convocatorias
+- **02_Presupuestos_y_Cuentas**: presupuestos anuales, balances, liquidaciones, derramas, repartos de cuotas
+- **03_Contratos**: contratos con proveedores (ascensor, limpieza, jardinería, suministros)
+- **04_Facturas**: facturas de proveedores
+- **05_Seguros**: pólizas de seguro, expedientes de siniestros
+- **06_Certificados_e_Informes**: ITE, certificados energéticos, informes técnicos, proyectos, planos
+- **07_Recibos**: recibos de comuneros, consumos, lecturas de contadores, listados de cobro
+- **08_Correspondencia**: circulares, notificaciones, cartas, comunicaciones con organismos
+- **09_Documentacion_Legal**: escrituras, división horizontal, estatutos, CIF, DNIs de cargos, permisos, tasas, mandatos SEPA
+- **10_Mantenimiento**: partes de trabajo, albaranes de reparaciones, informes de mantenimiento
+- **11_Otros**: documentos que no encajan en las categorías anteriores
+
+### Comportamiento en la interfaz
+
+1. **Al crear carpeta nueva**: crear la carpeta principal y las 11 subcarpetas vía Graph API.
+
+2. **Al mostrar documentos de una comunidad**: 
+   - Si la carpeta tiene las subcarpetas estándar, mostrarlas como pestañas o secciones colapsables, con el número de documentos dentro de cada una.
+   - Si la carpeta tiene subcarpetas con otros nombres (Contratos, Documentación, Informes, Mantenimiento — que ya existen en algunas comunidades), mostrarlas tal cual. NO renombrar ni mover nada de lo que ya existe.
+   - Los archivos sueltos en la raíz de la carpeta de la comunidad (fuera de subcarpetas) mostrarlos en una sección "Sin clasificar" al final.
+
+3. **Al subir un documento**: preguntar al usuario en qué subcarpeta quiere guardarlo, mostrando la lista de subcarpetas disponibles. Subir vía Graph API a la subcarpeta seleccionada.
+
+### Compatibilidad con carpetas existentes
+
+Algunas comunidades ya tienen documentos organizados en carpetas con nombres diferentes (ej: "Contratos", "Documentación", "Informes", "Mantenimiento" como se ve en la captura). La app debe:
+- Mostrar las carpetas que existan, sean cuales sean sus nombres
+- NO borrar, renombrar ni reorganizar nada existente
+- Si el usuario pide "normalizar estructura", entonces crear las subcarpetas estándar que falten SIN tocar las que ya están, si dos nombres coinciden se le añade ".new" a la nueva.
