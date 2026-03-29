@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
           { nombre: { contains: search, mode: "insensitive" as const } },
           { nif: { contains: search, mode: "insensitive" as const } },
           { direccion: { contains: search, mode: "insensitive" as const } },
+          { codigo: { contains: search, mode: "insensitive" as const } },
+          { cp: { contains: search, mode: "insensitive" as const } },
         ],
       }
     : {};
@@ -35,7 +37,7 @@ export async function GET(req: NextRequest) {
           select: { checklists: true, documentos: true, alertas: true },
         },
       },
-      orderBy: { nombre: "asc" },
+      orderBy: { codigo: "asc" },
       ...(all ? {} : { skip: (page - 1) * pageSize, take: pageSize }),
     }),
   ]);
@@ -48,9 +50,9 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { nombre, nif, direccion, pisos } = body;
+  const { codigo, nombre, nif, direccion, cp, pisos } = body;
 
-  if (!nombre || !nif || !direccion) {
+  if (!nombre || !nif || !direccion || !codigo) {
     return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
   }
 
@@ -59,9 +61,11 @@ export async function POST(req: NextRequest) {
 
   const comunidad = await prisma.comunidad.create({
     data: {
+      codigo,
       nombre,
       nif,
       direccion,
+      cp: cp ?? "",
       pisos: pisos ?? 0,
       operativa: {
         create: {},

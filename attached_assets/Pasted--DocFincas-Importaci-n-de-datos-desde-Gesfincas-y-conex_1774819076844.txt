@@ -1,0 +1,1611 @@
+# DocFincas — Importación de datos desde Gesfincas y conexión con OneDrive
+
+## Contexto
+
+DocFincas ya está conectada a OneDrive vía Graph API. Lo que necesito es:
+
+1. **Reemplazar los datos actuales de comunidades** con los datos reales de Gesfincas (fuente de verdad)
+2. **Asociar cada comunidad a su carpeta en OneDrive** usando el mapeo que proporciono abajo
+3. **Mostrar los documentos de OneDrive** en la interfaz cuando el usuario selecciona una comunidad
+4. **Crear carpetas automáticamente** en OneDrive para las comunidades que no tengan
+
+## Datos maestros de comunidades
+
+Elimina todos los datos de ejemplo actuales. Las 171 comunidades reales con sus datos de Gesfincas son:
+
+```json
+[
+  {
+    "codigo": "000002",
+    "id_persona": "1303",
+    "nif": "H15105901",
+    "nombre": "C.P. LINARES RIVAS, 27",
+    "direccion": "AV LINARES RIVAS, 27",
+    "cp": "15005",
+    "carpeta_onedrive": "002. C.P. LINARES RIVAS, 27"
+  },
+  {
+    "codigo": "000003",
+    "id_persona": "1323",
+    "nif": "H15086200",
+    "nombre": "C.P. LINARES RIVAS, 12-14",
+    "direccion": "AV LINARES RIVAS, 12-14",
+    "cp": "15005",
+    "carpeta_onedrive": "003. C.P. LINARES RIVAS, 12-14"
+  },
+  {
+    "codigo": "000004",
+    "id_persona": "12546",
+    "nif": "H21989306",
+    "nombre": "ESPACIO CORUÑA (LOCALES PLANTA 1º,2º Y 3º)",
+    "direccion": "CL José Pascual López Cortón, 10",
+    "cp": "15008",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000005",
+    "id_persona": "1377",
+    "nif": "H15087935",
+    "nombre": "C.P. DURAN LORIGA, 11",
+    "direccion": "CL DURAN LORIGA, 11",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000006",
+    "id_persona": "1405",
+    "nif": "H15102866",
+    "nombre": "C.P. PRIMO DE RIVERA, 2",
+    "direccion": "AV PRIMO DE RIVERA, 2",
+    "cp": "15006",
+    "carpeta_onedrive": "006. C.P. PRIMO DE RIVERA, 2"
+  },
+  {
+    "codigo": "000008",
+    "id_persona": "1451",
+    "nif": "H15271711",
+    "nombre": "C.P. DOCTOR FLEMING, 15",
+    "direccion": "CL DOCTOR FLEMING, 15",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000009",
+    "id_persona": "1478",
+    "nif": "H15088081",
+    "nombre": "C.P. PRIMO DE RIVERA, 3",
+    "direccion": "CL PRIMO DE RIVERA, 3",
+    "cp": "15006",
+    "carpeta_onedrive": "009. C.P. PRIMO DE RIVERA, 3"
+  },
+  {
+    "codigo": "000010",
+    "id_persona": "1514",
+    "nif": "H15088024",
+    "nombre": "C.P. LINARES RIVAS, 10-11",
+    "direccion": "AV LINARES RIVAS, 10- 11",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000011",
+    "id_persona": "12228",
+    "nif": "H70239926",
+    "nombre": "C.P. TOURO, 2",
+    "direccion": "CL Touro, 2",
+    "cp": "15002",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000013",
+    "id_persona": "1541",
+    "nif": "H15087901",
+    "nombre": "C.P. CUEVAS, 5",
+    "direccion": "CL CUEVAS, 5",
+    "cp": "15002",
+    "carpeta_onedrive": "013. C.P. CUEVAS, 5"
+  },
+  {
+    "codigo": "000014",
+    "id_persona": "12426",
+    "nif": "H15230790",
+    "nombre": "C.P. ALFREDO VICENTI, 32",
+    "direccion": "CL Alfredo Vicenti, 32",
+    "cp": "15004",
+    "carpeta_onedrive": "014. C.P. ALFREDO VICENTI, 32"
+  },
+  {
+    "codigo": "000015",
+    "id_persona": "1567",
+    "nif": "H15563117",
+    "nombre": "C.P. ALFONSO MOLINA, 5",
+    "direccion": "AV ALFONSO MOLINA, 5",
+    "cp": "15005",
+    "carpeta_onedrive": "015. C.P. ALFONSO MOLINA 5"
+  },
+  {
+    "codigo": "000016",
+    "id_persona": "1616",
+    "nif": "H15088008",
+    "nombre": "C.P. CONCEPCION ARENAL, 2-4",
+    "direccion": "CL CONCEPCION ARENAL, 2-4",
+    "cp": "15006",
+    "carpeta_onedrive": "016 C.P. CONCEPCION ARENAL, 2-4"
+  },
+  {
+    "codigo": "000017",
+    "id_persona": "1715",
+    "nif": "H15087638",
+    "nombre": "C.P. LINARES RIVAS, 18-21",
+    "direccion": "AV LINARES RIVAS, 18- 21",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000018",
+    "id_persona": "1773",
+    "nif": "H15087612",
+    "nombre": "C.P. MANUEL MURGUIA, 12",
+    "direccion": "CL MANUEL MURGUIA, 12",
+    "cp": "15011",
+    "carpeta_onedrive": "018. MANUEL MURGUIA, 12"
+  },
+  {
+    "codigo": "000019",
+    "id_persona": "1793",
+    "nif": "H15088016",
+    "nombre": "C.P. MARQUES DE AMBOAGE, 12",
+    "direccion": "CL MARQUES DE AMBOAGE, 12",
+    "cp": "15006",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000020",
+    "id_persona": "1825",
+    "nif": "H15154933",
+    "nombre": "C.P. PASTEUR, 11-13",
+    "direccion": "CL PASTEUR, 11-13",
+    "cp": "15008",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000021",
+    "id_persona": "1854",
+    "nif": "H15087653",
+    "nombre": "C.P. PRINCIPE, 2-4",
+    "direccion": "CL PRINCIPE, 2-4",
+    "cp": "15001",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000022",
+    "id_persona": "1915",
+    "nif": "H15086234",
+    "nombre": "C.P. PAYO GOMEZ, 1-3",
+    "direccion": "CL PAYO GÓMEZ, 1 0",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000023",
+    "id_persona": "1948",
+    "nif": "H15155286",
+    "nombre": "C.P. CIUDAD DE LUGO, 31-33",
+    "direccion": "CL CIUDAD DE LUGO, 31-33",
+    "cp": "15004",
+    "carpeta_onedrive": "023. C.P. CIUDAD DE LUGO, 31-33"
+  },
+  {
+    "codigo": "000025",
+    "id_persona": "2188",
+    "nif": "H15086226",
+    "nombre": "C.P. EDIFICIO OLIMPIA",
+    "direccion": "RIAZOR 9/A. VICENTI 12-14",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000026",
+    "id_persona": "2310",
+    "nif": "H15087950",
+    "nombre": "C.P. PRIMO DE RIVERA, 1",
+    "direccion": "AV PRIMO DE RIVERA 1",
+    "cp": "15006",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000027",
+    "id_persona": "13894",
+    "nif": "H15517881",
+    "nombre": "MERCED, 71-73",
+    "direccion": "CL Merced 71-73",
+    "cp": "15009",
+    "carpeta_onedrive": "027. C.P. MERCED, 71-73"
+  },
+  {
+    "codigo": "000028",
+    "id_persona": "2377",
+    "nif": "H15155336",
+    "nombre": "C.P. ALAMEDA, 30-32/HUERTAS, 8",
+    "direccion": "ALAMEDA, 30-32/HUERTAS, 8",
+    "cp": "15003",
+    "carpeta_onedrive": "028. C.P. ALAMEDA, 30-32 HUERTAS, 8"
+  },
+  {
+    "codigo": "000029",
+    "id_persona": "2409",
+    "nif": "H15088040",
+    "nombre": "C.P. EDIFICIO GRANADA",
+    "direccion": "CL CANTON GRANDE, 5",
+    "cp": "15003",
+    "carpeta_onedrive": "029 C.P. EDIFICIO GRANADA"
+  },
+  {
+    "codigo": "000030",
+    "id_persona": "2481",
+    "nif": "H15088032",
+    "nombre": "C.P. ARZOBISPO LAGO, 8",
+    "direccion": "CL ARZOBISPO LAGO, 8",
+    "cp": "15004",
+    "carpeta_onedrive": "030. C.P. ARZOBISPO LAGO, 8"
+  },
+  {
+    "codigo": "000031",
+    "id_persona": "14039",
+    "nif": "H26718411",
+    "nombre": "C.P. SAN LUCAS, 11",
+    "direccion": "CL SAN LUCAS 11",
+    "cp": "15007",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000032",
+    "id_persona": "2495",
+    "nif": "H15087604",
+    "nombre": "C.P. MERCED, 77",
+    "direccion": "CL MERCED, 77",
+    "cp": "15009",
+    "carpeta_onedrive": "032. C.P. MERCED, 77"
+  },
+  {
+    "codigo": "000033",
+    "id_persona": "2544",
+    "nif": "H15090954",
+    "nombre": "C.P. ENRIQUE DEQUIDT, 9",
+    "direccion": "CL ENRIQUE DEQUIDT 9",
+    "cp": "15005",
+    "carpeta_onedrive": "033. C.P. ENRIQUE DEQUIDT, 9"
+  },
+  {
+    "codigo": "000034",
+    "id_persona": "2577",
+    "nif": "H15160559",
+    "nombre": "C.P. FONTAN, 1",
+    "direccion": "CL FONTAN 1",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000036",
+    "id_persona": "2642",
+    "nif": "H15327158",
+    "nombre": "C.P. REY ABDULLAH, 6-8",
+    "direccion": "CL REY ABDULLAH, 6",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000037",
+    "id_persona": "2677",
+    "nif": "H15325566",
+    "nombre": "C.P. PASEO DE LOS PUENTES, 2",
+    "direccion": "PS PUENTES 2",
+    "cp": "15004",
+    "carpeta_onedrive": "037 C.P. PASEO DE LOS PUENTES, 2"
+  },
+  {
+    "codigo": "000038",
+    "id_persona": "2711",
+    "nif": "H15327950",
+    "nombre": "C.P. RUA NUEVA, 2",
+    "direccion": "CL RUA NUEVA, 2",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000039",
+    "id_persona": "2725",
+    "nif": "H15325590",
+    "nombre": "C.P. DURAN LORIGA, 9",
+    "direccion": "CL DURAN LORIGA, 9",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000040",
+    "id_persona": "2758",
+    "nif": "H15354467",
+    "nombre": "C.P. PASEO DE LOS PUENTES, 4",
+    "direccion": "PS PUENTES 4",
+    "cp": "15004",
+    "carpeta_onedrive": "040. C.P. PASEO DE LOS PUENTES, 4"
+  },
+  {
+    "codigo": "000041",
+    "id_persona": "2794",
+    "nif": "H15096811",
+    "nombre": "C.P. SOCORRO, 2/PZ.JUAN NAYA, 5",
+    "direccion": "SOCORRO,2/JUAN NAYA, 5",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000042",
+    "id_persona": "2848",
+    "nif": "H15366776",
+    "nombre": "C.P. RAMON DE LA SAGRA, 14",
+    "direccion": "CL RAMON DE LA SAGRA, 14",
+    "cp": "15005",
+    "carpeta_onedrive": "042 C.P. RAMON DE LA SAGRA, 14"
+  },
+  {
+    "codigo": "000044",
+    "id_persona": "2884",
+    "nif": "H15327166",
+    "nombre": "C.P. RAMON DE LA SAGRA, 6-8",
+    "direccion": "CL RAMON DE LA SAGRA, 6-8",
+    "cp": "15005",
+    "carpeta_onedrive": "044. RAMON DE LA SAGRA, 6-8"
+  },
+  {
+    "codigo": "000045",
+    "id_persona": "2925",
+    "nif": "H15310022",
+    "nombre": "C.P. HUERTAS, 1-3",
+    "direccion": "CL HUERTAS, 1-3",
+    "cp": "15003",
+    "carpeta_onedrive": "045. C.P. HUERTAS, 1-3"
+  },
+  {
+    "codigo": "000046",
+    "id_persona": "2955",
+    "nif": "H15231038",
+    "nombre": "C.P. MENENDEZ PELAYO, 20",
+    "direccion": "CL MENENDEZ PELAYO, 20",
+    "cp": "15005",
+    "carpeta_onedrive": "046 C.P. MENENDEZ PELAYO, 20"
+  },
+  {
+    "codigo": "000048",
+    "id_persona": "2985",
+    "nif": "H15342967",
+    "nombre": "C.P. FERNANDO GONZALEZ, 7",
+    "direccion": "CL FERNANDO GONZÁLEZ 7-9",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000049",
+    "id_persona": "3040",
+    "nif": "H15274699",
+    "nombre": "C.P. CUESTA DE LA UNIÓN, 28",
+    "direccion": "CL CUESTA DE LA UNIÓN 28",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000050",
+    "id_persona": "3055",
+    "nif": "H15755036",
+    "nombre": "C.P. CAPITAN JUAN VARELA, 1-3",
+    "direccion": "CL CAPITAN JUAN VARELA, 1-3",
+    "cp": "15007",
+    "carpeta_onedrive": "050 C.P. CAPITAN JUAN VARELA, 1-3"
+  },
+  {
+    "codigo": "000051",
+    "id_persona": "3101",
+    "nif": "H15813876",
+    "nombre": "C.P. RIEGO DE AGUA, 31",
+    "direccion": "CL RIEGO DE AGUA, 31",
+    "cp": "15001",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000052",
+    "id_persona": "1016",
+    "nif": "H15287675",
+    "nombre": "C.P. JUAN FLOREZ, 80-82 (S.1)",
+    "direccion": "CL JUAN FLOREZ, 80-82",
+    "cp": "15005",
+    "carpeta_onedrive": "001. C.P. JUAN FLOREZ, 80-82 E.DEQUIDT, 13-15"
+  },
+  {
+    "codigo": "000053",
+    "id_persona": "3205",
+    "nif": "H15396542",
+    "nombre": "C.P. CABANA, 13",
+    "direccion": "CL CABANA 13",
+    "cp": "15006",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000055",
+    "id_persona": "3213",
+    "nif": "H15097165",
+    "nombre": "C.P. ALFREDO VICENTI, 17-19",
+    "direccion": "CL ALFREDO VICENTI, 17-19",
+    "cp": "15004",
+    "carpeta_onedrive": "055 C.P. ALFREDO VICENTI, 17-19"
+  },
+  {
+    "codigo": "000056",
+    "id_persona": "3270",
+    "nif": "H15068182",
+    "nombre": "C.P. LINARES RIVAS, 28-30-32",
+    "direccion": "AV LINARES RIVAS, 28-30-32",
+    "cp": "15005",
+    "carpeta_onedrive": "056. C.P. LINARES RIVAS, 28-30-32"
+  },
+  {
+    "codigo": "000058",
+    "id_persona": "3308",
+    "nif": "H15166317",
+    "nombre": "C.P. CHILE, 19-25",
+    "direccion": "CL CHILE, 19-25",
+    "cp": "15009",
+    "carpeta_onedrive": "058. C.P. CHILE, 19-25"
+  },
+  {
+    "codigo": "000059",
+    "id_persona": "3502",
+    "nif": "H15470867",
+    "nombre": "C.P. CABANA, 5-7",
+    "direccion": "CL CABANA, 5-7",
+    "cp": "15006",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000060",
+    "id_persona": "3515",
+    "nif": "H15438211",
+    "nombre": "C.P. LINARES RIVAS, 33-34",
+    "direccion": "AV LINARES RIVAS, 33-34",
+    "cp": "15005",
+    "carpeta_onedrive": "060 LINARES RIVAS, 33-34"
+  },
+  {
+    "codigo": "000061",
+    "id_persona": "3538",
+    "nif": "H15462989",
+    "nombre": "C.P. ORENSE, 10",
+    "direccion": "PZ ORENSE 10",
+    "cp": "15004",
+    "carpeta_onedrive": "061. C.P. ORENSE, 10"
+  },
+  {
+    "codigo": "000064",
+    "id_persona": "3557",
+    "nif": "H15257520",
+    "nombre": "C.P. PASEO MARITIMO, 1",
+    "direccion": "CL PASEO MARITIMO, 1",
+    "cp": "15002",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000065",
+    "id_persona": "3609",
+    "nif": "H15793334",
+    "nombre": "C.P. MARCIAL DEL ADALID, 17-19",
+    "direccion": "CL MARCIAL DEL ADALID, 17-19",
+    "cp": "15005",
+    "carpeta_onedrive": "065. MARCIAL DEL ADALID, 17-19"
+  },
+  {
+    "codigo": "000066",
+    "id_persona": "1014",
+    "nif": "H15377005",
+    "nombre": "C.P. ORENSE, 7-8/FEDERICO TAPIA,7",
+    "direccion": "PZ ORENSE 7-8",
+    "cp": "15004",
+    "carpeta_onedrive": "066 C.P. ORENSE, 7-8 FEDERICO TAPIA,7"
+  },
+  {
+    "codigo": "000067",
+    "id_persona": "3728",
+    "nif": "H15520810",
+    "nombre": "C.P. PASCUAL VEIGA, 32",
+    "direccion": "CL PASCUAL VEIGA, 32",
+    "cp": "15010",
+    "carpeta_onedrive": "067. C.P. PASCUAL VEIGA, 32"
+  },
+  {
+    "codigo": "000069",
+    "id_persona": "3756",
+    "nif": "H15524259",
+    "nombre": "C.P. PADRE FEIJOO, 11",
+    "direccion": "CL PADRE FEIJOO, 11",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000070",
+    "id_persona": "3781",
+    "nif": "H15139744",
+    "nombre": "C.P. JUAN FLOREZ, 64-66",
+    "direccion": "CL JUAN FLOREZ 64",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000072",
+    "id_persona": "3817",
+    "nif": "H15320641",
+    "nombre": "C.P. CANTON PEQUEÑO, 29/ALAMEDA, 2",
+    "direccion": "CL CANTON PEQUEÑO, 29",
+    "cp": "15003",
+    "carpeta_onedrive": "072. C.P. CANTON PEQUEÑO, 29, ALAMEDA, 2"
+  },
+  {
+    "codigo": "000073",
+    "id_persona": "3847",
+    "nif": "H15292089",
+    "nombre": "C.P. MAGISTRADO MANUEL ARTIME, 12",
+    "direccion": "CL MAGISTRADO MANUEL ARTIME, 12",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000074",
+    "id_persona": "3863",
+    "nif": "H15170368",
+    "nombre": "C.P. NOVOA SANTOS, 6-8",
+    "direccion": "CL NOVOA SANTOS, 6-8",
+    "cp": "15006",
+    "carpeta_onedrive": "074. C.P. NOVOA SANTOS, 6-8"
+  },
+  {
+    "codigo": "000075",
+    "id_persona": "3910",
+    "nif": "H15637770",
+    "nombre": "C.P. FERNANDEZ LATORRE, 5-9",
+    "direccion": "CL FERNANDEZ LATORRE, 5-9",
+    "cp": "15006",
+    "carpeta_onedrive": "075. C.P. FERNANDEZ LATORRE, 5-9"
+  },
+  {
+    "codigo": "000076",
+    "id_persona": "3946",
+    "nif": "H15658230",
+    "nombre": "C.P. MANUEL AZAÑA, 54-56-58",
+    "direccion": "CL MANUEL AZAÑA, 54-56-58",
+    "cp": "15011",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000078",
+    "id_persona": "4032",
+    "nif": "H15793623",
+    "nombre": "C.P. JUAN GONZÁLEZ RODRÍGUEZ, 12",
+    "direccion": "CL JUAN GONZÁLEZ RODRÍGUEZ 12",
+    "cp": "15011",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000079",
+    "id_persona": "4076",
+    "nif": "H15846918",
+    "nombre": "C.P. FINISTERRE, 53",
+    "direccion": "AV FINISTERRE, 53",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000080",
+    "id_persona": "4090",
+    "nif": "H15671738",
+    "nombre": "C.P. LINARES RIVAS, 1-2-3",
+    "direccion": "AV LINARES RIVAS, 1-2-3",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000081",
+    "id_persona": "4123",
+    "nif": "H15257314",
+    "nombre": "C.P. EMILIA PARDO BAZAN, 8-10",
+    "direccion": "CL EMILIA PARDO BAZAN, 8-10",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000082",
+    "id_persona": "4142",
+    "nif": "H15374952",
+    "nombre": "C.P. EMILIA PARDO BAZAN, 18",
+    "direccion": "CL EMILIA PARDO BAZAN, 18",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000083",
+    "id_persona": "4181",
+    "nif": "H15161656",
+    "nombre": "C.P. PLA Y CANCELA, 37",
+    "direccion": "CL PLA Y CANCELA, 37",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000084",
+    "id_persona": "4207",
+    "nif": "H15872278",
+    "nombre": "C.P. EMILIA PARDO BAZAN, 32",
+    "direccion": "CL EMILIA PARDO BAZAN, 32",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000086",
+    "id_persona": "4214",
+    "nif": "H15362437",
+    "nombre": "C.P. RONDA DE NELLE, 30",
+    "direccion": "RD NELLE 30",
+    "cp": "15005",
+    "carpeta_onedrive": "086. C.P. RONDA DE NELLE, 30"
+  },
+  {
+    "codigo": "000087",
+    "id_persona": "4235",
+    "nif": "H15290232",
+    "nombre": "C.P. ARCO, 13-15",
+    "direccion": "CL ARCO, 13-15",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000089",
+    "id_persona": "4276",
+    "nif": "H15591597",
+    "nombre": "C.P. MARIA PITA, 24",
+    "direccion": "PZ MARIA PITA, 24",
+    "cp": "15001",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000090",
+    "id_persona": "12539",
+    "nif": "H21990049",
+    "nombre": "ESPACIO CORUÑA",
+    "direccion": "CL Barbadillo, 4",
+    "cp": "28042",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000091",
+    "id_persona": "12544",
+    "nif": "H21989355",
+    "nombre": "ESPACIO CORUÑA (PLANTA BAJA)",
+    "direccion": "CL José Pascual López-Cortón, 10",
+    "cp": "15008",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000092",
+    "id_persona": "12546",
+    "nif": "H21989306",
+    "nombre": "ESPACIO CORUÑA (LOCALES PLANTA 1º,2º Y 3º)",
+    "direccion": "CL José Pascual López Cortón, 10",
+    "cp": "15008",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000093",
+    "id_persona": "12737",
+    "nif": "H21952601",
+    "nombre": "ESPACIO CORUÑA (SÓTANO 1)",
+    "direccion": "CL José Pasacual López-Cortón, 10",
+    "cp": "15008",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000094",
+    "id_persona": "12739",
+    "nif": "H21952569",
+    "nombre": "ESPACIO CORUÑA (GARAJES SÓTANO 2)",
+    "direccion": "CL José Pascual López-Cortón, 10",
+    "cp": "15008",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000096",
+    "id_persona": "4290",
+    "nif": "H15363161",
+    "nombre": "C.P. MERCED, 75",
+    "direccion": "CL MERCED, 75",
+    "cp": "15009",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000097",
+    "id_persona": "4372",
+    "nif": "H15889652",
+    "nombre": "C.P. ETIOPIA, 4-6",
+    "direccion": "CL ETIOPIA, 4-6",
+    "cp": "15172",
+    "carpeta_onedrive": "097. C.P. ETIOPIA 4-6-8"
+  },
+  {
+    "codigo": "000098",
+    "id_persona": "4421",
+    "nif": "H15104060",
+    "nombre": "C.P. FERNANDO GONZALEZ, 6",
+    "direccion": "CL FERNANDO GONZALEZ, 6",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000099",
+    "id_persona": "4463",
+    "nif": "H15917461",
+    "nombre": "C.P. SAN AMARO, 27",
+    "direccion": "CL SAN AMARO, 27",
+    "cp": "15002",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000100",
+    "id_persona": "15052",
+    "nif": "H70242425",
+    "nombre": "C.P. BARRIE DE LA MAZA, 17",
+    "direccion": "CL BARRIE DE LA MAZA, 17",
+    "cp": "15003",
+    "carpeta_onedrive": "100. C.P. BARRIE DE LA MAZA, 17"
+  },
+  {
+    "codigo": "000101",
+    "id_persona": "15082",
+    "nif": "H15374762",
+    "nombre": "C.P. GARAJE BARRIÉ, 17 - SOCORRO, 30",
+    "direccion": "CL BARRIE, 17",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000102",
+    "id_persona": "4478",
+    "nif": "H15965544",
+    "nombre": "C.P. SAN SEBASTIAN, 19",
+    "direccion": "CL SAN SEBASTIAN, 19",
+    "cp": "15007",
+    "carpeta_onedrive": "102. C.P. SAN SEBASTIÁN, 19"
+  },
+  {
+    "codigo": "000103",
+    "id_persona": "4504",
+    "nif": "H15366115",
+    "nombre": "C.P. PADRE SARMIENTO, 18",
+    "direccion": "CL PADRE SARMIENTO, 18",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000104",
+    "id_persona": "4534",
+    "nif": "H15996432",
+    "nombre": "C.P. FINISTERRE, 22",
+    "direccion": "CL FINISTERRE, 22",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000105",
+    "id_persona": "4550",
+    "nif": "H15996457",
+    "nombre": "C.P. REAL,96",
+    "direccion": "CL REAL, 96",
+    "cp": "15003",
+    "carpeta_onedrive": "105. C.P. REAL 96"
+  },
+  {
+    "codigo": "000106",
+    "id_persona": "4566",
+    "nif": "H15696693",
+    "nombre": "C.P. MARIA PITA, 9",
+    "direccion": "PZ MARIA PITA, 9",
+    "cp": "15001",
+    "carpeta_onedrive": "106. C.P. MARIA PITA, 9"
+  },
+  {
+    "codigo": "000107",
+    "id_persona": "4581",
+    "nif": "H70009071",
+    "nombre": "C.P. GAITEIRA, 33-35",
+    "direccion": "CL GAITEIRA, 33-35",
+    "cp": "15009",
+    "carpeta_onedrive": "107. C.P. GAITEIRA, 33-35"
+  },
+  {
+    "codigo": "000108",
+    "id_persona": "554",
+    "nif": "H15661408",
+    "nombre": "C.P. ALCALDE PUGA Y PARGA, 5",
+    "direccion": "CL ALCALDE PUGA Y PARGA, 5",
+    "cp": "15006",
+    "carpeta_onedrive": "108. C.P. ALCALDE PUGA Y PARGA, 5"
+  },
+  {
+    "codigo": "000109",
+    "id_persona": "4673",
+    "nif": "H15293194",
+    "nombre": "C.P. REAL, 85",
+    "direccion": "CL REAL, 85",
+    "cp": "15003",
+    "carpeta_onedrive": "109. C.P. REAL, 85"
+  },
+  {
+    "codigo": "000110",
+    "id_persona": "4690",
+    "nif": "H15375744",
+    "nombre": "C.P. SANCHEZ BREGUA, 8 / PICAVIA, 8",
+    "direccion": "CL SÁNCHEZ BREGUA 6-8",
+    "cp": "15004",
+    "carpeta_onedrive": "110 SANCHEZ BREGUA, 8 PICAVIA, 8"
+  },
+  {
+    "codigo": "000111",
+    "id_persona": "4729",
+    "nif": "H70053699",
+    "nombre": "C.P. AVENIDA DE OZA, 86",
+    "direccion": "AV OZA 86",
+    "cp": "15006",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000112",
+    "id_persona": "15114",
+    "nif": "H15288798",
+    "nombre": "C.P. SOCORRO, 2",
+    "direccion": "CL SOCORRO, 30",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000113",
+    "id_persona": "4759",
+    "nif": "H15379662",
+    "nombre": "C.P. ALFONSO MOLINA, 4",
+    "direccion": "AV ALFONSO MOLINA 4",
+    "cp": "15006",
+    "carpeta_onedrive": "113. C.P. ALFONSO MOLINA, 4"
+  },
+  {
+    "codigo": "000114",
+    "id_persona": "4797",
+    "nif": "H70332408",
+    "nombre": "COMUNIDAD ESPECIAL DE SERVICIOS",
+    "direccion": "AV LINARES RIVAS, 43-44-47 F.TAPIA",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000115",
+    "id_persona": "5076",
+    "nif": "H15509599",
+    "nombre": "C.P. CHARLES DARWIN, 15",
+    "direccion": "CL CHARLES DARWIN, 15",
+    "cp": "15172",
+    "carpeta_onedrive": "115. C.P. CHARLES DARWIN, 15"
+  },
+  {
+    "codigo": "000116",
+    "id_persona": "5138",
+    "nif": "H15085640",
+    "nombre": "C.P. RAMON DE LA SAGRA, 1",
+    "direccion": "CL RAMON DE LA SAGRA, 1",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000117",
+    "id_persona": "4581",
+    "nif": "H70009071",
+    "nombre": "C.P. GAITEIRA, 33-35 (GARAJES)",
+    "direccion": "CL GAITEIRA, 33-35",
+    "cp": "15009",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000118",
+    "id_persona": "5182",
+    "nif": "H15085681",
+    "nombre": "C.P. SANCHEZ BREGUA, 7",
+    "direccion": "CL SANCHEZ BREGUA, 7",
+    "cp": "15004",
+    "carpeta_onedrive": "118. SANCHEZ BREGUA, 7"
+  },
+  {
+    "codigo": "000119",
+    "id_persona": "5197",
+    "nif": "H15566656",
+    "nombre": "C.P. RAMON DE LA SAGRA, 10",
+    "direccion": "CL RAMON DE LA SAGRA, 10",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000120",
+    "id_persona": "541",
+    "nif": "H15086028",
+    "nombre": "C.P. BUENOS AIRES, 8",
+    "direccion": "CL BUENOS AIRES, 8",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000121",
+    "id_persona": "5255",
+    "nif": "H15520976",
+    "nombre": "C.P. EDIFICIO ARCO",
+    "direccion": "AV PORTAZGO, 2-4-6",
+    "cp": "15174",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000124",
+    "id_persona": "5374",
+    "nif": "H15107170",
+    "nombre": "C.P. NICARAGUA,12",
+    "direccion": "CL NICARAGUA, 12",
+    "cp": "15005",
+    "carpeta_onedrive": "124. C.P. NICARAGUA,12"
+  },
+  {
+    "codigo": "000125",
+    "id_persona": "5406",
+    "nif": "H70201538",
+    "nombre": "C.P. ALFREDO VICENTI, 40",
+    "direccion": "CL ALFREDO VICENTI, 40",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000126",
+    "id_persona": "5412",
+    "nif": "H15629587",
+    "nombre": "C.P. REAL, 29",
+    "direccion": "CL REAL 29",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000127",
+    "id_persona": "5420",
+    "nif": "H70248760",
+    "nombre": "C.P. MIRADOR DE EIRIS",
+    "direccion": "CL. FERRER, CL DABAN, CL. SOLIS",
+    "cp": "15008",
+    "carpeta_onedrive": "127. C.P. MIRADOR DE EIRIS"
+  },
+  {
+    "codigo": "000128",
+    "id_persona": "5660",
+    "nif": "H15108517",
+    "nombre": "C.P. CALVO SOTELO, 21",
+    "direccion": "AV CALVO SOTELO, 21",
+    "cp": "15004",
+    "carpeta_onedrive": "128. C.P. CALVO SOTELO, 21"
+  },
+  {
+    "codigo": "000130",
+    "id_persona": "5691",
+    "nif": "H15084585",
+    "nombre": "C.P.NOVOA SANTOS 1-3,POSE 2 Y EJERCITO 8",
+    "direccion": "CL NOVOA SANTOS 1, EJERCITO 8, PIÑEIROS POSE  2",
+    "cp": "15006",
+    "carpeta_onedrive": "130. C.P.NOVOA SANTOS 1-3,POSE 2 Y EJERCITO 8"
+  },
+  {
+    "codigo": "000131",
+    "id_persona": "5877",
+    "nif": "H15260771",
+    "nombre": "C.P. RAMON Y CAJAL, 15-17",
+    "direccion": "CL RAMON Y CAJAL, 15-17 (EDIFICIO BAHÍA)",
+    "cp": "15006",
+    "carpeta_onedrive": "131. C.P. RAMON Y CAJAL, 15-17"
+  },
+  {
+    "codigo": "000132",
+    "id_persona": "5905",
+    "nif": "H70251681",
+    "nombre": "C.P. ENRIQUE DEQUIDT, 3",
+    "direccion": "CL ENRIQUE DEQUIDT 3",
+    "cp": "15005",
+    "carpeta_onedrive": "132. C.P. ENRIQUE DEQUIDT, 3"
+  },
+  {
+    "codigo": "000133",
+    "id_persona": "5910",
+    "nif": "H15605967",
+    "nombre": "C.P. PLAZA DE LUGO 7-8",
+    "direccion": "PZ LUGO, 7",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000134",
+    "id_persona": "5920",
+    "nif": "H15495542",
+    "nombre": "C.P. EDIFICIO GALERA",
+    "direccion": "CL SAN ANDRÉS 23",
+    "cp": "15003",
+    "carpeta_onedrive": "134. C.P. EDIFICIO GALERA"
+  },
+  {
+    "codigo": "000135",
+    "id_persona": "6037",
+    "nif": "H15261480",
+    "nombre": "C.P. HERCULES, 83",
+    "direccion": "AV HÉRCULES, 83",
+    "cp": "15002",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000136",
+    "id_persona": "6063",
+    "nif": "H15438252",
+    "nombre": "C.P. ALFONSO MOLINA, 6",
+    "direccion": "AV ALFONSO MOLINA, 6",
+    "cp": "15005",
+    "carpeta_onedrive": "136. C.P. ALFONSO MOLINA, 6"
+  },
+  {
+    "codigo": "000137",
+    "id_persona": "5420",
+    "nif": "H70248760",
+    "nombre": "C.P. MIRADOR DE EIRIS (GARAJES)",
+    "direccion": "CL. FERRER, CL DABAN, CL. SOLIS",
+    "cp": "15008",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000138",
+    "id_persona": "6325",
+    "nif": "H70286604",
+    "nombre": "C.P. JUANA DE VEGA,11",
+    "direccion": "CL JUANA DE VEGA, 11",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000139",
+    "id_persona": "6336",
+    "nif": "H70315031",
+    "nombre": "C.P. TABERNAS, 2",
+    "direccion": "CL TABERNAS, 2",
+    "cp": "15001",
+    "carpeta_onedrive": "139. C.P. TABERNAS, 2"
+  },
+  {
+    "codigo": "000140",
+    "id_persona": "6349",
+    "nif": "H70314034",
+    "nombre": "C.P. GALERA, 51",
+    "direccion": "CL GALERA, 51",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000141",
+    "id_persona": "6357",
+    "nif": "H15401615",
+    "nombre": "C.P. AVDA. EJERCITO, 12-14-16",
+    "direccion": "AV EJERCITO, 12-14-16",
+    "cp": "15006",
+    "carpeta_onedrive": "141. C.P. AVDA. EJERCITO, 12-14-16"
+  },
+  {
+    "codigo": "000142",
+    "id_persona": "6492",
+    "nif": "H15646391",
+    "nombre": "C.P. CASTIÑEIRAS, 40-42",
+    "direccion": "CL CASTIÑEIRAS,40-42",
+    "cp": "15006",
+    "carpeta_onedrive": "142. C.P. CASTIÑEIRAS, 40-42"
+  },
+  {
+    "codigo": "000143",
+    "id_persona": "6515",
+    "nif": "H15363484",
+    "nombre": "C.P. EDIFICIO LAS NIEVES",
+    "direccion": "CL DURÁN LORIGA,2-4-6 y SANTA CATALINA,11-13",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000145",
+    "id_persona": "6951",
+    "nif": "H70341037",
+    "nombre": "C.P. SARDIÑEIRA, 25",
+    "direccion": "CL SARDIÑEIRA, 25",
+    "cp": "15007",
+    "carpeta_onedrive": "145 C.P. SARDIÑEIRA, 25"
+  },
+  {
+    "codigo": "000146",
+    "id_persona": "6967",
+    "nif": "H15802259",
+    "nombre": "C.P. CARMEN, 26",
+    "direccion": "CL CARMEN, 26",
+    "cp": "15002",
+    "carpeta_onedrive": "146. C.P. CARMEN, 26"
+  },
+  {
+    "codigo": "000147",
+    "id_persona": "6979",
+    "nif": "H15277486",
+    "nombre": "C.P. MAESTRANZA,28",
+    "direccion": "CL MAESTRANZA, 28",
+    "cp": "15001",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000148",
+    "id_persona": "6993",
+    "nif": "H15795636",
+    "nombre": "C.P.ZONA DEPORTIVA PRIVADA URB.ICARIA II",
+    "direccion": "URB. ICARIA II Y III",
+    "cp": "15179",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000149",
+    "id_persona": "7135",
+    "nif": "H15325889",
+    "nombre": "C.P.NICARAGUA, 16",
+    "direccion": "CL NICARAGUA, 16",
+    "cp": "15005",
+    "carpeta_onedrive": "149. C.P. NICARAGUA, 16"
+  },
+  {
+    "codigo": "000151",
+    "id_persona": "7193",
+    "nif": "H70382098",
+    "nombre": "C.P. GARAJES MARCIAL DEL ADALID, 1",
+    "direccion": "CL MARCIAL DEL ADALID, 1",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000152",
+    "id_persona": "7213",
+    "nif": "H15513013",
+    "nombre": "C.P. GARAJE CARACAS",
+    "direccion": "CL CARACAS ESQ.TOURIÑANA, 22",
+    "cp": "15140",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000153",
+    "id_persona": "7275",
+    "nif": "H15898380",
+    "nombre": "C.P. FERROL, 10",
+    "direccion": "CL FERROL, 10",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000154",
+    "id_persona": "7279",
+    "nif": "H15542574",
+    "nombre": "C.P. HABITAT RESIDENCIAL PUENTE PASAJE,1",
+    "direccion": "CL HABITAT PUENTE PASAJE, 1",
+    "cp": "15172",
+    "carpeta_onedrive": "154. C.P. HABITAT RESIDENCIAL PUENTE PASAJE,1"
+  },
+  {
+    "codigo": "000155",
+    "id_persona": "3213",
+    "nif": "H15097165",
+    "nombre": "C.P. ALFREDO VICENTI, 17-19 (GARAJE)",
+    "direccion": "CL ALFREDO VICENTI, 17-19",
+    "cp": "15004",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000156",
+    "id_persona": "11957",
+    "nif": "H15084817",
+    "nombre": "C.P. CALVO SOTELO, 19",
+    "direccion": "AV Calvo Sotelo, 19",
+    "cp": "15004",
+    "carpeta_onedrive": "156. C.P. CALVO SOTELO, 19"
+  },
+  {
+    "codigo": "000158",
+    "id_persona": "5420",
+    "nif": "H70248760",
+    "nombre": "C.P. MIRADOR DE EIRIS",
+    "direccion": "CL. FERRER, CL DABAN, CL. SOLIS",
+    "cp": "15008",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000159",
+    "id_persona": "7514",
+    "nif": "H15238165",
+    "nombre": "C.P. FERNANDO MACIAS, 3",
+    "direccion": "CL FERNANDO MACIAS, 3",
+    "cp": "15004",
+    "carpeta_onedrive": "159. C.P. FERNANDO MACIAS, 3"
+  },
+  {
+    "codigo": "000160",
+    "id_persona": "7569",
+    "nif": "H15295058",
+    "nombre": "C.P. SAN ANDRÉS, 125",
+    "direccion": "CL SAN ANDRÉS, 125",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000161",
+    "id_persona": "7581",
+    "nif": "H15090673",
+    "nombre": "C.P. MARÍA PITA, 12",
+    "direccion": "CL MARIA PITA, 12",
+    "cp": "15001",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000162",
+    "id_persona": "7592",
+    "nif": "H15109663",
+    "nombre": "C.P. RAMON Y CAJAL 1-3, EJERCITO 2",
+    "direccion": "CL RAMÓN Y CAJAL 1-3, EJÉRCITO 2",
+    "cp": "15006",
+    "carpeta_onedrive": "162. C.P. RAMON Y CAJAL 1-3, EJERCITO 2"
+  },
+  {
+    "codigo": "000164",
+    "id_persona": "7658",
+    "nif": "H15512767",
+    "nombre": "COMUNIDAD USUARIOS APARCAMIENTO PZ. VIGO",
+    "direccion": "CL APARCAMIENTO PZA. DE VIGO",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000167",
+    "id_persona": "7801",
+    "nif": "H70248109",
+    "nombre": "MANCOMUNIDAD GARAJE VIOÑO",
+    "direccion": "CL F.1-3, R.F 7,E.F 4,E.F 2 Y PARCELA EL4",
+    "cp": "15008",
+    "carpeta_onedrive": "167. MANCOMUNIDAD GARAJE VIOÑO"
+  },
+  {
+    "codigo": "000168",
+    "id_persona": "8306",
+    "nif": "H15768393",
+    "nombre": "C.P. FEDERICO TAPIA, 33-35",
+    "direccion": "CL FEDERICO TAPIA, 33",
+    "cp": "15005",
+    "carpeta_onedrive": "168. FEDERICO TAPIA, 33"
+  },
+  {
+    "codigo": "000169",
+    "id_persona": "8314",
+    "nif": "E15163892",
+    "nombre": "C.P. FALPERRA, 27",
+    "direccion": "CL Falperra 27",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000170",
+    "id_persona": "8332",
+    "nif": "H70460688",
+    "nombre": "C.P. TRAVESÍA DE HUERTAS, 5",
+    "direccion": "TR HUERTAS 5",
+    "cp": "15003",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000171",
+    "id_persona": "8337",
+    "nif": "H70215991",
+    "nombre": "C.P. FRATERNIDAD, 1-3",
+    "direccion": "CL FRATERNIDAD, 1-3",
+    "cp": "15008",
+    "carpeta_onedrive": "171. C.P. FRATERNIDAD, 1-3"
+  },
+  {
+    "codigo": "000172",
+    "id_persona": "8498",
+    "nif": "H70215983",
+    "nombre": "C.P. ENCICLOPEDIA FRANCESA, 4",
+    "direccion": "LG PARCELA M4.A, POLÍGONO F8.01, S/N",
+    "cp": "15008",
+    "carpeta_onedrive": "172. C.P. ENCICLOPEDIA FRANCESA, 4"
+  },
+  {
+    "codigo": "000173",
+    "id_persona": "8582",
+    "nif": "H15767122",
+    "nombre": "C.P. MAESTRANZA, 1",
+    "direccion": "CL MAESTRANZA 1",
+    "cp": "15001",
+    "carpeta_onedrive": "173. C.P. MAESTRANZA, 1"
+  },
+  {
+    "codigo": "000174",
+    "id_persona": "8668",
+    "nif": "H70221957",
+    "nombre": "C.P. REVOLUCIÓN FRANCESA, 7",
+    "direccion": "CL REVOLUCIÓN FRANCESA, 7",
+    "cp": "15008",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000175",
+    "id_persona": "8777",
+    "nif": "H70266747",
+    "nombre": "C.P. CALLE ESTANQUE, 22",
+    "direccion": "CL ESTANQUE 22",
+    "cp": "15679",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000176",
+    "id_persona": "8830",
+    "nif": "H15889645",
+    "nombre": "C.P. ETIOPÍA, 8",
+    "direccion": "CL ETIOPIA, 8",
+    "cp": "15172",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000177",
+    "id_persona": "8842",
+    "nif": "H70333745",
+    "nombre": "C.P. MIRAMAR, 2",
+    "direccion": "CL MIRAMAR, 2",
+    "cp": "15006",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000178",
+    "id_persona": "8850",
+    "nif": "H15304314",
+    "nombre": "C.P. TRABAJO 4",
+    "direccion": "CL TRABAJO 4",
+    "cp": "15002",
+    "carpeta_onedrive": "178. C.P. TRABAJO 4"
+  },
+  {
+    "codigo": "000179",
+    "id_persona": "8857",
+    "nif": "H70571898",
+    "nombre": "C.P. ALCALDE ASUNSOLO, 2",
+    "direccion": "CL ALCALDE ASUNSOLO 2",
+    "cp": "15007",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000180",
+    "id_persona": "4090",
+    "nif": "H15671738",
+    "nombre": "C.P. LINARES RIVAS, 1-2-3 (GARAJE)",
+    "direccion": "AV LINARES RIVAS, 1-2-3",
+    "cp": "15005",
+    "carpeta_onedrive": "180. C.P. LINARES RIVAS, 1-2-3 (GARAJE)"
+  },
+  {
+    "codigo": "000181",
+    "id_persona": "6357",
+    "nif": "H15401615",
+    "nombre": "C.P. AVDA. EJERCITO, 12-14-16",
+    "direccion": "AV EJERCITO, 12-14-16",
+    "cp": "15006",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000182",
+    "id_persona": "10374",
+    "nif": "H70229026",
+    "nombre": "C.P. DIVISIÓN AZUL, 7",
+    "direccion": "CL ANTÓN VILAR PONTE 7",
+    "cp": "15005",
+    "carpeta_onedrive": "182. C.P. ANTÓN VILAR PONTE, 7"
+  },
+  {
+    "codigo": "000183",
+    "id_persona": "4181",
+    "nif": "H15161656",
+    "nombre": "C.P. PLA Y CANCELA, 37 (GARAJE)",
+    "direccion": "CL PLA Y CANCELA, 37",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000184",
+    "id_persona": "8933",
+    "nif": "H15440118",
+    "nombre": "C.P. FERNANDEZ LATORRE, 52",
+    "direccion": "AV FERNANDEZ LATORRE, 52",
+    "cp": "15006",
+    "carpeta_onedrive": "184. C.P. FERNANDEZ LATORRE, 52"
+  },
+  {
+    "codigo": "000185",
+    "id_persona": "10447",
+    "nif": "H70611132",
+    "nombre": "SUBCOMUNIDAD TRASTEROS MAESTRANZA 1",
+    "direccion": "CL MAESTRANZA 1",
+    "cp": "15001",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000186",
+    "id_persona": "10440",
+    "nif": "H70613971",
+    "nombre": "C.P. RAMÓN DE LA SAGRA 12",
+    "direccion": "CL RAMÓN DE LA SAGRA 12",
+    "cp": "15005",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000188",
+    "id_persona": "10561",
+    "nif": "H15377294",
+    "nombre": "C.P. PANADERAS, 8-10",
+    "direccion": "CL Panaderas 8-10",
+    "cp": "15001",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000190",
+    "id_persona": "10674",
+    "nif": "H70149273",
+    "nombre": "C.P. PLAZA DE ESPAÑA, 22",
+    "direccion": "PZ DE ESPAÑA, 22",
+    "cp": "15001",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000191",
+    "id_persona": "10707",
+    "nif": "H02773513",
+    "nombre": "C.P. ORQUESTA SINFÓNICA DE GALICIA, 21",
+    "direccion": "CL ORQUESTA SINFONICA DE GALICIA, 21",
+    "cp": "15004",
+    "carpeta_onedrive": "191. C.P. ORQUESTA SINFÓNICA DE GALICIA, 21"
+  },
+  {
+    "codigo": "000192",
+    "id_persona": "11140",
+    "nif": "H15085830",
+    "nombre": "C.P. EMILIA PARDO BAZÁN, 20",
+    "direccion": "CL Emilia Pardo Bazán 20",
+    "cp": "15005",
+    "carpeta_onedrive": "192. C.P. EMILIA PARDO BAZÁN, 20"
+  },
+  {
+    "codigo": "000193",
+    "id_persona": "11465",
+    "nif": "H15324825",
+    "nombre": "C.P. JUANA DE VEGA, 6",
+    "direccion": "CL JUANA DE VEGA 6",
+    "cp": "15004",
+    "carpeta_onedrive": "193. C.P. JUANA DE VEGA, 6"
+  },
+  {
+    "codigo": "000196",
+    "id_persona": "4290",
+    "nif": "H15363161",
+    "nombre": "C.P. MERCED, 75 (GARAJE)",
+    "direccion": "CL MERCED, 75",
+    "cp": "15009",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000197",
+    "id_persona": "4372",
+    "nif": "H15889652",
+    "nombre": "C.P. ETIOPIA, 4-6-8 (GARAJE)",
+    "direccion": "CL ETIOPIA, 4-6",
+    "cp": "15172",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "000200",
+    "id_persona": "9070",
+    "nif": "H15000000",
+    "nombre": "COMUNIDAD DE PRUEBA",
+    "direccion": "COMUNIDAD DE PRUEBA",
+    "cp": "15011",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "004329",
+    "id_persona": "9708",
+    "nif": "32484442R",
+    "nombre": "GASALLA FERNANDEZ, MERCEDES",
+    "direccion": "CL María de Molina 68",
+    "cp": "28006",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "004373",
+    "id_persona": "4759",
+    "nif": "H15379662",
+    "nombre": "COMUNIDAD PROP. ALFONSO MOLINA Nº 4",
+    "direccion": "AV ALFONSO MOLINA 4",
+    "cp": "15006",
+    "carpeta_onedrive": null
+  },
+  {
+    "codigo": "004417",
+    "id_persona": "9954",
+    "nif": "E70542154",
+    "nombre": "COMUNIDAD HEREDITARIA JOSE ALVAREZ AREAS",
+    "direccion": "Av. Conchiñas 13, 5ºB",
+    "cp": "15010",
+    "carpeta_onedrive": null
+  }
+]
+```
+
+## Campos de cada comunidad
+
+- `codigo`: Código de facturación de Gesfincas (6 dígitos). Usar como ID principal en la app.
+- `id_persona`: ID interno de Gesfincas. Guardar como referencia pero no mostrar al usuario.
+- `nif`: NIF/CIF de la comunidad. Mostrar en la ficha.
+- `nombre`: Nombre oficial de la comunidad. Mostrar como título.
+- `direccion`: Dirección completa. Mostrar en la ficha.
+- `cp`: Código postal. Mostrar en la ficha.
+- `carpeta_onedrive`: Nombre exacto de la carpeta en OneDrive que contiene los documentos de esta comunidad. Si es `null`, la comunidad no tiene carpeta todavía.
+
+## Comportamiento de la pestaña "Documentos" en el detalle de comunidad
+
+Cuando el usuario selecciona una comunidad y va a la pestaña "Documentos":
+
+1. Si `carpeta_onedrive` NO es null:
+   - Buscar en OneDrive la carpeta con ese nombre exacto
+   - Listar todos los archivos y subcarpetas
+   - Mostrar: nombre del archivo, tamaño, fecha de modificación, icono por tipo (PDF=rojo, Word=azul, Excel=verde, imagen=naranja)
+   - Acciones por archivo: "Ver" (abre en Office Online) y "Descargar"
+   - Si hay subcarpetas, permitir navegar dentro con breadcrumb
+   - Barra de búsqueda para filtrar por nombre de archivo
+   - Contador de documentos y tamaño total
+
+2. Si `carpeta_onedrive` ES null:
+   - Mostrar mensaje: "Esta comunidad no tiene carpeta de documentos en OneDrive"
+   - Botón "Crear carpeta" que:
+     - Crea una carpeta en OneDrive con el formato: `[codigo]. [nombre]` (ej: "008. C.P. DOCTOR FLEMING, 15")
+     - Actualiza el mapeo en la app para que la comunidad quede vinculada
+     - Muestra la carpeta vacía lista para subir documentos
+
+## Subida de documentos
+
+En la pestaña "Documentos", añadir botón "Subir documento" que:
+- Abre selector de archivos
+- Sube el archivo a la carpeta de OneDrive de esa comunidad vía Graph API
+- Actualiza la lista de documentos tras la subida
+
+## Dashboard
+
+Actualizar el dashboard para mostrar métricas reales:
+- Total de comunidades: 171
+- Comunidades con documentación: 78 (las que tienen carpeta)
+- Comunidades sin documentación: 93 (sin carpeta)
+- Porcentaje de digitalización: mostrar barra de progreso
+
+## Listado de comunidades
+
+El listado debe mostrar las 171 comunidades con:
+- Código, nombre, NIF, dirección, CP
+- Indicador visual de si tiene carpeta en OneDrive (icono verde) o no (icono gris)
+- Búsqueda por cualquier campo
+- Ordenación por cualquier columna

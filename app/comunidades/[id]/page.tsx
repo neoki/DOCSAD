@@ -29,10 +29,13 @@ type Operativa = {
 
 type Comunidad = {
   id: string;
+  codigo: string;
   nombre: string;
   nif: string;
   direccion: string;
+  cp: string;
   pisos: number;
+  sharePointFolderName: string | null;
   operativa: Operativa | null;
   _count: { checklists: number; documentos: number };
 };
@@ -134,9 +137,23 @@ export default function ComunidadDetailPage() {
         <div>
           <h1 className="page-title">{comunidad.nombre}</h1>
           <div className="flex items-center gap-3 mt-1 text-gray-500 text-sm">
+            <span className="font-mono">{comunidad.codigo}</span>
+            <span>·</span>
             <span>{comunidad.nif}</span>
             <span>·</span>
             <span>{comunidad.direccion}</span>
+            {comunidad.cp && (
+              <>
+                <span>·</span>
+                <span>CP {comunidad.cp}</span>
+              </>
+            )}
+            {comunidad.sharePointFolderName && (
+              <>
+                <span>·</span>
+                <span style={{ color: "#16a34a" }}>OneDrive vinculado</span>
+              </>
+            )}
           </div>
         </div>
         <div className="flex gap-2">

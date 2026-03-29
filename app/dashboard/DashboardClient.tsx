@@ -45,6 +45,9 @@ interface Props {
   completitudMedia: number;
   totalPendientes: number;
   appTuComunidadCount: number;
+  conDocumentacion: number;
+  sinDocumentacion: number;
+  pctDigitalizacion: number;
 }
 
 function BarChartIcon() {
@@ -174,7 +177,15 @@ const OP_TAG_LIST = [
   { key: "tieneReformas", label: "Con reforma", activeColor: "#a855f7", activeBg: "#FAF5FF" },
 ] as const;
 
-export default function DashboardClient({ comunidades, categorias, totalComunidades, completitudMedia, totalPendientes, appTuComunidadCount }: Props) {
+function CloudIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+    </svg>
+  );
+}
+
+export default function DashboardClient({ comunidades, categorias, totalComunidades, completitudMedia, totalPendientes, appTuComunidadCount, conDocumentacion, sinDocumentacion, pctDigitalizacion }: Props) {
   const [tab, setTab] = useState<"documental" | "operativo">("documental");
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
 
@@ -243,6 +254,9 @@ export default function DashboardClient({ comunidades, categorias, totalComunida
           completitudMedia={completitudMedia}
           totalPendientes={totalPendientes}
           appTuComunidadCount={appTuComunidadCount}
+          conDocumentacion={conDocumentacion}
+          sinDocumentacion={sinDocumentacion}
+          pctDigitalizacion={pctDigitalizacion}
         />
       ) : (
         <OperativoTab
@@ -266,6 +280,9 @@ function DocumentalTab({
   completitudMedia,
   totalPendientes,
   appTuComunidadCount,
+  conDocumentacion,
+  sinDocumentacion,
+  pctDigitalizacion,
 }: {
   comunidades: ComunidadData[];
   categorias: CategoriaInfo[];
@@ -273,12 +290,15 @@ function DocumentalTab({
   completitudMedia: number;
   totalPendientes: number;
   appTuComunidadCount: number;
+  conDocumentacion: number;
+  sinDocumentacion: number;
+  pctDigitalizacion: number;
 }) {
   const kpis = [
     { label: "Comunidades", value: String(totalComunidades), icon: <BuildingIcon />, color: "#4F7CFF" },
-    { label: "Completitud media", value: `${completitudMedia}%`, icon: <CheckCircleIcon />, color: "#22C55E" },
-    { label: "Docs. pendientes", value: String(totalPendientes), icon: <DocIcon />, color: "#F59E0B" },
-    { label: "App Tu Comunidad", value: String(appTuComunidadCount), icon: <PhoneIcon />, color: "#8B5CF6" },
+    { label: "Con documentación", value: String(conDocumentacion), icon: <CloudIcon />, color: "#22C55E" },
+    { label: "Sin carpeta", value: String(sinDocumentacion), icon: <DocIcon />, color: "#F59E0B" },
+    { label: "Digitalización", value: `${pctDigitalizacion}%`, icon: <BarChartIcon />, color: "#8B5CF6" },
   ];
 
   return (

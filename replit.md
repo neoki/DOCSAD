@@ -1,7 +1,7 @@
 # DocFincas
 
 ## Overview
-DocFincas is a document management system for community property management ("Gestión documental de comunidades de propietarios"). Built with Next.js 15, Prisma, PostgreSQL, NextAuth, and Tailwind CSS. Features a dark sidebar navigation, two-tab dashboard (Documental/Operativo), community detail with checklist/operativa/documents tabs, a 3-step document upload flow with simulated AI classification, a document viewer, OneDrive integration (demo mode), and an AI API configuration panel.
+DocFincas is a document management system for community property management ("Gestión documental de comunidades de propietarios"). Built with Next.js 15, Prisma, PostgreSQL, NextAuth, and Tailwind CSS. Connected to Microsoft SharePoint/OneDrive via Graph API (single source of truth — no file copies on server). 171 real communities imported from Gesfincas with OneDrive folder mapping.
 
 ## Architecture
 - **Framework**: Next.js 15 (App Router)
@@ -9,46 +9,50 @@ DocFincas is a document management system for community property management ("Ge
 - **Auth**: NextAuth v4 with Credentials provider, bcryptjs for password hashing
 - **Styling**: Tailwind CSS with PostCSS, Lato font
 - **Layout**: Dark sidebar (#0f172a) with AppShell wrapping authenticated pages
+- **Storage**: SharePoint/OneDrive via Microsoft Graph API (Files.ReadWrite.All, Sites.Read.All)
 
 ## Project Structure
 - `app/` — Next.js App Router pages and API routes
-  - `app/dashboard/` — Dashboard with Documental/Operativo tabs (server + client components)
-  - `app/comunidades/` — Community list, detail pages, and new community form
+  - `app/dashboard/` — Dashboard with Documental/Operativo tabs, OneDrive stats
+  - `app/comunidades/` — Community list (171 from Gesfincas), detail pages with 3 tabs
+  - `app/comunidades/[id]/` — Detail page: ChecklistTab, OperativaTab, DocumentosTab (OneDrive browser)
   - `app/subir/` — 3-step document upload flow with simulated AI
   - `app/visor/` — Document viewer with zoom controls
-  - `app/onedrive/` — OneDrive file browser with demo mode and import flow
-  - `app/ajustes/` — AI model configuration and OneDrive setup instructions
-  - `app/login/` — Authentication page
-  - `app/api/` — REST API routes for comunidades, checklist, operativa, documentos, auth, ajustes, onedrive
+  - `app/onedrive/` — OneDrive file browser with import flow
+  - `app/ajustes/` — AI model configuration and OneDrive setup
+  - `app/api/comunidades/[id]/sharepoint/` — SharePoint folder management (create, link, normalize, upload)
+  - `app/api/onedrive/` — OAuth flow, file listing, downloads
 - `components/` — Shared React components (Sidebar, AppShell)
-- `lib/` — Utility modules (auth, prisma client, doctypes with 27 types in 6 categories)
-- `prisma/` — Prisma schema and seed data
-
-## Document Types
-27 document types across 6 categories:
-- Documentación Jurídica (#4F7CFF) — 5 types
-- Órganos de Gobierno (#22C55E) — 5 types
-- Contabilidad (#F59E0B) — 4 types
-- Seguros (#EC4899) — 4 types
-- Contratos y Proveedores (#8B5CF6) — 5 types
-- Prevención de Riesgos (#EF4444) — 4 types
+- `lib/microsoft-graph.ts` — Graph API: OAuth, tokens, sites/drives/files, folder creation, upload, 11-subfolder structure
+- `lib/` — Utility modules (auth, prisma client, doctypes)
+- `prisma/` — Schema, seed data (171 communities), comunidades-gesfincas.json
 
 ## Database Models
-- User, Comunidad, Operativa, Checklist, Documento, Alerta, Setting (key-value for AI config)
+- **Comunidad**: codigo (unique Gesfincas code), idPersona, nombre, nif, direccion, cp, sharePointSiteId/DriveId/FolderId/FolderName
+- **User, Operativa, Checklist, Documento, Alerta, Setting**
 
-## Features
-- **OneDrive Integration**: Real OAuth 2.0 connection to Microsoft OneDrive via Graph API. Browse folders, preview files, and import document references to communities. OneDrive is the single source of truth — no files are copied to the server, only metadata is stored. Tokens stored in Settings table with auto-refresh. Routes: `/api/onedrive/auth` (initiate OAuth), `/api/onedrive/callback` (handle redirect), `/api/onedrive/disconnect` (remove tokens), `/api/onedrive/download` (get temporary download URL), `/api/onedrive` (list files/check status).
-- **AI Configuration**: Configure API keys for 5 AI providers (OpenAI GPT, Anthropic Claude, Google Gemini, Microsoft Copilot, Moonshot Kimi K2). Select active model for document classification. Test connection functionality.
+## Community Data
+- 171 communities imported from Gesfincas (source of truth)
+- Each has a `codigo` (6-digit Gesfincas billing code, e.g. "000002")
+- `carpeta_onedrive` mapped to `sharePointFolderName` — 78 communities have folders, 93 don't
+- Folder naming convention: `[codigo]. [nombre]` (e.g. "008. C.P. DOCTOR FLEMING, 15")
+
+## SharePoint/OneDrive Integration
+- **Standard 11-subfolder structure**: 01_Actas through 11_Otros
+- **Scopes**: Files.ReadWrite.All, Sites.Read.All, User.Read, offline_access
+- **Token storage**: Settings table (onedrive_access_token, onedrive_refresh_token, onedrive_token_expires_at)
+- **API endpoints**:
+  - GET `/api/comunidades/[id]/sharepoint` — Status, files, subfolders, search
+  - POST `/api/comunidades/[id]/sharepoint` — Create folder, link folder, normalize, unlink
+  - POST `/api/comunidades/[id]/sharepoint/upload` — Upload file to folder
 
 ## Environment Variables
 - `DATABASE_URL` — PostgreSQL connection string (managed by Replit)
-- `NEXTAUTH_SECRET` — Session signing secret (Replit Secret)
-- `NEXTAUTH_URL` — App base URL for NextAuth (Replit Secret)
-- `NEXT_PUBLIC_APP_NAME` — Display name "DocFincas" (Replit Secret)
-- `MICROSOFT_CLIENT_ID` — Azure AD app client ID (optional, for OneDrive)
-- `MICROSOFT_CLIENT_SECRET` — Azure AD app client secret (optional, for OneDrive)
-- `MICROSOFT_TENANT_ID` — Azure AD tenant ID (optional, for OneDrive)
-- `ONEDRIVE_FOLDER_PATH` — OneDrive folder to sync (optional, e.g. /DocFincas)
+- `NEXTAUTH_SECRET` — Session signing secret
+- `NEXTAUTH_URL` — App base URL for NextAuth
+- `MICROSOFT_CLIENT_ID` — Azure AD app client ID (c04cd310-...)
+- `MICROSOFT_CLIENT_SECRET` — Azure AD app client secret
+- `MICROSOFT_TENANT_ID` — Azure AD tenant ID (85ebd406-...)
 
 ## Default Credentials
 - Email: `admin@asesoriadiaz.com`
@@ -57,6 +61,6 @@ DocFincas is a document management system for community property management ("Ge
 ## Development
 - `npm run dev` — Start dev server on port 5000
 - `npm run build` — Production build
-- `npm run db:seed` — Seed database with real community data (157 communities from Excel import)
+- `npm run db:seed` — Seed database with 171 Gesfincas communities
 - `npx prisma db push` — Sync schema to database
 - `npx prisma generate` — Regenerate Prisma client

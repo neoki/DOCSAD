@@ -154,10 +154,13 @@ function getFileExtension(name: string): string {
 export interface OneDriveFile {
   id: string;
   name: string;
-  size: string;
+  size: number;
   modified: string;
   type: string;
   downloadUrl?: string;
+  webUrl?: string;
+  lastModified?: string;
+  mimeType?: string;
   isFolder: boolean;
   driveId?: string;
 }
@@ -224,15 +227,19 @@ export async function listFiles(driveId: string, folderId?: string): Promise<One
       ? new Date(item.lastModifiedDateTime as string).toLocaleDateString("es-ES")
       : "";
     const isFolder = !!(item.folder);
-    const size = item.size ? formatFileSize(item.size as number) : "";
+    const sizeNum = (item.size as number) || 0;
+    const file = item.file as Record<string, unknown> | undefined;
 
     return {
       id: item.id as string,
       name: item.name as string,
-      size,
+      size: sizeNum,
       modified: lastModified,
+      lastModified: item.lastModifiedDateTime as string | undefined,
       type: isFolder ? "folder" : getFileExtension(item.name as string),
       downloadUrl: (item as Record<string, unknown>)["@microsoft.graph.downloadUrl"] as string | undefined,
+      webUrl: item.webUrl as string | undefined,
+      mimeType: file?.mimeType as string | undefined,
       isFolder,
       driveId,
     };

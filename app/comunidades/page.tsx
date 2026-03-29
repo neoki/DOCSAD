@@ -4,32 +4,18 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-type ChecklistItem = {
-  estado: string;
-};
-
-type Operativa = {
-  usaAgreGasfincas: boolean;
-  tieneVideovigilancia: boolean;
-  tienePortero: boolean;
-  tieneConserje: boolean;
-  tieneGarajista: boolean;
-  tieneLimpiadora: boolean;
-  tieneOtroPersonal: boolean;
-  obligadaITE: boolean;
-  fechaProximaITE: string | null;
-};
-
 type Comunidad = {
   id: string;
+  codigo: string;
   nombre: string;
   nif: string;
   direccion: string;
-  operativa: Operativa | null;
-  checklists: ChecklistItem[];
+  cp: string;
+  sharePointFolderName: string | null;
+  checklists: { estado: string }[];
 };
 
-function calcCompletitud(checklists: ChecklistItem[]): number {
+function calcCompletitud(checklists: { estado: string }[]): number {
   if (!checklists || checklists.length === 0) return 0;
   const completados = checklists.filter((c) => c.estado === "COMPLETADO").length;
   const noAplica = checklists.filter((c) => c.estado === "NO_APLICA").length;
@@ -38,28 +24,22 @@ function calcCompletitud(checklists: ChecklistItem[]): number {
   return Math.round((completados / denom) * 100);
 }
 
-function personalCount(op: Operativa | null): number {
-  if (!op) return 0;
-  return (
-    (op.tienePortero ? 1 : 0) +
-    (op.tieneConserje ? 1 : 0) +
-    (op.tieneGarajista ? 1 : 0) +
-    (op.tieneLimpiadora ? 1 : 0) +
-    (op.tieneOtroPersonal ? 1 : 0)
-  );
-}
-
 function progressColor(pct: number): string {
   if (pct >= 70) return "#22C55E";
   if (pct >= 40) return "#F59E0B";
   return "#EF4444";
 }
 
+type SortKey = "codigo" | "nombre" | "nif" | "cp" | "completitud" | "docs";
+type SortDir = "asc" | "desc";
+
 export default function ComunidadesPage() {
   const router = useRouter();
   const [comunidades, setComunidades] = useState<Comunidad[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("codigo");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   useEffect(() => {
     (async () => {
@@ -71,16 +51,64 @@ export default function ComunidadesPage() {
     })();
   }, []);
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const sortIndicator = (key: SortKey) => {
+    if (sortKey !== key) return "";
+    return sortDir === "asc" ? " ↑" : " ↓";
+  };
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return comunidades;
-    const q = search.toLowerCase();
-    return comunidades.filter(
-      (c) =>
-        c.nombre.toLowerCase().includes(q) ||
-        c.nif.toLowerCase().includes(q) ||
-        c.direccion.toLowerCase().includes(q)
-    );
-  }, [comunidades, search]);
+    let result = comunidades;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (c) =>
+          c.nombre.toLowerCase().includes(q) ||
+          c.nif.toLowerCase().includes(q) ||
+          c.direccion.toLowerCase().includes(q) ||
+          c.codigo.toLowerCase().includes(q) ||
+          c.cp.toLowerCase().includes(q)
+      );
+    }
+
+    result = [...result].sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "codigo":
+          cmp = a.codigo.localeCompare(b.codigo);
+          break;
+        case "nombre":
+          cmp = a.nombre.localeCompare(b.nombre);
+          break;
+        case "nif":
+          cmp = a.nif.localeCompare(b.nif);
+          break;
+        case "cp":
+          cmp = a.cp.localeCompare(b.cp);
+          break;
+        case "completitud":
+          cmp = calcCompletitud(a.checklists) - calcCompletitud(b.checklists);
+          break;
+        case "docs":
+          cmp = (a.sharePointFolderName ? 1 : 0) - (b.sharePointFolderName ? 1 : 0);
+          break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return result;
+  }, [comunidades, search, sortKey, sortDir]);
+
+  const conCarpeta = comunidades.filter((c) => c.sharePointFolderName).length;
+  const sinCarpeta = comunidades.length - conCarpeta;
 
   return (
     <div>
@@ -89,6 +117,10 @@ export default function ComunidadesPage() {
           <h1 className="page-title">Comunidades</h1>
           <p className="page-subtitle">
             {comunidades.length} comunidades registradas
+            {" · "}
+            <span style={{ color: "#22C55E" }}>{conCarpeta} con documentos</span>
+            {" · "}
+            <span style={{ color: "#94a3b8" }}>{sinCarpeta} sin carpeta</span>
           </p>
         </div>
         <Link href="/comunidades/nueva" className="btn-primary" style={{ textDecoration: "none" }}>
@@ -99,7 +131,7 @@ export default function ComunidadesPage() {
       <div className="card mb-6">
         <input
           type="text"
-          placeholder="Buscar por nombre, NIF o dirección..."
+          placeholder="Buscar por código, nombre, NIF, dirección o CP..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="input-field"
@@ -118,14 +150,42 @@ export default function ComunidadesPage() {
             <table className="w-full">
               <thead>
                 <tr>
-                  <th className="table-header text-left">Comunidad</th>
-                  <th className="table-header text-left">NIF</th>
-                  <th className="table-header text-left">Dirección</th>
-                  <th className="table-header text-left">Completitud</th>
-                  <th className="table-header text-center">GESFINCAS</th>
-                  <th className="table-header text-center">Videovig.</th>
-                  <th className="table-header text-center">Personal</th>
-                  <th className="table-header text-center">ITE</th>
+                  <th
+                    className="table-header text-left cursor-pointer select-none"
+                    onClick={() => handleSort("codigo")}
+                  >
+                    Cód.{sortIndicator("codigo")}
+                  </th>
+                  <th
+                    className="table-header text-left cursor-pointer select-none"
+                    onClick={() => handleSort("nombre")}
+                  >
+                    Comunidad{sortIndicator("nombre")}
+                  </th>
+                  <th
+                    className="table-header text-left cursor-pointer select-none"
+                    onClick={() => handleSort("nif")}
+                  >
+                    NIF{sortIndicator("nif")}
+                  </th>
+                  <th
+                    className="table-header text-left cursor-pointer select-none"
+                    onClick={() => handleSort("cp")}
+                  >
+                    CP{sortIndicator("cp")}
+                  </th>
+                  <th
+                    className="table-header text-center cursor-pointer select-none"
+                    onClick={() => handleSort("docs")}
+                  >
+                    OneDrive{sortIndicator("docs")}
+                  </th>
+                  <th
+                    className="table-header text-left cursor-pointer select-none"
+                    onClick={() => handleSort("completitud")}
+                  >
+                    Completitud{sortIndicator("completitud")}
+                  </th>
                   <th className="table-header text-right"></th>
                 </tr>
               </thead>
@@ -133,8 +193,7 @@ export default function ComunidadesPage() {
                 {filtered.map((c) => {
                   const pct = calcCompletitud(c.checklists);
                   const color = progressColor(pct);
-                  const personal = personalCount(c.operativa);
-                  const op = c.operativa;
+                  const hasFolder = !!c.sharePointFolderName;
 
                   return (
                     <tr
@@ -142,6 +201,9 @@ export default function ComunidadesPage() {
                       className="table-row cursor-pointer"
                       onClick={() => router.push(`/comunidades/${c.id}`)}
                     >
+                      <td className="table-cell font-mono text-gray-500 text-xs">
+                        {c.codigo}
+                      </td>
                       <td className="table-cell">
                         <div className="font-semibold text-gray-900">{c.nombre}</div>
                         <div className="text-xs text-gray-500">{c.direccion}</div>
@@ -149,8 +211,47 @@ export default function ComunidadesPage() {
                       <td className="table-cell font-mono text-gray-600 text-xs">
                         {c.nif}
                       </td>
-                      <td className="table-cell text-gray-600 text-xs max-w-[200px] truncate">
-                        {c.direccion}
+                      <td className="table-cell text-gray-600 text-xs">
+                        {c.cp}
+                      </td>
+                      <td className="table-cell text-center">
+                        {hasFolder ? (
+                          <span
+                            title={c.sharePointFolderName || ""}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 28,
+                              height: 28,
+                              borderRadius: "50%",
+                              background: "#dcfce7",
+                              color: "#16a34a",
+                            }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 28,
+                              height: 28,
+                              borderRadius: "50%",
+                              background: "#f1f5f9",
+                              color: "#94a3b8",
+                            }}
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </span>
+                        )}
                       </td>
                       <td className="table-cell">
                         <div className="flex items-center gap-2">
@@ -168,42 +269,13 @@ export default function ComunidadesPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="table-cell text-center">
-                        <span className={op?.usaAgreGasfincas ? "badge-si" : "badge-no"}>
-                          {op?.usaAgreGasfincas ? "Sí" : "No"}
-                        </span>
-                      </td>
-                      <td className="table-cell text-center">
-                        <span className={op?.tieneVideovigilancia ? "badge-si" : "badge-no"}>
-                          {op?.tieneVideovigilancia ? "Sí" : "No"}
-                        </span>
-                      </td>
-                      <td className="table-cell text-center">
-                        <span className="text-xs text-gray-700 font-semibold">
-                          {personal} {personal === 1 ? "rol" : "roles"}
-                        </span>
-                      </td>
-                      <td className="table-cell text-center">
-                        {op?.obligadaITE ? (
-                          <span className="text-xs">
-                            <span className="badge-si">Sí</span>
-                            {op.fechaProximaITE && (
-                              <span className="text-gray-500 ml-1">
-                                {new Date(op.fechaProximaITE).toLocaleDateString("es-ES")}
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="badge-no">No</span>
-                        )}
-                      </td>
                       <td className="table-cell text-right">
                         <Link
                           href={`/comunidades/${c.id}`}
                           className="text-primary hover:text-blue-700 text-sm font-semibold"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          Ver →
+                          Ver
                         </Link>
                       </td>
                     </tr>

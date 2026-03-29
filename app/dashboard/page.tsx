@@ -96,6 +96,10 @@ async function getDashboardData() {
   const totalPendientes = comunidadesData.reduce((sum, c) => sum + c.pendientes, 0);
   const appTuComunidadCount = comunidadesData.filter((c) => c.operativa?.tieneAppTuComunidad).length;
 
+  const conDocumentacion = comunidades.filter((c) => c.sharePointFolderName !== null).length;
+  const sinDocumentacion = totalComunidades - conDocumentacion;
+  const pctDigitalizacion = totalComunidades > 0 ? Math.round((conDocumentacion / totalComunidades) * 100) : 0;
+
   return {
     comunidades: comunidadesData,
     categorias: catStats,
@@ -103,6 +107,9 @@ async function getDashboardData() {
     completitudMedia,
     totalPendientes,
     appTuComunidadCount,
+    conDocumentacion,
+    sinDocumentacion,
+    pctDigitalizacion,
   };
 }
 
@@ -119,6 +126,9 @@ export default async function DashboardPage() {
       completitudMedia={data.completitudMedia}
       totalPendientes={data.totalPendientes}
       appTuComunidadCount={data.appTuComunidadCount}
+      conDocumentacion={data.conDocumentacion}
+      sinDocumentacion={data.sinDocumentacion}
+      pctDigitalizacion={data.pctDigitalizacion}
     />
   );
 }

@@ -605,7 +605,7 @@ export default function OneDrivePage() {
                                   {isImported && <span className="badge-completado">Importado</span>}
                                 </div>
                               </td>
-                              <td className="table-cell" style={{ color: "#64748b" }}>{file.size}</td>
+                              <td className="table-cell" style={{ color: "#64748b" }}>{typeof file.size === 'number' ? (file.size < 1024 ? `${file.size} B` : file.size < 1024*1024 ? `${(file.size/1024).toFixed(1)} KB` : `${(file.size/(1024*1024)).toFixed(1)} MB`) : file.size}</td>
                               <td className="table-cell" style={{ color: "#64748b" }}>{file.modified}</td>
                               <td className="table-cell">
                                 {file.isFolder ? null : isImported ? (

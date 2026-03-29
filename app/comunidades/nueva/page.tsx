@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function NuevaComunidadPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ nombre: "", nif: "", direccion: "", pisos: "" });
+  const [form, setForm] = useState({ codigo: "", nombre: "", nif: "", direccion: "", cp: "", pisos: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -15,8 +15,8 @@ export default function NuevaComunidadPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!form.nombre || !form.nif || !form.direccion) {
-      setError("Nombre, NIF y dirección son obligatorios.");
+    if (!form.codigo || !form.nombre || !form.nif || !form.direccion) {
+      setError("Código, nombre, NIF y dirección son obligatorios.");
       return;
     }
     setSaving(true);
@@ -49,11 +49,40 @@ export default function NuevaComunidadPage() {
       <div className="card">
         <h1 className="page-title">Nueva comunidad</h1>
         <p className="page-subtitle mb-6">
-          Registra una nueva comunidad de propietarios. Se creará automáticamente el checklist documental con los 27 tipos de documento.
+          Registra una nueva comunidad de propietarios. Se creará automáticamente el checklist documental.
         </p>
 
         <form onSubmit={handleSubmit}>
           <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="section-label block mb-1.5">
+                  Código Gesfincas *
+                </label>
+                <input
+                  type="text"
+                  value={form.codigo}
+                  onChange={(e) => set("codigo", e.target.value)}
+                  placeholder="000XXX"
+                  className="input-field font-mono"
+                  required
+                />
+              </div>
+              <div>
+                <label className="section-label block mb-1.5">
+                  NIF *
+                </label>
+                <input
+                  type="text"
+                  value={form.nif}
+                  onChange={(e) => set("nif", e.target.value)}
+                  placeholder="H28XXXXXX"
+                  className="input-field font-mono"
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <label className="section-label block mb-1.5">
                 Nombre de la comunidad *
@@ -68,18 +97,31 @@ export default function NuevaComunidadPage() {
               />
             </div>
 
+            <div>
+              <label className="section-label block mb-1.5">
+                Dirección *
+              </label>
+              <input
+                type="text"
+                value={form.direccion}
+                onChange={(e) => set("direccion", e.target.value)}
+                placeholder="Calle, número"
+                className="input-field"
+                required
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="section-label block mb-1.5">
-                  NIF *
+                  Código postal
                 </label>
                 <input
                   type="text"
-                  value={form.nif}
-                  onChange={(e) => set("nif", e.target.value)}
-                  placeholder="H28XXXXXX"
+                  value={form.cp}
+                  onChange={(e) => set("cp", e.target.value)}
+                  placeholder="15001"
                   className="input-field font-mono"
-                  required
                 />
               </div>
               <div>
@@ -95,20 +137,6 @@ export default function NuevaComunidadPage() {
                   min="0"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="section-label block mb-1.5">
-                Dirección *
-              </label>
-              <input
-                type="text"
-                value={form.direccion}
-                onChange={(e) => set("direccion", e.target.value)}
-                placeholder="Calle, número, ciudad, CP"
-                className="input-field"
-                required
-              />
             </div>
           </div>
 
