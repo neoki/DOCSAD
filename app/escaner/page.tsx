@@ -15,6 +15,8 @@ type ClassifiedFile = {
 
 type Stats = {
   total: number;
+  totalIncludingFolders: number;
+  folders: number;
   high: number;
   medium: number;
   low: number;
@@ -284,7 +286,8 @@ export default function EscanerPage() {
         <div className="card-static py-16 text-center">
           <div className="text-gray-400 mb-4" style={{ fontSize: 48 }}>⏳</div>
           <p className="text-gray-700 font-semibold">Analizando archivos del escáner...</p>
-          <p className="text-gray-500 text-sm mt-2">Esto puede tardar unos minutos para carpetas grandes.</p>
+          <p className="text-gray-500 text-sm mt-2">Recorriendo todas las carpetas y archivos. Con ~97.000 archivos esto puede tardar varios minutos.</p>
+          <p className="text-gray-400 text-xs mt-1">No cierres esta página.</p>
         </div>
       </div>
     );
@@ -400,9 +403,10 @@ export default function EscanerPage() {
       </div>
 
       {stats && (
-        <div className="grid grid-cols-5 gap-3 mb-5">
+        <div className="grid grid-cols-6 gap-3 mb-5">
           {[
-            { label: "Total archivos", value: stats.total, color: "#4F7CFF" },
+            { label: "Archivos", value: stats.total, color: "#4F7CFF" },
+            { label: "Carpetas", value: stats.folders, color: "#64748b" },
             { label: "Confianza alta", value: stats.high, color: "#22C55E" },
             { label: "Confianza media", value: stats.medium, color: "#F59E0B" },
             { label: "Sin clasificar", value: stats.none, color: "#94a3b8" },

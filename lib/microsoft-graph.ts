@@ -426,7 +426,7 @@ export async function uploadFileToFolder(
 export async function listAllFilesRecursive(
   driveId: string,
   folderId: string,
-  maxItems: number = 5000,
+  maxItems: number = 200000,
 ): Promise<{ id: string; name: string; path: string; size: number; isFolder: boolean }[]> {
   const accessToken = await getValidAccessToken();
   if (!accessToken) throw new Error("Not connected");
@@ -436,7 +436,7 @@ export async function listAllFilesRecursive(
   async function fetchChildren(parentId: string, parentPath: string) {
     if (results.length >= maxItems) return;
 
-    let url: string | null = `/drives/${driveId}/items/${parentId}/children?$top=200&$select=id,name,size,folder,parentReference`;
+    let url: string | null = `/drives/${driveId}/items/${parentId}/children?$top=999&$select=id,name,size,folder`;
 
     while (url && results.length < maxItems) {
       const data = await graphGet(url, accessToken!);

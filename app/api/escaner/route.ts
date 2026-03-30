@@ -13,6 +13,8 @@ import {
 } from "@/lib/microsoft-graph";
 import { classifyFile } from "@/lib/scanner-classifier";
 
+export const maxDuration = 300;
+
 let cachedScannerFolder: { driveId: string; folderId: string } | null = null;
 let cachedScannedFileIds: Set<string> | null = null;
 
@@ -57,9 +59,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Carpeta Escáner no encontrada" }, { status: 404 });
     }
 
-    const maxItems = Math.min(Math.max(parseInt(searchParams.get("maxItems") || "5000") || 5000, 100), 25000);
+    const maxItems = Math.min(Math.max(parseInt(searchParams.get("maxItems") || "200000") || 200000, 100), 200000);
     const page = Math.max(parseInt(searchParams.get("page") || "1") || 1, 1);
-    const pageSize = Math.min(Math.max(parseInt(searchParams.get("pageSize") || "100") || 100, 10), 10000);
+    const pageSize = Math.min(Math.max(parseInt(searchParams.get("pageSize") || "100") || 100, 10), 50000);
     const filterConfidence = searchParams.get("confidence");
 
     const allFiles = await listAllFilesRecursive(scanner.driveId, scanner.folderId, maxItems);
@@ -89,6 +91,8 @@ export async function GET(req: NextRequest) {
 
     const stats = {
       total: classified.length,
+      totalIncludingFolders: allFiles.length,
+      folders: allFiles.filter((f) => f.isFolder).length,
       high: classified.filter((c) => c.confidence === "high").length,
       medium: classified.filter((c) => c.confidence === "medium").length,
       low: classified.filter((c) => c.confidence === "low").length,
