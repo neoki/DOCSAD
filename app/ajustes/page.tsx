@@ -76,6 +76,11 @@ export default function AjustesPage() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{
+    summary?: { totalFolders: number; linked: number; alreadyLinked: number; communitiesWithoutFolder: number };
+    error?: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch("/api/ajustes")
@@ -428,6 +433,72 @@ export default function AjustesPage() {
         <p style={{ fontSize: 14, color: "#3b82f6", fontWeight: 600, marginTop: 12 }}>
           Una vez configuradas las credenciales, la página de OneDrive se activará automáticamente.
         </p>
+      </div>
+
+      <h2 className="section-title" style={{ marginTop: 40 }}>Sincronizar carpetas SharePoint</h2>
+      <div
+        className="card-static"
+        style={{ borderLeft: "4px solid #8B5CF6", maxWidth: 720 }}
+      >
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Vincular comunidades con carpetas reales</h3>
+        <p style={{ color: "#475569", fontSize: 14, marginBottom: 16 }}>
+          Este proceso busca la carpeta &quot;Comunidades&quot; en SharePoint, lee todas las subcarpetas y vincula cada una con su comunidad en DocFincas basándose en el código del nombre de la carpeta (ej: &quot;008. C.P. DOCTOR FLEMING&quot; → comunidad 000008).
+        </p>
+
+        <div className="flex items-center gap-3">
+          <button
+            className="btn-primary"
+            onClick={async () => {
+              setSyncing(true);
+              setSyncResult(null);
+              try {
+                const res = await fetch("/api/sync-sharepoint", { method: "POST" });
+                const data = await res.json();
+                if (data.error) {
+                  setSyncResult({ error: data.error });
+                } else {
+                  setSyncResult({ summary: data.summary });
+                }
+              } catch (err) {
+                setSyncResult({ error: String(err) });
+              } finally {
+                setSyncing(false);
+              }
+            }}
+            disabled={syncing}
+            style={{ minWidth: 200 }}
+          >
+            {syncing ? "Sincronizando..." : "Sincronizar ahora"}
+          </button>
+        </div>
+
+        {syncResult?.error && (
+          <div style={{ marginTop: 16, padding: 12, background: "#fef2f2", borderRadius: 8, color: "#dc2626", fontSize: 14 }}>
+            {syncResult.error}
+          </div>
+        )}
+        {syncResult?.summary && (
+          <div style={{ marginTop: 16, padding: 16, background: "#f0fdf4", borderRadius: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#4F7CFF" }}>{syncResult.summary.totalFolders}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>Carpetas encontradas</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#22c55e" }}>{syncResult.summary.linked}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>Nuevas vinculadas</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#8B5CF6" }}>{syncResult.summary.alreadyLinked}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>Ya vinculadas</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#f59e0b" }}>{syncResult.summary.communitiesWithoutFolder}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>Sin carpeta</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <style jsx>{`

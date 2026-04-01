@@ -219,31 +219,39 @@ export async function listFiles(driveId: string, folderId?: string): Promise<One
   if (!accessToken) throw new Error("Not connected");
 
   const parentRef = folderId && folderId !== "root" ? `items/${folderId}` : "root";
-  const url = `/drives/${driveId}/${parentRef}/children?$top=200&$orderby=name`;
+  let url: string | null = `/drives/${driveId}/${parentRef}/children?$top=999&$orderby=name`;
+  const items: OneDriveFile[] = [];
 
-  const data = await graphGet(url, accessToken);
-  const items: OneDriveFile[] = (data.value || []).map((item: Record<string, unknown>) => {
-    const lastModified = item.lastModifiedDateTime
-      ? new Date(item.lastModifiedDateTime as string).toLocaleDateString("es-ES")
-      : "";
-    const isFolder = !!(item.folder);
-    const sizeNum = (item.size as number) || 0;
-    const file = item.file as Record<string, unknown> | undefined;
+  while (url) {
+    const data = await graphGet(url, accessToken);
 
-    return {
-      id: item.id as string,
-      name: item.name as string,
-      size: sizeNum,
-      modified: lastModified,
-      lastModified: item.lastModifiedDateTime as string | undefined,
-      type: isFolder ? "folder" : getFileExtension(item.name as string),
-      downloadUrl: (item as Record<string, unknown>)["@microsoft.graph.downloadUrl"] as string | undefined,
-      webUrl: item.webUrl as string | undefined,
-      mimeType: file?.mimeType as string | undefined,
-      isFolder,
-      driveId,
-    };
-  });
+    for (const item of data.value || []) {
+      const lastModified = item.lastModifiedDateTime
+        ? new Date(item.lastModifiedDateTime as string).toLocaleDateString("es-ES")
+        : "";
+      const isFolder = !!(item.folder);
+      const sizeNum = (item.size as number) || 0;
+      const file = item.file as Record<string, unknown> | undefined;
+
+      items.push({
+        id: item.id as string,
+        name: item.name as string,
+        size: sizeNum,
+        modified: lastModified,
+        lastModified: item.lastModifiedDateTime as string | undefined,
+        type: isFolder ? "folder" : getFileExtension(item.name as string),
+        downloadUrl: (item as Record<string, unknown>)["@microsoft.graph.downloadUrl"] as string | undefined,
+        webUrl: item.webUrl as string | undefined,
+        mimeType: file?.mimeType as string | undefined,
+        isFolder,
+        driveId,
+      });
+    }
+
+    url = data["@odata.nextLink"]
+      ? data["@odata.nextLink"].replace("https://graph.microsoft.com/v1.0", "")
+      : null;
+  }
 
   return items;
 }
