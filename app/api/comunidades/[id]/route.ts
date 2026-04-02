@@ -32,15 +32,19 @@ export async function PUT(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const body = await req.json();
-  const { nombre, nif, direccion, pisos } = body;
+  try {
+    const body = await req.json();
+    const { nombre, nif, direccion, cp, pisos } = body;
 
-  const comunidad = await prisma.comunidad.update({
-    where: { id },
-    data: { nombre, nif, direccion, pisos },
-  });
+    const comunidad = await prisma.comunidad.update({
+      where: { id },
+      data: { nombre, nif, direccion, cp, pisos },
+    });
 
-  return NextResponse.json(comunidad);
+    return NextResponse.json(comunidad);
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
 
 export async function DELETE(

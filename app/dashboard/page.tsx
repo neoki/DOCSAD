@@ -2,11 +2,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getSyncStats } from "@/lib/sync-engine";
+import { getSyncStats, getGlobalDocInsights } from "@/lib/sync-engine";
 import DashboardClient from "./DashboardClient";
 
 async function getDashboardData() {
-  const [comunidades, syncStats] = await Promise.all([
+  const [comunidades, syncStats, docInsights] = await Promise.all([
     prisma.comunidad.findMany({
       select: {
         id: true,
@@ -21,11 +21,12 @@ async function getDashboardData() {
       orderBy: { codigo: "asc" },
     }),
     getSyncStats(),
+    getGlobalDocInsights(),
   ]);
 
   const recentLogs = await prisma.syncLog.findMany({
     orderBy: { createdAt: "desc" },
-    take: 20,
+    take: 15,
     select: {
       id: true,
       operation: true,
@@ -37,20 +38,25 @@ async function getDashboardData() {
     },
   });
 
-  const comunidadesData = comunidades.map((c) => ({
-    id: c.id,
-    codigo: c.codigo,
-    nombre: c.nombre,
-    direccion: c.direccion,
-    linked: !!c.sharePointFolderId,
-    folderName: c.sharePointFolderName,
-    matchMethod: c.sharePointMatchMethod,
-    fileCount: c._count.fileCache,
-  }));
-
   return {
-    comunidades: comunidadesData,
+    comunidades: comunidades.map((c) => ({
+      id: c.id,
+      codigo: c.codigo,
+      nombre: c.nombre,
+      direccion: c.direccion,
+      linked: !!c.sharePointFolderId,
+      folderName: c.sharePointFolderName,
+      matchMethod: c.sharePointMatchMethod,
+      fileCount: c._count.fileCache,
+    })),
     syncStats,
+    docInsights: {
+      ...docInsights,
+      recentActivity: docInsights.recentActivity.map((a) => ({
+        ...a,
+        modified: a.modified,
+      })),
+    },
     recentLogs: recentLogs.map((l) => ({
       ...l,
       createdAt: l.createdAt.toISOString(),
@@ -67,6 +73,7 @@ export default async function DashboardPage() {
     <DashboardClient
       comunidades={data.comunidades}
       syncStats={data.syncStats}
+      docInsights={data.docInsights}
       recentLogs={data.recentLogs}
     />
   );

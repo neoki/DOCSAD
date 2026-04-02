@@ -187,11 +187,12 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
           seenItemIds.add(file.id);
           const existing = existingMap.get(file.id);
 
-          const sizeHash = `${file.size}`;
+          const contentHash = `${file.size}:${file.lastModified || ""}`;
           const subfolder = extractSubfolder(file.path);
+          const spModified = file.lastModified ? new Date(file.lastModified) : null;
 
           if (existing) {
-            if (existing.sharePointHash !== sizeHash || existing.name !== file.name) {
+            if (existing.sharePointHash !== contentHash || existing.name !== file.name) {
               await prisma.fileCache.update({
                 where: { id: existing.id },
                 data: {
@@ -200,7 +201,9 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
                   sizeBytes: file.size,
                   isFolder: file.isFolder,
                   subfolder,
-                  sharePointHash: sizeHash,
+                  mimeType: file.mimeType,
+                  sharePointModified: spModified,
+                  sharePointHash: contentHash,
                   lastSyncedAt: new Date(),
                 },
               });
@@ -217,7 +220,9 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
                 subfolder,
                 sizeBytes: file.size,
                 isFolder: file.isFolder,
-                sharePointHash: sizeHash,
+                mimeType: file.mimeType,
+                sharePointModified: spModified,
+                sharePointHash: contentHash,
                 lastSyncedAt: new Date(),
               },
             });
@@ -328,4 +333,149 @@ export async function getRecentSyncLogs(limit = 50) {
     orderBy: { createdAt: "desc" },
     take: limit,
   });
+}
+
+export const STANDARD_SUBFOLDERS = [
+  "01_Actas",
+  "02_Certificados",
+  "03_Contratos",
+  "04_Facturas",
+  "05_Seguros",
+  "06_Escrituras",
+  "07_Informes",
+  "08_Correspondencia",
+  "09_Licencias",
+  "10_Presupuestos",
+  "11_Otros",
+];
+
+export async function getCommunityDocInsights(comunidadId: string) {
+  const files = await prisma.fileCache.findMany({
+    where: { comunidadId, isFolder: false },
+    select: {
+      name: true,
+      subfolder: true,
+      sizeBytes: true,
+      mimeType: true,
+      sharePointModified: true,
+      path: true,
+    },
+    orderBy: { sharePointModified: "desc" },
+  });
+
+  const subfolderCounts: Record<string, { count: number; sizeBytes: number }> = {};
+  for (const f of files) {
+    const key = f.subfolder || "(raíz)";
+    if (!subfolderCounts[key]) subfolderCounts[key] = { count: 0, sizeBytes: 0 };
+    subfolderCounts[key].count++;
+    subfolderCounts[key].sizeBytes += f.sizeBytes;
+  }
+
+  const missingSubfolders = STANDARD_SUBFOLDERS.filter((sf) => !subfolderCounts[sf]);
+
+  const mimeGroups: Record<string, number> = {};
+  for (const f of files) {
+    const ext = f.name.split(".").pop()?.toLowerCase() || "otro";
+    mimeGroups[ext] = (mimeGroups[ext] || 0) + 1;
+  }
+
+  const recentFiles = files.slice(0, 15);
+
+  const totalSize = files.reduce((s, f) => s + f.sizeBytes, 0);
+
+  const now = new Date();
+  const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+  const oldFiles = files.filter(
+    (f) => f.sharePointModified && f.sharePointModified < oneYearAgo,
+  ).length;
+
+  return {
+    totalFiles: files.length,
+    totalSize,
+    subfolderCounts,
+    missingSubfolders,
+    mimeGroups,
+    recentFiles: recentFiles.map((f) => ({
+      name: f.name,
+      subfolder: f.subfolder,
+      sizeBytes: f.sizeBytes,
+      modified: f.sharePointModified?.toISOString() || null,
+    })),
+    oldFilesCount: oldFiles,
+  };
+}
+
+export async function getGlobalDocInsights() {
+  const [comunidades, allFolders, fileCounts, recentActivity, staleCommsRaw] = await Promise.all([
+    prisma.comunidad.findMany({
+      where: { sharePointFolderId: { not: null } },
+      select: { id: true, codigo: true, nombre: true },
+    }),
+    prisma.fileCache.findMany({
+      where: { comunidadId: { not: null }, subfolder: { not: null } },
+      distinct: ["comunidadId", "subfolder"],
+      select: { comunidadId: true, subfolder: true },
+    }),
+    prisma.fileCache.groupBy({
+      by: ["comunidadId"],
+      where: { isFolder: false, comunidadId: { not: null } },
+      _count: true,
+    }),
+    prisma.fileCache.findMany({
+      where: { isFolder: false, sharePointModified: { not: null } },
+      orderBy: { sharePointModified: "desc" },
+      take: 20,
+      select: {
+        name: true,
+        subfolder: true,
+        sizeBytes: true,
+        sharePointModified: true,
+        comunidad: { select: { codigo: true, nombre: true } },
+      },
+    }),
+    prisma.fileCache.groupBy({
+      by: ["comunidadId"],
+      where: { isFolder: false, comunidadId: { not: null } },
+      _max: { sharePointModified: true },
+    }),
+  ]);
+
+  const foldersByCom = new Map<string, Set<string>>();
+  for (const f of allFolders) {
+    if (!f.comunidadId || !f.subfolder) continue;
+    if (!foldersByCom.has(f.comunidadId)) foldersByCom.set(f.comunidadId, new Set());
+    foldersByCom.get(f.comunidadId)!.add(f.subfolder);
+  }
+
+  const fileCountMap = new Map(fileCounts.map((c) => [c.comunidadId, c._count]));
+
+  const subfolderCoverage: { comunidadId: string; codigo: string; nombre: string; missing: string[]; fileCount: number }[] = [];
+  for (const com of comunidades) {
+    const existingSubs = foldersByCom.get(com.id) || new Set();
+    const missing = STANDARD_SUBFOLDERS.filter((sf) => !existingSubs.has(sf));
+    const fileCount = fileCountMap.get(com.id) || 0;
+    if (missing.length > 0 || fileCount === 0) {
+      subfolderCoverage.push({ comunidadId: com.id, codigo: com.codigo, nombre: com.nombre, missing, fileCount });
+    }
+  }
+  subfolderCoverage.sort((a, b) => b.missing.length - a.missing.length);
+
+  const now = new Date();
+  const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+  const staleCommunities = staleCommsRaw.filter(
+    (c) => c._max.sharePointModified && c._max.sharePointModified < threeMonthsAgo,
+  );
+
+  return {
+    subfolderCoverage: subfolderCoverage.slice(0, 20),
+    recentActivity: recentActivity.map((f) => ({
+      name: f.name,
+      subfolder: f.subfolder,
+      sizeBytes: f.sizeBytes,
+      modified: f.sharePointModified?.toISOString() || null,
+      comunidad: f.comunidad ? `${f.comunidad.codigo} - ${f.comunidad.nombre}` : null,
+    })),
+    staleCommunityCount: staleCommunities.length,
+    totalLinked: comunidades.length,
+  };
 }

@@ -6,6 +6,7 @@ import Link from "next/link";
 import OperativaTab from "./OperativaTab";
 import ChecklistTab from "./ChecklistTab";
 import DocumentosTab from "./DocumentosTab";
+import ResumenDocTab from "./ResumenDocTab";
 
 type Operativa = {
   usaAgreGasfincas: boolean;
@@ -47,9 +48,10 @@ type ChecklistItem = {
 };
 
 const TABS = [
+  { id: "resumen", label: "Resumen documental" },
+  { id: "documentos", label: "Documentos" },
   { id: "checklist", label: "Checklist" },
   { id: "operativa", label: "Info. Operativa" },
-  { id: "documentos", label: "Documentos" },
 ];
 
 const TAG_DEFS: { key: keyof Operativa; label: string }[] = [
@@ -67,8 +69,11 @@ export default function ComunidadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [comunidad, setComunidad] = useState<Comunidad | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
-  const [activeTab, setActiveTab] = useState("checklist");
+  const [activeTab, setActiveTab] = useState("resumen");
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ nombre: "", nif: "", direccion: "", cp: "" });
+  const [editSaving, setEditSaving] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [comRes, checkRes] = await Promise.all([
@@ -157,10 +162,18 @@ export default function ComunidadDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Link href="/subir" className="btn-primary" style={{ textDecoration: "none" }}>
-            Subir doc.
-          </Link>
-          <button className="btn-secondary">
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              setEditForm({
+                nombre: comunidad.nombre,
+                nif: comunidad.nif,
+                direccion: comunidad.direccion,
+                cp: comunidad.cp || "",
+              });
+              setEditOpen(true);
+            }}
+          >
             Editar datos básicos
           </button>
         </div>
@@ -224,9 +237,112 @@ export default function ComunidadDetailPage() {
         </nav>
       </div>
 
+      {activeTab === "resumen" && <ResumenDocTab comunidadId={id} />}
+      {activeTab === "documentos" && <DocumentosTab comunidadId={id} />}
       {activeTab === "checklist" && <ChecklistTab comunidadId={id} />}
       {activeTab === "operativa" && <OperativaTab comunidadId={id} />}
-      {activeTab === "documentos" && <DocumentosTab comunidadId={id} />}
+
+      {editOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEditOpen(false); }}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: 12,
+              padding: 24,
+              width: 480,
+              maxWidth: "90vw",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Editar datos básicos</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                Nombre
+                <input
+                  type="text"
+                  value={editForm.nombre}
+                  onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })}
+                  className="input-field"
+                  style={{ marginTop: 4, width: "100%" }}
+                />
+              </label>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                NIF / CIF
+                <input
+                  type="text"
+                  value={editForm.nif}
+                  onChange={(e) => setEditForm({ ...editForm, nif: e.target.value })}
+                  className="input-field"
+                  style={{ marginTop: 4, width: "100%" }}
+                />
+              </label>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                Dirección
+                <input
+                  type="text"
+                  value={editForm.direccion}
+                  onChange={(e) => setEditForm({ ...editForm, direccion: e.target.value })}
+                  className="input-field"
+                  style={{ marginTop: 4, width: "100%" }}
+                />
+              </label>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                Código Postal
+                <input
+                  type="text"
+                  value={editForm.cp}
+                  onChange={(e) => setEditForm({ ...editForm, cp: e.target.value })}
+                  className="input-field"
+                  style={{ marginTop: 4, width: "100%" }}
+                />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20 }}>
+              <button className="btn-secondary" onClick={() => setEditOpen(false)}>
+                Cancelar
+              </button>
+              <button
+                className="btn-primary"
+                disabled={editSaving}
+                onClick={async () => {
+                  setEditSaving(true);
+                  try {
+                    const res = await fetch(`/api/comunidades/${id}`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(editForm),
+                    });
+                    if (res.ok) {
+                      setEditOpen(false);
+                      fetchData();
+                    } else {
+                      const data = await res.json().catch(() => ({}));
+                      alert(data.error || "Error al guardar los cambios");
+                    }
+                  } catch (err) {
+                    alert("Error de conexión: " + String(err));
+                  } finally {
+                    setEditSaving(false);
+                  }
+                }}
+              >
+                {editSaving ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

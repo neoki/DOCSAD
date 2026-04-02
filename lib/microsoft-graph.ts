@@ -435,16 +435,16 @@ export async function listAllFilesRecursive(
   driveId: string,
   folderId: string,
   maxItems: number = 200000,
-): Promise<{ id: string; name: string; path: string; size: number; isFolder: boolean }[]> {
+): Promise<{ id: string; name: string; path: string; size: number; isFolder: boolean; mimeType: string | null; lastModified: string | null }[]> {
   const accessToken = await getValidAccessToken();
   if (!accessToken) throw new Error("Not connected");
 
-  const results: { id: string; name: string; path: string; size: number; isFolder: boolean }[] = [];
+  const results: { id: string; name: string; path: string; size: number; isFolder: boolean; mimeType: string | null; lastModified: string | null }[] = [];
 
   async function fetchChildren(parentId: string, parentPath: string) {
     if (results.length >= maxItems) return;
 
-    let url: string | null = `/drives/${driveId}/items/${parentId}/children?$top=999&$select=id,name,size,folder`;
+    let url: string | null = `/drives/${driveId}/items/${parentId}/children?$top=999&$select=id,name,size,folder,file,lastModifiedDateTime`;
 
     while (url && results.length < maxItems) {
       const data = await graphGet(url, accessToken!);
@@ -459,6 +459,8 @@ export async function listAllFilesRecursive(
           path: itemPath,
           size: item.size || 0,
           isFolder,
+          mimeType: item.file?.mimeType || null,
+          lastModified: item.lastModifiedDateTime || null,
         });
 
         if (isFolder && results.length < maxItems) {
