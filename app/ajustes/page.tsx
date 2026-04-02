@@ -78,7 +78,7 @@ export default function AjustesPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{
-    summary?: { totalFolders: number; linked: number; alreadyLinked: number; communitiesWithoutFolder: number };
+    summary?: { added?: number; updated?: number; removed?: number; errors?: number };
     error?: string;
   } | null>(null);
 
@@ -435,14 +435,14 @@ export default function AjustesPage() {
         </p>
       </div>
 
-      <h2 className="section-title" style={{ marginTop: 40 }}>Sincronizar carpetas SharePoint</h2>
+      <h2 className="section-title" style={{ marginTop: 40 }}>Sincronización SharePoint</h2>
       <div
         className="card-static"
         style={{ borderLeft: "4px solid #8B5CF6", maxWidth: 720 }}
       >
-        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Vincular comunidades con carpetas reales</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Sincronizar con SharePoint</h3>
         <p style={{ color: "#475569", fontSize: 14, marginBottom: 16 }}>
-          Este proceso busca la carpeta &quot;Comunidades&quot; en SharePoint, lee todas las subcarpetas y vincula cada una con su comunidad en DocFincas basándose en el código del nombre de la carpeta (ej: &quot;008. C.P. DOCTOR FLEMING&quot; → comunidad 000008).
+          Escanea todas las carpetas de comunidades en SharePoint, vincula cada carpeta con su comunidad y actualiza la caché local de archivos. Puedes lanzar la sincronización desde el Dashboard.
         </p>
 
         <div className="flex items-center gap-3">
@@ -452,12 +452,12 @@ export default function AjustesPage() {
               setSyncing(true);
               setSyncResult(null);
               try {
-                const res = await fetch("/api/sync-sharepoint", { method: "POST" });
+                const res = await fetch("/api/sync", { method: "POST" });
                 const data = await res.json();
                 if (data.error) {
                   setSyncResult({ error: data.error });
                 } else {
-                  setSyncResult({ summary: data.summary });
+                  setSyncResult({ summary: data.result });
                 }
               } catch (err) {
                 setSyncResult({ error: String(err) });
@@ -481,20 +481,20 @@ export default function AjustesPage() {
           <div style={{ marginTop: 16, padding: 16, background: "#f0fdf4", borderRadius: 8 }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#4F7CFF" }}>{syncResult.summary.totalFolders}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>Carpetas encontradas</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#22c55e" }}>{syncResult.summary.added ?? 0}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>Archivos nuevos</div>
               </div>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#22c55e" }}>{syncResult.summary.linked}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>Nuevas vinculadas</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#4F7CFF" }}>{syncResult.summary.updated ?? 0}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>Actualizados</div>
               </div>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#8B5CF6" }}>{syncResult.summary.alreadyLinked}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>Ya vinculadas</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#f59e0b" }}>{syncResult.summary.removed ?? 0}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>Eliminados</div>
               </div>
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#f59e0b" }}>{syncResult.summary.communitiesWithoutFolder}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>Sin carpeta</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#dc2626" }}>{syncResult.summary.errors ?? 0}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>Errores</div>
               </div>
             </div>
           </div>

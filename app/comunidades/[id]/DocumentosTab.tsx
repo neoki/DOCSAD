@@ -236,8 +236,8 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
         <p className="text-gray-500 text-sm mb-2">
           OneDrive/SharePoint no está conectado
         </p>
-        <a href="/onedrive" className="text-blue-600 text-sm font-semibold hover:text-blue-800">
-          Conectar OneDrive →
+        <a href="/ajustes" className="text-blue-600 text-sm font-semibold hover:text-blue-800">
+          Configurar conexión →
         </a>
       </div>
     );

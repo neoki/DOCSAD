@@ -59,6 +59,7 @@ model Comunidad {
   checklists Checklist[]
   documentos Documento[]
   alertas    Alerta[]
+  fileCache  FileCache[]
 
   @@map("comunidades")
 }
@@ -147,4 +148,54 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+model FileCache {
+  id              String   @id @default(cuid())
+  comunidadId     String?
+  comunidad       Comunidad? @relation(fields: [comunidadId], references: [id], onDelete: SetNull)
+  sharePointItemId String   @unique
+  driveId         String
+  name            String
+  path            String
+  subfolder       String?
+  sizeBytes       Int      @default(0)
+  mimeType        String?
+  isFolder        Boolean  @default(false)
+  sharePointModified DateTime?
+  sharePointHash  String?
+  lastSyncedAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([comunidadId])
+  @@index([path])
+  @@map("file_cache")
+}
+
+model SyncLog {
+  id          String   @id @default(cuid())
+  operation   String
+  status      String   @default("success")
+  comunidadId String?
+  fileName    String?
+  filePath    String?
+  sourceItemId String?
+  destItemId  String?
+  details     String?
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([comunidadId])
+  @@map("sync_logs")
+}
+
+model SyncState {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  value         String   @default("")
+  updatedAt     DateTime @updatedAt
+
+  @@map("sync_state")
 }
