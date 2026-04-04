@@ -60,6 +60,7 @@ model Comunidad {
   documentos Documento[]
   alertas    Alerta[]
   fileCache  FileCache[]
+  notas      Nota[]
 
   @@map("comunidades")
 }
@@ -198,4 +199,17 @@ model SyncState {
   updatedAt     DateTime @updatedAt
 
   @@map("sync_state")
+}
+
+model Nota {
+  id          String    @id @default(cuid())
+  comunidadId String
+  comunidad   Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
+  texto       String
+  autor       String    @default("admin")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([comunidadId])
+  @@map("notas")
 }

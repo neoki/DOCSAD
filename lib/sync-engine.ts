@@ -277,6 +277,134 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
   }
 }
 
+export async function incrementalSync(onProgress?: (msg: string) => void): Promise<SyncResult> {
+  const lastSync = await getSyncState("sync_completed_at");
+  if (!lastSync) {
+    return fullSync(onProgress);
+  }
+
+  const startTime = Date.now();
+  await setSyncState("sync_status", "running");
+
+  const result: SyncResult = {
+    added: 0,
+    updated: 0,
+    removed: 0,
+    errors: 0,
+    communities: 0,
+    totalFiles: 0,
+  };
+
+  try {
+    const comunidades = await prisma.comunidad.findMany({
+      where: { sharePointFolderId: { not: null }, sharePointDriveId: { not: null } },
+      select: {
+        id: true,
+        codigo: true,
+        nombre: true,
+        sharePointDriveId: true,
+        sharePointFolderId: true,
+      },
+    });
+
+    result.communities = comunidades.length;
+    onProgress?.(`Sync incremental: ${comunidades.length} comunidades...`);
+
+    for (const com of comunidades) {
+      try {
+        const driveId = com.sharePointDriveId!;
+        const folderId = com.sharePointFolderId!;
+        const spFiles = await listAllFilesRecursive(driveId, folderId, 10000);
+
+        const existingCache = await prisma.fileCache.findMany({
+          where: { comunidadId: com.id },
+          select: { id: true, sharePointItemId: true, sharePointHash: true, name: true },
+        });
+        const existingMap = new Map(existingCache.map((e) => [e.sharePointItemId, e]));
+        const seenItemIds = new Set<string>();
+
+        for (const file of spFiles) {
+          seenItemIds.add(file.id);
+          const existing = existingMap.get(file.id);
+          const contentHash = `${file.size}:${file.lastModified || ""}`;
+          const subfolder = extractSubfolder(file.path);
+          const spModified = file.lastModified ? new Date(file.lastModified) : null;
+
+          if (existing) {
+            if (existing.sharePointHash !== contentHash || existing.name !== file.name) {
+              await prisma.fileCache.update({
+                where: { id: existing.id },
+                data: {
+                  name: file.name,
+                  path: file.path,
+                  sizeBytes: file.size,
+                  isFolder: file.isFolder,
+                  subfolder,
+                  mimeType: file.mimeType,
+                  sharePointModified: spModified,
+                  sharePointHash: contentHash,
+                  lastSyncedAt: new Date(),
+                },
+              });
+              result.updated++;
+            }
+          } else {
+            await prisma.fileCache.create({
+              data: {
+                comunidadId: com.id,
+                sharePointItemId: file.id,
+                driveId,
+                name: file.name,
+                path: file.path,
+                subfolder,
+                sizeBytes: file.size,
+                isFolder: file.isFolder,
+                mimeType: file.mimeType,
+                sharePointModified: spModified,
+                sharePointHash: contentHash,
+                lastSyncedAt: new Date(),
+              },
+            });
+            result.added++;
+          }
+        }
+
+        const toRemove = existingCache.filter((e) => !seenItemIds.has(e.sharePointItemId));
+        if (toRemove.length > 0) {
+          await prisma.fileCache.deleteMany({
+            where: { id: { in: toRemove.map((r) => r.id) } },
+          });
+          result.removed += toRemove.length;
+        }
+
+        result.totalFiles += spFiles.filter((f) => !f.isFolder).length;
+      } catch (err) {
+        result.errors++;
+        await logOp("incremental_sync_error", "error", {
+          comunidadId: com.id,
+          error: String(err),
+        });
+      }
+    }
+
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    await setSyncState("sync_status", "completed");
+    await setSyncState("sync_completed_at", new Date().toISOString());
+    await setSyncState("sync_duration_seconds", String(elapsed));
+    await setSyncState("sync_total_files", String(result.totalFiles));
+
+    await logOp("incremental_sync", "success", {
+      details: `Added ${result.added}, updated ${result.updated}, removed ${result.removed}. ${elapsed}s`,
+    });
+
+    return result;
+  } catch (err) {
+    await setSyncState("sync_status", "error");
+    await logOp("incremental_sync", "error", { error: String(err) });
+    throw err;
+  }
+}
+
 function extractSubfolder(path: string): string | null {
   const parts = path.split("/");
   if (parts.length >= 2) {

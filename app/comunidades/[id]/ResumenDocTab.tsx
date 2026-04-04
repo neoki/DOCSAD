@@ -85,8 +85,17 @@ export default function ResumenDocTab({ comunidadId }: { comunidadId: string }) 
   const extEntries = Object.entries(data.mimeGroups).sort((a, b) => b[1] - a[1]).slice(0, 10);
   const maxExtCount = Math.max(...extEntries.map(([, v]) => v));
 
+  const exportCSV = () => {
+    window.open(`/api/exportar?tipo=comunidad&comunidadId=${comunidadId}`, "_blank");
+  };
+
   return (
     <div>
+      <div className="flex justify-end mb-3">
+        <button onClick={exportCSV} className="text-xs text-blue-600 hover:text-blue-800 font-semibold">
+          Exportar CSV
+        </button>
+      </div>
       <div className="grid grid-cols-4 gap-3 mb-5">
         <div className="kpi-card" style={{ borderLeft: "4px solid #4F7CFF" }}>
           <div>

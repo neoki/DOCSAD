@@ -7,6 +7,8 @@ import OperativaTab from "./OperativaTab";
 import ChecklistTab from "./ChecklistTab";
 import DocumentosTab from "./DocumentosTab";
 import ResumenDocTab from "./ResumenDocTab";
+import HistorialTab from "./HistorialTab";
+import NotasTab from "./NotasTab";
 
 type Operativa = {
   usaAgreGasfincas: boolean;
@@ -50,6 +52,8 @@ type ChecklistItem = {
 const TABS = [
   { id: "resumen", label: "Resumen documental" },
   { id: "documentos", label: "Documentos" },
+  { id: "notas", label: "Notas" },
+  { id: "historial", label: "Historial" },
   { id: "checklist", label: "Checklist" },
   { id: "operativa", label: "Info. Operativa" },
 ];
@@ -239,6 +243,8 @@ export default function ComunidadDetailPage() {
 
       {activeTab === "resumen" && <ResumenDocTab comunidadId={id} />}
       {activeTab === "documentos" && <DocumentosTab comunidadId={id} />}
+      {activeTab === "notas" && <NotasTab comunidadId={id} />}
+      {activeTab === "historial" && <HistorialTab comunidadId={id} />}
       {activeTab === "checklist" && <ChecklistTab comunidadId={id} />}
       {activeTab === "operativa" && <OperativaTab comunidadId={id} />}
 

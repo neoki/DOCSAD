@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface ComunidadData {
@@ -59,6 +59,17 @@ interface LogEntry {
   createdAt: string;
 }
 
+interface AlertItem {
+  id: string;
+  comunidadId: string;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  fecha: string;
+  diasRestantes: number;
+  urgencia: "CRITICA" | "ALTA" | "MEDIA" | "BAJA";
+}
+
 interface Props {
   comunidades: ComunidadData[];
   syncStats: SyncStats;
@@ -100,6 +111,14 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
     errors?: number;
   } | null>(null);
   const [syncError, setSyncError] = useState("");
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+
+  useEffect(() => {
+    fetch("/api/alertas")
+      .then((r) => r.json())
+      .then((data) => setAlerts(data.alerts || []))
+      .catch(() => {});
+  }, []);
 
   const runSync = async () => {
     setSyncing(true);
@@ -177,6 +196,51 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
           </div>
         ))}
       </div>
+
+      {alerts.length > 0 && (
+        <div className="card mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="section-label">Alertas y vencimientos</div>
+            <span className="text-xs text-gray-400">{alerts.length} vencimientos en los próximos 12 meses</span>
+          </div>
+          <div className="flex flex-col gap-1" style={{ maxHeight: 240, overflowY: "auto" }}>
+            {alerts.map((a) => {
+              const urgColors: Record<string, { bg: string; color: string; label: string }> = {
+                CRITICA: { bg: "#fef2f2", color: "#dc2626", label: "VENCIDO" },
+                ALTA: { bg: "#fff7ed", color: "#ea580c", label: "URGENTE" },
+                MEDIA: { bg: "#fefce8", color: "#ca8a04", label: "PRONTO" },
+                BAJA: { bg: "#f0fdf4", color: "#16a34a", label: "OK" },
+              };
+              const urg = urgColors[a.urgencia] || urgColors.BAJA;
+              return (
+                <Link
+                  key={a.id}
+                  href={`/comunidades/${a.comunidadId}`}
+                  className="flex items-center gap-3 text-xs py-2 px-2 rounded hover:bg-gray-50 group"
+                  style={{ textDecoration: "none" }}
+                >
+                  <span
+                    className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                    style={{ background: urg.bg, color: urg.color, flexShrink: 0, minWidth: 60, textAlign: "center" }}
+                  >
+                    {urg.label}
+                  </span>
+                  <span className="text-gray-700 group-hover:text-blue-600 truncate" style={{ width: 200, flexShrink: 0 }}>
+                    {a.codigo} - {a.nombre}
+                  </span>
+                  <span className="text-gray-500 flex-1 truncate">{a.tipo}</span>
+                  <span className="font-mono text-gray-400" style={{ flexShrink: 0, width: 90, textAlign: "right" }}>
+                    {formatDate(a.fecha)}
+                  </span>
+                  <span className="font-mono" style={{ color: urg.color, flexShrink: 0, width: 80, textAlign: "right" }}>
+                    {a.diasRestantes < 0 ? `${Math.abs(a.diasRestantes)}d vencido` : `${a.diasRestantes}d`}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-5 mb-6">
         <div className="card">

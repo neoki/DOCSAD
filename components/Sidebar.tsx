@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
   {
@@ -29,6 +30,28 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: "Buscar documentos",
+    href: "/busqueda",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+    ),
+  },
+  {
+    label: "Doc. pendiente",
+    href: "/pendientes",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="12" y1="18" x2="12" y2="12" />
+        <line x1="9" y1="15" x2="15" y2="15" />
+      </svg>
+    ),
+  },
+  {
     label: "Escáner",
     href: "/escaner",
     icon: (
@@ -40,8 +63,110 @@ const NAV_ITEMS = [
   },
 ];
 
+const BOTTOM_ITEMS = [
+  {
+    label: "Usuarios",
+    href: "/usuarios",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+  },
+  {
+    label: "Ajustes",
+    href: "/ajustes",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>
+    ),
+  },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const [darkMode, setDarkMode] = useState(false);
+  const [alertCount, setAlertCount] = useState(0);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("docfincas-dark-mode");
+    if (saved === "true") {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/alertas")
+      .then((r) => r.json())
+      .then((data) => {
+        const urgent = (data.alerts || []).filter(
+          (a: { urgencia: string }) => a.urgencia === "CRITICA" || a.urgencia === "ALTA"
+        );
+        setAlertCount(urgent.length);
+      })
+      .catch(() => {});
+  }, []);
+
+  const toggleDark = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    localStorage.setItem("docfincas-dark-mode", String(next));
+    if (next) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
+  const renderLink = (item: { label: string; href: string; icon: React.ReactNode }, showBadge?: boolean) => {
+    const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "11px 14px",
+          borderRadius: 12,
+          marginBottom: 4,
+          fontSize: 14,
+          fontWeight: 600,
+          color: isActive ? "#fff" : "#94a3b8",
+          background: isActive ? "rgba(79,124,255,0.15)" : "transparent",
+          borderLeft: isActive ? "3px solid #4F7CFF" : "3px solid transparent",
+          transition: "all 0.2s",
+          textDecoration: "none",
+        }}
+      >
+        <span style={{ opacity: isActive ? 1 : 0.7 }}>{item.icon}</span>
+        <span className="flex-1">{item.label}</span>
+        {showBadge && alertCount > 0 && (
+          <span
+            style={{
+              background: "#dc2626",
+              color: "#fff",
+              fontSize: 10,
+              fontWeight: 700,
+              padding: "1px 6px",
+              borderRadius: 10,
+              minWidth: 18,
+              textAlign: "center",
+            }}
+          >
+            {alertCount}
+          </span>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <aside
@@ -107,34 +232,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 mt-1">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            pathname === item.href || pathname?.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "11px 14px",
-                borderRadius: 12,
-                marginBottom: 4,
-                fontSize: 14,
-                fontWeight: 600,
-                color: isActive ? "#fff" : "#94a3b8",
-                background: isActive ? "rgba(79,124,255,0.15)" : "transparent",
-                borderLeft: isActive ? "3px solid #4F7CFF" : "3px solid transparent",
-                transition: "all 0.2s",
-                textDecoration: "none",
-              }}
-            >
-              <span style={{ opacity: isActive ? 1 : 0.7 }}>{item.icon}</span>
-              {item.label}
-            </Link>
-          );
-        })}
+        {NAV_ITEMS.map((item) => renderLink(item, item.href === "/dashboard"))}
       </nav>
 
       <div className="px-3 mb-3">
@@ -145,8 +243,10 @@ export default function Sidebar() {
             paddingTop: 8,
           }}
         >
-          <Link
-            href="/ajustes"
+          {BOTTOM_ITEMS.map((item) => renderLink(item))}
+
+          <button
+            onClick={toggleDark}
             style={{
               display: "flex",
               alignItems: "center",
@@ -156,46 +256,37 @@ export default function Sidebar() {
               marginBottom: 4,
               fontSize: 14,
               fontWeight: 600,
-              color: pathname === "/ajustes" || pathname?.startsWith("/ajustes/") ? "#fff" : "#94a3b8",
-              background: pathname === "/ajustes" || pathname?.startsWith("/ajustes/") ? "rgba(79,124,255,0.15)" : "transparent",
-              borderLeft: pathname === "/ajustes" || pathname?.startsWith("/ajustes/") ? "3px solid #4F7CFF" : "3px solid transparent",
+              color: "#94a3b8",
+              background: "transparent",
+              borderLeft: "3px solid transparent",
               transition: "all 0.2s",
-              textDecoration: "none",
+              border: "none",
+              cursor: "pointer",
+              width: "100%",
+              textAlign: "left",
             }}
           >
-            <span style={{ opacity: pathname === "/ajustes" || pathname?.startsWith("/ajustes/") ? 1 : 0.7 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
+            <span style={{ opacity: 0.7 }}>
+              {darkMode ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="5" />
+                  <line x1="12" y1="1" x2="12" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="23" />
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                  <line x1="1" y1="12" x2="3" y2="12" />
+                  <line x1="21" y1="12" x2="23" y2="12" />
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              )}
             </span>
-            Ajustes
-          </Link>
-        </div>
-      </div>
-
-      <div className="px-5 pb-5">
-        <div
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.06)",
-            paddingTop: 16,
-          }}
-        >
-          <p
-            style={{
-              color: "#475569",
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              marginBottom: 4,
-            }}
-          >
-            VERSIÓN PROTOTIPO
-          </p>
-          <p style={{ color: "#64748b", fontSize: 11 }}>
-            IA pendiente de configurar clave API
-          </p>
+            {darkMode ? "Modo claro" : "Modo oscuro"}
+          </button>
         </div>
       </div>
     </aside>

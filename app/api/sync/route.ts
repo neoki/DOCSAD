@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import {
   fullSync,
+  incrementalSync,
   getSyncStats,
   getRecentSyncLogs,
   getSyncState,
@@ -55,8 +56,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await fullSync();
-    return NextResponse.json({ success: true, result });
+    let body: { mode?: string } = {};
+    try { body = await req.json(); } catch { body = {}; }
+    const mode = body.mode || "full";
+
+    const result = mode === "incremental"
+      ? await incrementalSync()
+      : await fullSync();
+    return NextResponse.json({ success: true, result, mode });
   } catch (err) {
     return NextResponse.json(
       { error: String(err) },
