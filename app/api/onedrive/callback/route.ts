@@ -28,25 +28,25 @@ export async function GET(req: NextRequest) {
 
   if (!savedState || !returnedState || savedState !== returnedState) {
     console.error("OAuth state mismatch — possible CSRF");
-    return NextResponse.redirect(`${base}/onedrive?error=state_mismatch`);
+    return NextResponse.redirect(`${base}/ajustes?error=state_mismatch`);
   }
 
   if (error) {
     const desc = searchParams.get("error_description") || error;
     console.error("OAuth error:", desc);
-    return NextResponse.redirect(`${base}/onedrive?error=auth_failed`);
+    return NextResponse.redirect(`${base}/ajustes?error=auth_failed`);
   }
 
   if (!code) {
-    return NextResponse.redirect(`${base}/onedrive?error=no_code`);
+    return NextResponse.redirect(`${base}/ajustes?error=no_code`);
   }
 
   try {
     const tokens = await exchangeCodeForTokens(code);
     await storeTokens(tokens.access_token, tokens.refresh_token, tokens.expires_in);
-    return NextResponse.redirect(`${base}/onedrive?connected=true`);
+    return NextResponse.redirect(`${base}/ajustes?connected=true`);
   } catch (err) {
     console.error("Token exchange error:", err);
-    return NextResponse.redirect(`${base}/onedrive?error=token_failed`);
+    return NextResponse.redirect(`${base}/ajustes?error=token_failed`);
   }
 }

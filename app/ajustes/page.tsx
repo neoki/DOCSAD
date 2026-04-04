@@ -81,6 +81,10 @@ export default function AjustesPage() {
     summary?: { added?: number; updated?: number; removed?: number; errors?: number };
     error?: string;
   } | null>(null);
+  const [onedriveStatus, setOnedriveStatus] = useState<{ connected: boolean; email?: string; expiresAt?: string } | null>(null);
+  const [onedriveLoading, setOnedriveLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     fetch("/api/ajustes")
@@ -105,6 +109,12 @@ export default function AjustesPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch("/api/onedrive")
+      .then((r) => r.json())
+      .then((data) => setOnedriveStatus({ connected: !!data.connected, email: data.email, expiresAt: data.expiresAt }))
+      .catch(() => setOnedriveStatus({ connected: false }))
+      .finally(() => setOnedriveLoading(false));
   }, []);
 
   const updateProvider = (id: string, field: keyof ProviderConfig, value: string | boolean) => {
@@ -363,76 +373,148 @@ export default function AjustesPage() {
         )}
       </div>
 
-      <h2 className="section-title">Conexión OneDrive</h2>
+      <h2 className="section-title">Conexión OneDrive / SharePoint</h2>
       <div
         className="card-static"
-        style={{ borderLeft: "4px solid #3b82f6", maxWidth: 720 }}
+        style={{ borderLeft: `4px solid ${onedriveStatus?.connected ? "#22c55e" : "#3b82f6"}`, maxWidth: 720 }}
       >
-        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Configuración de OneDrive</h3>
-        <p style={{ color: "#475569", fontSize: 14, marginBottom: 16 }}>
-          Para conectar una carpeta de OneDrive, necesitas registrar una aplicación en Azure Active Directory.
-        </p>
-
-        <ol style={{ paddingLeft: 20, fontSize: 14, color: "#334155", lineHeight: 1.8, marginBottom: 16 }}>
-          <li>
-            Accede a{" "}
-            <strong>portal.azure.com</strong> → Azure Active Directory → App registrations
-          </li>
-          <li>
-            Registra una nueva aplicación con redirect URI:{" "}
-            <code
+        <div className="flex items-center gap-3" style={{ marginBottom: 16 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: onedriveStatus?.connected ? "#22c55e" : "#3b82f6",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>
+              Microsoft OneDrive / SharePoint
+            </h3>
+            <p style={{ color: "#64748b", fontSize: 14, margin: 0 }}>
+              {onedriveLoading
+                ? "Comprobando estado..."
+                : onedriveStatus?.connected
+                  ? "Conectado y funcionando"
+                  : "No conectado"}
+            </p>
+          </div>
+          {!onedriveLoading && (
+            <div
               style={{
-                background: "#f1f5f9",
-                padding: "3px 10px",
-                borderRadius: 6,
-                fontSize: 13,
-                fontFamily: "monospace",
+                padding: "4px 12px",
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 700,
+                background: onedriveStatus?.connected ? "#dcfce7" : "#fef2f2",
+                color: onedriveStatus?.connected ? "#16a34a" : "#dc2626",
               }}
             >
-              {appUrl}/api/onedrive/callback
-            </code>
-          </li>
-          <li>
-            En &quot;API permissions&quot;, añade <strong>Microsoft Graph → Files.Read.All</strong>
-          </li>
-          <li>
-            Crea un Client Secret en &quot;Certificates &amp; secrets&quot;
-          </li>
-          <li>
-            Configura las siguientes variables de entorno en Replit Secrets:
-            <div className="flex flex-wrap gap-2" style={{ marginTop: 8 }}>
-              {[
-                "MICROSOFT_CLIENT_ID",
-                "MICROSOFT_CLIENT_SECRET",
-                "MICROSOFT_TENANT_ID",
-                "ONEDRIVE_FOLDER_PATH",
-              ].map((v) => (
-                <span
-                  key={v}
-                  style={{
-                    background: "#eef2ff",
-                    border: "1px solid #c7d2fe",
-                    borderRadius: 6,
-                    padding: "4px 12px",
-                    fontSize: 13,
-                    fontFamily: "monospace",
-                    fontWeight: 600,
-                    color: "#4338ca",
-                  }}
-                >
-                  {v}
-                </span>
-              ))}
+              {onedriveStatus?.connected ? "CONECTADO" : "DESCONECTADO"}
             </div>
-            <div style={{ fontSize: 13, color: "#64748b", marginTop: 6 }}>
-              (ruta de la carpeta a sincronizar, ej: /DocFincas)
-            </div>
-          </li>
-        </ol>
+          )}
+        </div>
 
-        <p style={{ fontSize: 14, color: "#3b82f6", fontWeight: 600, marginTop: 12 }}>
-          Una vez configuradas las credenciales, la página de OneDrive se activará automáticamente.
-        </p>
+        {onedriveStatus?.connected ? (
+          <div>
+            {onedriveStatus.email && (
+              <p style={{ fontSize: 14, color: "#334155", marginBottom: 8 }}>
+                Cuenta: <strong>{onedriveStatus.email}</strong>
+              </p>
+            )}
+            {onedriveStatus.expiresAt && (
+              <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
+                Token válido hasta: {new Date(onedriveStatus.expiresAt).toLocaleString("es-ES")}
+              </p>
+            )}
+            <div className="flex items-center gap-3">
+              <button
+                className="btn-primary"
+                onClick={async () => {
+                  setConnecting(true);
+                  try {
+                    const res = await fetch("/api/onedrive/auth");
+                    const data = await res.json();
+                    if (data.authUrl) window.location.href = data.authUrl;
+                  } catch { }
+                  setConnecting(false);
+                }}
+                disabled={connecting}
+                style={{ minWidth: 180 }}
+              >
+                {connecting ? "Redirigiendo..." : "Reconectar cuenta"}
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={async () => {
+                  if (!confirm("¿Seguro que quieres desconectar OneDrive? Tendrás que volver a autorizar la cuenta.")) return;
+                  setDisconnecting(true);
+                  try {
+                    await fetch("/api/onedrive/disconnect", { method: "POST" });
+                    setOnedriveStatus({ connected: false });
+                  } catch { }
+                  setDisconnecting(false);
+                }}
+                disabled={disconnecting}
+                style={{ color: "#dc2626" }}
+              >
+                {disconnecting ? "Desconectando..." : "Desconectar"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p style={{ color: "#475569", fontSize: 14, marginBottom: 16 }}>
+              Conecta tu cuenta de Microsoft para acceder a los archivos de SharePoint / OneDrive.
+              Las credenciales de Azure (Client ID, Secret, Tenant ID) deben estar configuradas como variables de entorno.
+            </p>
+            <button
+              className="btn-primary"
+              onClick={async () => {
+                setConnecting(true);
+                try {
+                  const res = await fetch("/api/onedrive/auth");
+                  const data = await res.json();
+                  if (data.authUrl) {
+                    window.location.href = data.authUrl;
+                  } else {
+                    alert(data.error || "Error al iniciar la autorización. Verifica que las variables de entorno MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET y MICROSOFT_TENANT_ID estén configuradas.");
+                  }
+                } catch {
+                  alert("Error de conexión. Inténtalo de nuevo.");
+                }
+                setConnecting(false);
+              }}
+              disabled={connecting}
+              style={{
+                minWidth: 220,
+                background: "#0078d4",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+              </svg>
+              {connecting ? "Redirigiendo..." : "Conectar con Microsoft"}
+            </button>
+            <div style={{ marginTop: 16, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
+                Redirect URI para Azure AD: <code style={{ background: "#f1f5f9", padding: "2px 8px", borderRadius: 4, fontSize: 12 }}>{appUrl}/api/onedrive/callback</code>
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <h2 className="section-title" style={{ marginTop: 40 }}>Sincronización SharePoint</h2>
