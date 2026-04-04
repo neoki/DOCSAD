@@ -15,81 +15,106 @@ DocFincas is a document management system for community property management ("Ge
 
 ## Project Structure
 - `app/` — Next.js App Router pages and API routes
-  - `app/dashboard/` — Dashboard with sync stats, alerts panel, document insights, subfolder coverage, stale detection, recent activity
-  - `app/comunidades/` — Community list (171 from Gesfincas), detail pages with edit modal
+  - `app/dashboard/` — Dashboard with sync stats, alerts panel, trends chart, document insights, subfolder coverage, stale detection, recent activity, executive report download
+  - `app/comunidades/` — Community list with advanced filters (SP link status, completitud %, favorites), sortable columns
   - `app/comunidades/[id]/` — Detail page with 6 tabs: Resumen documental, Documentos, Notas, Historial, Checklist, Info. Operativa
-  - `app/comunidades/[id]/ResumenDocTab.tsx` — Document analysis: subfolder distribution, file types, missing folders, recent files, old file warnings, CSV export
-  - `app/comunidades/[id]/DocumentosTab.tsx` — SharePoint file browser with breadcrumbs, upload, search
+  - `app/comunidades/[id]/ResumenDocTab.tsx` — Document analysis with CSV export
+  - `app/comunidades/[id]/DocumentosTab.tsx` — SharePoint file browser with breadcrumbs, upload, document preview, create subfolders
   - `app/comunidades/[id]/NotasTab.tsx` — Notes/observations per community (CRUD)
   - `app/comunidades/[id]/HistorialTab.tsx` — Activity timeline from SyncLog
-  - `app/busqueda/` — Global document search across all communities with filters (name, subfolder, community, file type)
-  - `app/pendientes/` — Missing documentation overview with coverage %, filterable by subfolder, CSV export
-  - `app/usuarios/` — User management (admin only): create, delete users, assign roles
-  - `app/escaner/` — Scanner migration tool: classify & move ~21K files from Escáner folder to community subfolders
-  - `app/ajustes/` — Settings: AI config, OneDrive credentials, sync trigger
-  - `app/api/sync/` — Sync API: POST triggers full/incremental sync (body.mode), GET returns stats/logs/status
-  - `app/api/alertas/` — Alerts from Operativa dates (ITE, reforms) with urgency levels
-  - `app/api/busqueda/` — Global file search API with pagination and filters
-  - `app/api/pendientes/` — Missing documentation API per community
-  - `app/api/exportar/` — CSV export (tipo=pendientes for global, tipo=comunidad&comunidadId=X for per-community)
-  - `app/api/upload/` — Direct upload to SharePoint subfolder with FileCache sync
-  - `app/api/usuarios/` — User CRUD (admin only)
-  - `app/api/comunidades/[id]/` — CRUD, PUT supports nombre/nif/direccion/cp/pisos
-  - `app/api/comunidades/[id]/docs-insights/` — Community-level document analysis API
+  - `app/comunidades/[id]/ChecklistTab.tsx` — Document checklist with auto-complete from documents button
+  - `app/busqueda/` — Global document search across all communities
+  - `app/pendientes/` — Missing documentation overview with CSV export
+  - `app/comparar/` — Side-by-side community comparison (2-5 communities)
+  - `app/usuarios/` — User management (admin only)
+  - `app/auditoria/` — Audit log viewer (admin only)
+  - `app/escaner/` — Scanner migration tool
+  - `app/ajustes/` — Settings: OneDrive credentials, sync trigger
+  - `app/api/sync/` — Sync API: POST triggers full/incremental sync, GET returns stats/logs/status
+  - `app/api/alertas/` — Alerts from Operativa dates with urgency levels
+  - `app/api/busqueda/` — Global file search API
+  - `app/api/pendientes/` — Missing documentation API
+  - `app/api/exportar/` — CSV export
+  - `app/api/upload/` — Direct upload to SharePoint subfolder
+  - `app/api/usuarios/` — User CRUD (admin only) with audit logging
+  - `app/api/favoritos/` — Favorites toggle per user per community
+  - `app/api/duplicados/` — Duplicate file detection across communities
+  - `app/api/tendencias/` — Activity trends (monthly file adds/updates/uploads)
+  - `app/api/preview/` — Document preview via Graph API download URL
+  - `app/api/comparar/` — Community comparison data API
+  - `app/api/informe/` — Executive report (text format) download
+  - `app/api/auditoria/` — Audit log viewer API (admin only)
+  - `app/api/comunidades/[id]/` — CRUD
+  - `app/api/comunidades/[id]/docs-insights/` — Document analysis API
   - `app/api/comunidades/[id]/notas/` — Notes CRUD API
   - `app/api/comunidades/[id]/historial/` — Activity logs per community
-  - `app/api/comunidades/[id]/sharepoint/` — SharePoint folder management (create, link, normalize, upload)
-  - `app/api/escaner/` — Scanner API: find folder, scan & classify files, move batches
+  - `app/api/comunidades/[id]/checklist/auto/` — Auto-complete checklist from documents
+  - `app/api/comunidades/[id]/sharepoint/` — SharePoint folder management (create, link, normalize subfolders, upload)
+  - `app/api/escaner/` — Scanner API
 - `components/` — Shared React components (Sidebar with dark mode toggle + alert badge, AppShell)
-- `lib/sync-engine.ts` — Sync engine + document insights (fullSync, incrementalSync, getSyncStats, getCommunityDocInsights, getGlobalDocInsights)
-- `lib/microsoft-graph.ts` — Graph API: OAuth, tokens, sites/drives/files, folder creation, upload, move, recursive listing
-- `lib/scanner-classifier.ts` — File classification engine: NNN. prefix → community code, keyword → subfolder mapping
+- `lib/sync-engine.ts` — Sync engine + document insights
+- `lib/microsoft-graph.ts` — Graph API: OAuth, tokens, file operations
+- `lib/scanner-classifier.ts` — File classification engine
+- `lib/audit.ts` — Audit logging utility
 - `lib/` — Utility modules (auth, prisma client, doctypes)
-- `prisma/` — Schema, seed data (171 communities), comunidades-gesfincas.json
+- `prisma/` — Schema, seed data (171 communities)
 
 ## Database Models
 - **Comunidad**: codigo (unique Gesfincas code), nombre, nif, direccion, cp, pisos, sharePoint* fields
-- **FileCache**: SharePoint file metadata cache (sharePointItemId, name, path, mimeType, sizeBytes, subfolder, comunidadId, sharePointModified, sharePointHash)
+- **FileCache**: SharePoint file metadata cache
 - **SyncLog**: Audit trail of all sync/upload operations
 - **SyncState**: Key-value store for sync state
 - **Nota**: Notes per community (texto, autor, timestamps)
 - **User**: Email/password auth with Role (ADMIN/USER)
-- **Operativa**: Community operational data including date fields for ITE, reforms (used for alerts)
+- **Operativa**: Community operational data including date fields for ITE, reforms
+- **Favorite**: User-community favorites (userId+comunidadId unique)
+- **AuditLog**: User action audit trail (userId, userEmail, action, entity, entityId, details)
 - **Checklist, Documento, Alerta, Setting**
 
-## Features
-1. **Alerts & deadlines**: Dashboard panel showing upcoming ITE dates, reform deadlines from Operativa. Color-coded urgency (CRITICA/ALTA/MEDIA/BAJA). Notification badge in sidebar.
-2. **Global document search**: Search files across all communities by name, subfolder, community, file type. Paginated results.
-3. **Incremental sync**: POST /api/sync with body `{"mode":"incremental"}` for faster re-sync. Falls back to full sync if never synced.
-4. **Missing documentation view**: Dedicated /pendientes page showing communities with incomplete subfolders. Filterable by specific subfolder. Coverage % bars.
-5. **Direct upload to SharePoint**: Upload button in DocumentosTab sends files directly to SharePoint subfolder via Graph API, updates FileCache.
-6. **Activity timeline**: Per-community history tab showing SyncLog entries with timeline visualization.
-7. **Notes & observations**: CRUD notes per community. Stored in Nota model with author and timestamps.
-8. **CSV export**: Export documentation status (global or per-community) as CSV for offline analysis.
-9. **User management**: Admin can create/delete users with ADMIN or USER roles. Role-based access.
-10. **Dark mode**: Toggle in sidebar, persisted to localStorage. CSS class-based theming.
-11. **In-app notifications**: Alert badge in sidebar showing count of critical/high urgency deadlines.
+## Features (22 total)
+
+### Phase 1 (Original)
+1. **Alerts & deadlines**: Dashboard panel with upcoming ITE dates, reform deadlines
+2. **Global document search**: Search files across all communities
+3. **Incremental sync**: Faster re-sync mode
+4. **Missing documentation view**: Communities with incomplete subfolders
+5. **Direct upload to SharePoint**: Upload via Graph API
+6. **Activity timeline**: Per-community history tab
+7. **Notes & observations**: CRUD notes per community
+8. **CSV export**: Documentation status export
+9. **User management**: Admin CRUD with roles
+10. **Dark mode**: Toggle in sidebar
+11. **In-app notifications**: Alert badge in sidebar
+
+### Phase 2 (New)
+12. **Auto-sync on dashboard**: Incremental sync triggers if >2h since last sync
+13. **Auto-create subfolders**: Button to normalize/create standard 11 subfolders in SP
+14. **Duplicate file detection**: API to find files with same name across subfolders/communities
+15. **Auto-checklist from documents**: Mark checklist items COMPLETADO when matching subfolder has files
+16. **Dashboard trends chart**: Stacked bar chart showing monthly file adds/updates/uploads (6 months)
+17. **Executive report**: Downloadable text report with per-community documentation status
+18. **Community comparison**: Side-by-side comparison of 2-5 communities (files, coverage, types)
+19. **Document preview**: Preview PDFs/images inline via Graph API download URLs
+20. **Favorites / pinned communities**: Star toggle per community, filterable list
+21. **Advanced filters**: Community list filterable by SP status, completitud %, favorites
+22. **User audit log**: Records who creates/deletes users, viewable in /auditoria
 
 ## Community Data
 - 171 communities imported from Gesfincas (source of truth)
-- Each has a `codigo` (6-digit Gesfincas billing code, e.g. "000002")
-- SharePoint folder naming: `[codigo]. [nombre]` (e.g. "008. C.P. DOCTOR FLEMING, 15")
-- Code extraction regex: `^0*(\d+)\.\s*`, padded to 6 digits to match `codigo` field
+- Each has a `codigo` (6-digit Gesfincas billing code)
+- SharePoint folder naming: `[codigo]. [nombre]`
 
 ## SharePoint/OneDrive Integration
-- **Standard 11-subfolder structure**: 01_Actas through 11_Otros (defined in STANDARD_SUBFOLDERS)
-- **Top-level folders**: "Comunidades" (community docs) and "Escaner" (scanned files pending classification)
+- **Standard 11-subfolder structure**: 01_Actas through 11_Otros
+- **Top-level folders**: "Comunidades" and "Escaner"
 - **Scopes**: Files.ReadWrite.All, Sites.Read.All, User.Read, offline_access
-- **Token storage**: Settings table (onedrive_access_token, onedrive_refresh_token, onedrive_token_expires_at)
-- **Paginated listing**: listFiles() follows @odata.nextLink; listAllFilesRecursive() defaults to 200K items, $top=999
-- **Metadata captured**: file.mimeType, lastModifiedDateTime, size
+- **Token storage**: Settings table
 
 ## Sync System
-- **Full sync**: Scans all community folders in SharePoint, captures mimeType + lastModifiedDateTime, upserts into FileCache, removes stale entries
-- **Incremental sync**: Same logic but skips folder linking step; falls back to full if never synced
+- **Full sync**: Scans all community folders, upserts FileCache, removes stale entries
+- **Incremental sync**: Skips folder linking step; falls back to full if never synced
+- **Auto-sync**: Dashboard triggers incremental sync if >2h since last
 - **Change detection**: Composite hash (size + lastModifiedDateTime)
-- **SyncLog**: Records every file added/updated/removed with timestamps and details
-- **API**: POST /api/sync with optional `{"mode":"incremental"}` body
 
 ## Environment Variables
 - `DATABASE_URL` — PostgreSQL connection string (managed by Replit)

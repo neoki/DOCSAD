@@ -83,11 +83,28 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
     return true;
   });
 
+  const [autoChecking, setAutoChecking] = useState(false);
+  const [autoResult, setAutoResult] = useState<string | null>(null);
+
+  const runAutoCheck = async () => {
+    setAutoChecking(true);
+    setAutoResult(null);
+    try {
+      const res = await fetch(`/api/comunidades/${comunidadId}/checklist/auto`, { method: "POST" });
+      const data = await res.json();
+      setAutoResult(`${data.updated} ítems marcados como completados`);
+      fetchChecklist();
+    } catch {
+      setAutoResult("Error al ejecutar auto-checklist");
+    }
+    setAutoChecking(false);
+  };
+
   if (loading) return <div className="text-gray-500 text-sm">Cargando checklist...</div>;
 
   return (
     <div>
-      <div className="flex gap-3 mb-4 flex-wrap">
+      <div className="flex gap-3 mb-4 flex-wrap items-center">
         <input
           type="text"
           value={search}
@@ -120,6 +137,17 @@ export default function ChecklistTab({ comunidadId }: { comunidadId: string }) {
           <option value="PENDIENTE">Pendiente</option>
           <option value="NO_APLICA">No aplica</option>
         </select>
+        <button
+          onClick={runAutoCheck}
+          disabled={autoChecking}
+          className="btn-primary text-xs"
+          style={{ padding: "6px 14px", background: "#6d28d9" }}
+        >
+          {autoChecking ? "Verificando..." : "Auto-completar desde documentos"}
+        </button>
+        {autoResult && (
+          <span className="text-xs text-green-600 font-semibold">{autoResult}</span>
+        )}
       </div>
 
       <div className="card-static p-0 overflow-hidden">

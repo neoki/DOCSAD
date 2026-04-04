@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { logAudit } from "@/lib/audit";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
       data: { email, name, passwordHash, role: role === "ADMIN" ? "ADMIN" : "USER" },
     });
 
+    await logAudit({ userId: currentUser.id, userEmail: currentUser.email, action: "create", entity: "user", entityId: user.id, details: `Created user ${email} with role ${role || "USER"}` });
     return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
@@ -55,7 +57,9 @@ export async function DELETE(req: NextRequest) {
     const { userId } = await req.json();
     if (userId === currentUser.id) return NextResponse.json({ error: "No puedes eliminarte a ti mismo" }, { status: 400 });
 
+    const deletedUser = await prisma.user.findUnique({ where: { id: userId } });
     await prisma.user.delete({ where: { id: userId } });
+    await logAudit({ userId: currentUser.id, userEmail: currentUser.email, action: "delete", entity: "user", entityId: userId, details: `Deleted user ${deletedUser?.email}` });
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

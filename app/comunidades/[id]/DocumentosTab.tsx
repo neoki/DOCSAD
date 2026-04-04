@@ -64,6 +64,13 @@ type ComunidadInfo = {
   sharePointMatchScore: number | null;
 };
 
+function isPreviewable(name: string, mimeType?: string): boolean {
+  const ext = name.split(".").pop()?.toLowerCase() || "";
+  if (["pdf"].includes(ext) || mimeType?.includes("pdf")) return true;
+  if (["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"].includes(ext) || mimeType?.startsWith("image/")) return true;
+  return false;
+}
+
 export default function DocumentosTab({ comunidadId }: { comunidadId: string }) {
   const [comunidad, setComunidad] = useState<ComunidadInfo | null>(null);
   const [files, setFiles] = useState<FileItem[]>([]);
@@ -75,6 +82,9 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [connected, setConnected] = useState(true);
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const fetchComunidad = useCallback(async () => {
     const res = await fetch(`/api/comunidades/${comunidadId}`);
@@ -227,6 +237,24 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
     e.target.value = "";
   };
 
+  const openPreview = async (file: FileItem) => {
+    if (!comunidad?.sharePointDriveId) return;
+    setPreviewFile(file);
+    setPreviewLoading(true);
+    setPreviewUrl(null);
+    try {
+      if (file.downloadUrl) {
+        setPreviewUrl(file.downloadUrl);
+      } else {
+        const res = await fetch(`/api/preview?driveId=${comunidad.sharePointDriveId}&itemId=${file.id}`);
+        const data = await res.json();
+        if (data.downloadUrl) setPreviewUrl(data.downloadUrl);
+      }
+    } catch {
+    }
+    setPreviewLoading(false);
+  };
+
   if (!connected) {
     return (
       <div className="card-static py-16 text-center">
@@ -354,6 +382,35 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
           <span className="text-xs text-gray-500">
             {regularFiles.length} archivos · {formatSize(totalSize)}
           </span>
+          {breadcrumbs.length === 0 && (
+            <button
+              onClick={async () => {
+                if (!comunidad?.sharePointDriveId || !comunidad?.sharePointFolderId) return;
+                setError("");
+                try {
+                  const res = await fetch(`/api/comunidades/${comunidadId}/sharepoint`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      action: "normalize",
+                    }),
+                  });
+                  if (res.ok) {
+                    fetchFiles();
+                  } else {
+                    const data = await res.json();
+                    setError(data.error || "Error al crear subcarpetas");
+                  }
+                } catch {
+                  setError("Error de conexión");
+                }
+              }}
+              className="btn-primary text-xs"
+              style={{ padding: "6px 14px", background: "#6d28d9" }}
+            >
+              Crear subcarpetas
+            </button>
+          )}
           <label className="btn-primary text-xs cursor-pointer" style={{ padding: "6px 14px" }}>
             {uploading ? "Subiendo..." : "Subir documento"}
             <input
@@ -452,6 +509,14 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
                     </td>
                     <td className="table-cell text-right">
                       <div className="flex items-center justify-end gap-3">
+                        {isPreviewable(file.name, file.mimeType) && (
+                          <button
+                            onClick={() => openPreview(file)}
+                            className="text-xs font-semibold text-purple-600 hover:text-purple-800 bg-transparent border-none cursor-pointer"
+                          >
+                            Vista previa
+                          </button>
+                        )}
                         {file.webUrl && (
                           <a
                             href={file.webUrl}
@@ -488,6 +553,61 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {previewFile && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={() => { setPreviewFile(null); setPreviewUrl(null); }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 12,
+              width: "80vw",
+              maxWidth: 900,
+              height: "80vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #e2e8f0" }}>
+              <span className="font-semibold text-sm text-gray-800 truncate">{previewFile.name}</span>
+              <button
+                onClick={() => { setPreviewFile(null); setPreviewUrl(null); }}
+                className="text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-lg"
+              >
+                x
+              </button>
+            </div>
+            <div className="flex-1 flex items-center justify-center overflow-hidden" style={{ background: "#f8fafc" }}>
+              {previewLoading ? (
+                <span className="text-gray-400 text-sm">Cargando vista previa...</span>
+              ) : previewUrl ? (
+                (() => {
+                  const ext = previewFile.name.split(".").pop()?.toLowerCase() || "";
+                  const isImage = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"].includes(ext) || previewFile.mimeType?.startsWith("image/");
+                  if (isImage) {
+                    return <img src={previewUrl} alt={previewFile.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />;
+                  }
+                  return <iframe src={previewUrl} style={{ width: "100%", height: "100%", border: "none" }} title={previewFile.name} />;
+                })()
+              ) : (
+                <span className="text-gray-400 text-sm">No se pudo cargar la vista previa</span>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

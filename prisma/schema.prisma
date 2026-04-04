@@ -213,3 +213,31 @@ model Nota {
   @@index([comunidadId])
   @@map("notas")
 }
+
+model Favorite {
+  id          String    @id @default(cuid())
+  userId      String
+  comunidadId String
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, comunidadId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  userId      String?
+  userEmail   String?
+  action      String
+  entity      String
+  entityId    String?
+  details     String?
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([entity])
+  @@map("audit_logs")
+}

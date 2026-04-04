@@ -102,6 +102,14 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+interface TrendMonth {
+  month: string;
+  added: number;
+  updated: number;
+  removed: number;
+  uploaded: number;
+}
+
 export default function DashboardClient({ comunidades, syncStats, docInsights, recentLogs }: Props) {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{
@@ -112,13 +120,45 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
   } | null>(null);
   const [syncError, setSyncError] = useState("");
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [autoSyncDone, setAutoSyncDone] = useState(false);
+  const [trends, setTrends] = useState<TrendMonth[]>([]);
 
   useEffect(() => {
     fetch("/api/alertas")
       .then((r) => r.json())
       .then((data) => setAlerts(data.alerts || []))
       .catch(() => {});
+
+    fetch("/api/tendencias")
+      .then((r) => r.json())
+      .then((data) => setTrends(data.monthly || []))
+      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (autoSyncDone || syncing) return;
+    if (!syncStats.lastSync) return;
+    const lastSyncTime = new Date(syncStats.lastSync).getTime();
+    const twoHours = 2 * 60 * 60 * 1000;
+    if (Date.now() - lastSyncTime > twoHours) {
+      setAutoSyncDone(true);
+      setSyncing(true);
+      fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "incremental" }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.result) {
+            setSyncResult(data.result);
+            setTimeout(() => window.location.reload(), 3000);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setSyncing(false));
+    }
+  }, [syncStats.lastSync, autoSyncDone, syncing]);
 
   const runSync = async () => {
     setSyncing(true);
@@ -155,14 +195,23 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
               : "Sin sincronizar todavía — pulsa Sincronizar para empezar"}
           </p>
         </div>
-        <button
-          onClick={runSync}
-          disabled={syncing}
-          className="btn-primary"
-          style={{ minWidth: 180 }}
-        >
-          {syncing ? "Sincronizando..." : "Sincronizar ahora"}
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/informe"
+            className="btn-primary"
+            style={{ minWidth: 140, textDecoration: "none", background: "#6d28d9", textAlign: "center" }}
+          >
+            Informe ejecutivo
+          </a>
+          <button
+            onClick={runSync}
+            disabled={syncing}
+            className="btn-primary"
+            style={{ minWidth: 180 }}
+          >
+            {syncing ? "Sincronizando..." : "Sincronizar ahora"}
+          </button>
+        </div>
       </div>
 
       {syncResult && (
@@ -406,6 +455,51 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
           )}
         </div>
       </div>
+
+      {trends.length > 0 && (
+        <div className="card mb-6">
+          <div className="section-label mb-3">Tendencia de actividad (últimos 6 meses)</div>
+          <div className="flex items-end gap-1" style={{ height: 120 }}>
+            {(() => {
+              const maxVal = Math.max(...trends.map((t) => t.added + t.updated + t.uploaded), 1);
+              return trends.map((t) => {
+                const total = t.added + t.updated + t.uploaded;
+                const height = Math.max((total / maxVal) * 100, 2);
+                const monthLabel = t.month.split("-")[1];
+                const monthNames: Record<string, string> = {
+                  "01": "Ene", "02": "Feb", "03": "Mar", "04": "Abr", "05": "May", "06": "Jun",
+                  "07": "Jul", "08": "Ago", "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dic",
+                };
+                return (
+                  <div key={t.month} className="flex flex-col items-center flex-1">
+                    <div className="text-[10px] text-gray-400 font-mono mb-1">{total}</div>
+                    <div className="w-full flex flex-col items-center" style={{ height: 80 }}>
+                      <div className="w-full flex-1" />
+                      <div className="w-full flex flex-col rounded-t" style={{ height: `${height}%`, minHeight: 2 }}>
+                        {t.added > 0 && (
+                          <div style={{ flex: t.added, background: "#22c55e", borderRadius: "3px 3px 0 0" }} title={`${t.added} nuevos`} />
+                        )}
+                        {t.updated > 0 && (
+                          <div style={{ flex: t.updated, background: "#3b82f6" }} title={`${t.updated} actualizados`} />
+                        )}
+                        {t.uploaded > 0 && (
+                          <div style={{ flex: t.uploaded, background: "#8b5cf6", borderRadius: "0 0 3px 3px" }} title={`${t.uploaded} subidos`} />
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-1">{monthNames[monthLabel] || monthLabel}</div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+          <div className="flex items-center gap-4 mt-3 justify-center">
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2.5 h-2.5 rounded" style={{ background: "#22c55e" }} /> Nuevos</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2.5 h-2.5 rounded" style={{ background: "#3b82f6" }} /> Actualizados</span>
+            <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2.5 h-2.5 rounded" style={{ background: "#8b5cf6" }} /> Subidos</span>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="section-label mb-3">Historial de sincronización</div>

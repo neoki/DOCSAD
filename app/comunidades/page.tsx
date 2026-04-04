@@ -15,6 +15,7 @@ type Comunidad = {
   sharePointMatchMethod: string | null;
   sharePointMatchScore: number | null;
   checklists: { estado: string }[];
+  _count?: { notas: number; alertas: number };
 };
 
 function calcCompletitud(checklists: { estado: string }[]): number {
@@ -34,6 +35,7 @@ function progressColor(pct: number): string {
 
 type SortKey = "codigo" | "nombre" | "nif" | "cp" | "completitud" | "docs";
 type SortDir = "asc" | "desc";
+type FilterSP = "all" | "linked" | "unlinked" | "revisar";
 
 export default function ComunidadesPage() {
   const router = useRouter();
@@ -42,16 +44,42 @@ export default function ComunidadesPage() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("codigo");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [filterSP, setFilterSP] = useState<FilterSP>("all");
+  const [filterCompletitud, setFilterCompletitud] = useState<string>("all");
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [showFavOnly, setShowFavOnly] = useState(false);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const res = await fetch("/api/comunidades?all=true&pageSize=1000");
-      const data = await res.json();
-      setComunidades(data.comunidades ?? []);
+      const [comRes, favRes] = await Promise.all([
+        fetch("/api/comunidades?all=true&pageSize=1000"),
+        fetch("/api/favoritos"),
+      ]);
+      const comData = await comRes.json();
+      setComunidades(comData.comunidades ?? []);
+      const favData = await favRes.json();
+      setFavorites(new Set(favData.favoriteIds || []));
       setLoading(false);
     })();
   }, []);
+
+  const toggleFavorite = async (e: React.MouseEvent, comunidadId: string) => {
+    e.stopPropagation();
+    const isFav = favorites.has(comunidadId);
+    const action = isFav ? "remove" : "add";
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (isFav) next.delete(comunidadId);
+      else next.add(comunidadId);
+      return next;
+    });
+    await fetch("/api/favoritos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comunidadId, action }),
+    });
+  };
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -69,6 +97,11 @@ export default function ComunidadesPage() {
 
   const filtered = useMemo(() => {
     let result = comunidades;
+
+    if (showFavOnly) {
+      result = result.filter((c) => favorites.has(c.id));
+    }
+
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -80,6 +113,14 @@ export default function ComunidadesPage() {
           c.cp.toLowerCase().includes(q)
       );
     }
+
+    if (filterSP === "linked") result = result.filter((c) => c.sharePointFolderName && c.sharePointMatchMethod !== "REVISAR");
+    else if (filterSP === "unlinked") result = result.filter((c) => !c.sharePointFolderName);
+    else if (filterSP === "revisar") result = result.filter((c) => c.sharePointMatchMethod === "REVISAR");
+
+    if (filterCompletitud === "high") result = result.filter((c) => calcCompletitud(c.checklists) >= 70);
+    else if (filterCompletitud === "medium") result = result.filter((c) => { const p = calcCompletitud(c.checklists); return p >= 40 && p < 70; });
+    else if (filterCompletitud === "low") result = result.filter((c) => calcCompletitud(c.checklists) < 40);
 
     result = [...result].sort((a, b) => {
       let cmp = 0;
@@ -107,7 +148,7 @@ export default function ComunidadesPage() {
     });
 
     return result;
-  }, [comunidades, search, sortKey, sortDir]);
+  }, [comunidades, search, sortKey, sortDir, filterSP, filterCompletitud, showFavOnly, favorites]);
 
   const conCarpeta = comunidades.filter((c) => c.sharePointFolderName && c.sharePointMatchMethod !== "REVISAR").length;
   const porRevisar = comunidades.filter((c) => c.sharePointMatchMethod === "REVISAR").length;
@@ -128,19 +169,62 @@ export default function ComunidadesPage() {
             <span style={{ color: "#94a3b8" }}>{sinCarpeta} sin carpeta</span>
           </p>
         </div>
-        <Link href="/comunidades/nueva" className="btn-primary" style={{ textDecoration: "none" }}>
-          + Nueva comunidad
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/comparar" className="btn-primary" style={{ textDecoration: "none", background: "#6d28d9" }}>
+            Comparar
+          </Link>
+          <Link href="/comunidades/nueva" className="btn-primary" style={{ textDecoration: "none" }}>
+            + Nueva comunidad
+          </Link>
+        </div>
       </div>
 
       <div className="card mb-6">
-        <input
-          type="text"
-          placeholder="Buscar por código, nombre, NIF, dirección o CP..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="input-field"
-        />
+        <div className="flex items-center gap-3 mb-3">
+          <input
+            type="text"
+            placeholder="Buscar por código, nombre, NIF, dirección o CP..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="input-field flex-1"
+          />
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <select
+            value={filterSP}
+            onChange={(e) => setFilterSP(e.target.value as FilterSP)}
+            className="form-input text-xs"
+            style={{ width: 160 }}
+          >
+            <option value="all">Todas (SharePoint)</option>
+            <option value="linked">Con carpeta SP</option>
+            <option value="unlinked">Sin carpeta SP</option>
+            <option value="revisar">Por revisar</option>
+          </select>
+          <select
+            value={filterCompletitud}
+            onChange={(e) => setFilterCompletitud(e.target.value)}
+            className="form-input text-xs"
+            style={{ width: 160 }}
+          >
+            <option value="all">Toda completitud</option>
+            <option value="high">Alta (&ge;70%)</option>
+            <option value="medium">Media (40-69%)</option>
+            <option value="low">Baja (&lt;40%)</option>
+          </select>
+          <button
+            onClick={() => setShowFavOnly(!showFavOnly)}
+            className="px-3 py-1.5 rounded text-xs font-semibold border transition-all"
+            style={{
+              background: showFavOnly ? "#fef3c7" : "transparent",
+              borderColor: showFavOnly ? "#f59e0b" : "#e2e8f0",
+              color: showFavOnly ? "#d97706" : "#64748b",
+            }}
+          >
+            {showFavOnly ? "★ Favoritos" : "☆ Favoritos"}
+          </button>
+          <span className="text-xs text-gray-400 ml-auto">{filtered.length} resultados</span>
+        </div>
       </div>
 
       <div className="card-static p-0 overflow-hidden">
@@ -155,6 +239,7 @@ export default function ComunidadesPage() {
             <table className="w-full">
               <thead>
                 <tr>
+                  <th className="table-header" style={{ width: 30 }}></th>
                   <th
                     className="table-header text-left cursor-pointer select-none"
                     onClick={() => handleSort("codigo")}
@@ -207,6 +292,16 @@ export default function ComunidadesPage() {
                       className="table-row cursor-pointer"
                       onClick={() => router.push(`/comunidades/${c.id}`)}
                     >
+                      <td className="table-cell" style={{ width: 30 }}>
+                        <button
+                          onClick={(e) => toggleFavorite(e, c.id)}
+                          className="bg-transparent border-none cursor-pointer text-base"
+                          style={{ color: favorites.has(c.id) ? "#f59e0b" : "#d1d5db" }}
+                          title={favorites.has(c.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
+                        >
+                          {favorites.has(c.id) ? "★" : "☆"}
+                        </button>
+                      </td>
                       <td className="table-cell font-mono text-gray-500 text-xs">
                         {c.codigo}
                       </td>

@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         operativa: true,
         checklists: all ? { select: { estado: true } } : false,
         _count: {
-          select: { checklists: true, documentos: true, alertas: true },
+          select: { checklists: true, documentos: true, alertas: true, notas: true },
         },
       },
       orderBy: { codigo: "asc" },
