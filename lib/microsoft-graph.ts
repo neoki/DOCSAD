@@ -507,16 +507,16 @@ export async function listAllFilesRecursive(
   driveId: string,
   folderId: string,
   maxItems: number = 200000,
-): Promise<{ id: string; name: string; path: string; size: number; isFolder: boolean; mimeType: string | null; lastModified: string | null }[]> {
+): Promise<{ id: string; name: string; path: string; size: number; isFolder: boolean; mimeType: string | null; lastModified: string | null; webUrl: string | null }[]> {
   const accessToken = await getValidAccessToken();
   if (!accessToken) throw new Error("Not connected");
 
-  const results: { id: string; name: string; path: string; size: number; isFolder: boolean; mimeType: string | null; lastModified: string | null }[] = [];
+  const results: { id: string; name: string; path: string; size: number; isFolder: boolean; mimeType: string | null; lastModified: string | null; webUrl: string | null }[] = [];
 
   async function fetchChildren(parentId: string, parentPath: string) {
     if (results.length >= maxItems) return;
 
-    let url: string | null = `/drives/${driveId}/items/${parentId}/children?$top=999&$select=id,name,size,folder,file,lastModifiedDateTime`;
+    let url: string | null = `/drives/${driveId}/items/${parentId}/children?$top=999&$select=id,name,size,folder,file,lastModifiedDateTime,webUrl`;
 
     while (url && results.length < maxItems) {
       const data = await graphGet(url, accessToken!);
@@ -533,6 +533,7 @@ export async function listAllFilesRecursive(
           isFolder,
           mimeType: item.file?.mimeType || null,
           lastModified: item.lastModifiedDateTime || null,
+          webUrl: (item.webUrl as string) || null,
         });
 
         if (isFolder && results.length < maxItems) {

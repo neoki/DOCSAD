@@ -2,20 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-type FileItem = {
+type CachedFile = {
   id: string;
+  driveId: string;
   name: string;
-  size: number;
-  isFolder: boolean;
-  lastModified: string;
-  webUrl?: string;
-  downloadUrl?: string;
-  mimeType?: string;
+  subfolder: string | null;
+  sizeBytes: number;
+  mimeType: string | null;
+  lastModified: string | null;
+  webUrl: string | null;
 };
 
-type BreadcrumbItem = {
-  id: string | null;
-  name: string;
+type SubfolderGroup = {
+  name: string | null;
+  count: number;
 };
 
 function formatSize(bytes: number): string {
@@ -25,591 +25,249 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getFileIcon(name: string, mimeType?: string) {
+function formatDate(iso: string | null): string {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function getFileIcon(name: string, mimeType?: string | null) {
   const ext = name.split(".").pop()?.toLowerCase() || "";
-  if (ext === "pdf" || mimeType?.includes("pdf")) {
-    return { bg: "#fef2f2", color: "#ef4444", label: "PDF" };
-  }
-  if (["doc", "docx"].includes(ext) || mimeType?.includes("word")) {
-    return { bg: "#eff6ff", color: "#3b82f6", label: "DOC" };
-  }
-  if (["xls", "xlsx"].includes(ext) || mimeType?.includes("excel") || mimeType?.includes("spreadsheet")) {
-    return { bg: "#f0fdf4", color: "#22c55e", label: "XLS" };
-  }
-  if (["ppt", "pptx"].includes(ext) || mimeType?.includes("presentation")) {
-    return { bg: "#fff7ed", color: "#f97316", label: "PPT" };
-  }
-  if (["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"].includes(ext) || mimeType?.startsWith("image/")) {
-    return { bg: "#fff7ed", color: "#f97316", label: "IMG" };
-  }
-  if (["mp4", "avi", "mov", "wmv"].includes(ext) || mimeType?.startsWith("video/")) {
-    return { bg: "#faf5ff", color: "#8b5cf6", label: "VID" };
-  }
-  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
-    return { bg: "#fef3c7", color: "#d97706", label: "ZIP" };
-  }
-  if (["txt", "csv", "log"].includes(ext)) {
-    return { bg: "#f1f5f9", color: "#64748b", label: "TXT" };
-  }
+  if (ext === "pdf" || mimeType?.includes("pdf")) return { bg: "#fef2f2", color: "#ef4444", label: "PDF" };
+  if (["doc", "docx"].includes(ext) || mimeType?.includes("word")) return { bg: "#eff6ff", color: "#3b82f6", label: "DOC" };
+  if (["xls", "xlsx"].includes(ext) || mimeType?.includes("excel") || mimeType?.includes("spreadsheet")) return { bg: "#f0fdf4", color: "#22c55e", label: "XLS" };
+  if (["ppt", "pptx"].includes(ext) || mimeType?.includes("presentation")) return { bg: "#fff7ed", color: "#f97316", label: "PPT" };
+  if (["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"].includes(ext) || mimeType?.startsWith("image/")) return { bg: "#fff7ed", color: "#f97316", label: "IMG" };
+  if (["mp4", "avi", "mov", "wmv"].includes(ext)) return { bg: "#faf5ff", color: "#8b5cf6", label: "VID" };
+  if (["zip", "rar", "7z"].includes(ext)) return { bg: "#fef3c7", color: "#d97706", label: "ZIP" };
   return { bg: "#f1f5f9", color: "#64748b", label: ext.toUpperCase() || "FILE" };
 }
 
-type ComunidadInfo = {
-  codigo: string;
-  nombre: string;
-  sharePointFolderName: string | null;
-  sharePointDriveId: string | null;
-  sharePointFolderId: string | null;
-  sharePointMatchMethod: string | null;
-  sharePointMatchScore: number | null;
-};
-
-function isPreviewable(name: string, mimeType?: string): boolean {
-  const ext = name.split(".").pop()?.toLowerCase() || "";
-  if (["pdf"].includes(ext) || mimeType?.includes("pdf")) return true;
-  if (["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"].includes(ext) || mimeType?.startsWith("image/")) return true;
-  return false;
-}
+const ALL_KEY = "__all__";
+const ROOT_KEY = "__root__";
 
 export default function DocumentosTab({ comunidadId }: { comunidadId: string }) {
-  const [comunidad, setComunidad] = useState<ComunidadInfo | null>(null);
-  const [files, setFiles] = useState<FileItem[]>([]);
+  const [subfolders, setSubfolders] = useState<SubfolderGroup[]>([]);
+  const [files, setFiles] = useState<CachedFile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [linked, setLinked] = useState(true);
+  const [folderName, setFolderName] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>(ALL_KEY);
   const [search, setSearch] = useState("");
-  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [connected, setConnected] = useState(true);
-  const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
-  const fetchComunidad = useCallback(async () => {
-    const res = await fetch(`/api/comunidades/${comunidadId}`);
-    if (res.ok) {
-      const data = await res.json();
-      setComunidad(data);
-    }
-  }, [comunidadId]);
-
-  const fetchFiles = useCallback(async (folderId?: string) => {
+  const fetchFiles = useCallback(async (subfolder: string, searchTerm: string) => {
     setLoading(true);
-    setError("");
     try {
-      const params = new URLSearchParams({ action: "files" });
-      if (folderId) params.set("folderId", folderId);
-      const res = await fetch(`/api/comunidades/${comunidadId}/sharepoint?${params}`);
+      const params = new URLSearchParams();
+      if (subfolder !== ALL_KEY) params.set("subfolder", subfolder);
+      if (searchTerm) params.set("search", searchTerm);
+      const res = await fetch(`/api/comunidades/${comunidadId}/files?${params}`);
       const data = await res.json();
-
-      if (!res.ok) {
-        if (data.error === "SharePoint no conectado") {
-          setConnected(false);
+      if (!res.ok || !data.linked) {
+        setLinked(false);
+        setFiles([]);
+        setSubfolders([]);
+      } else {
+        setLinked(true);
+        setFiles(data.files || []);
+        if (subfolder === ALL_KEY && !searchTerm) {
+          setSubfolders(data.subfolders || []);
+          setFolderName(data.folderName || null);
         }
-        if (!data.linked) {
-          setFiles([]);
-        } else {
-          setError(data.error || "Error al cargar archivos");
-        }
-        setLoading(false);
-        return;
       }
-
-      setConnected(true);
-      setFiles(data.files || []);
     } catch {
-      setError("Error de conexión");
-    }
-    setLoading(false);
-  }, [comunidadId]);
-
-  useEffect(() => {
-    fetchComunidad();
-  }, [fetchComunidad]);
-
-  useEffect(() => {
-    if (comunidad?.sharePointDriveId && comunidad?.sharePointFolderId) {
-      fetchFiles(currentFolderId || undefined);
-    } else {
+      setFiles([]);
+    } finally {
       setLoading(false);
     }
-  }, [comunidad, currentFolderId, fetchFiles]);
+  }, [comunidadId]);
 
-  const navigateToFolder = (folderId: string, folderName: string) => {
-    setBreadcrumbs((prev) => [...prev, { id: folderId, name: folderName }]);
-    setCurrentFolderId(folderId);
+  useEffect(() => {
+    fetchFiles(ALL_KEY, "");
+  }, [fetchFiles]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearch("");
+    fetchFiles(tab, "");
   };
 
-  const navigateToBreadcrumb = (index: number) => {
-    if (index === -1) {
-      setCurrentFolderId(null);
-      setBreadcrumbs([]);
-    } else {
-      setCurrentFolderId(breadcrumbs[index].id);
-      setBreadcrumbs((prev) => prev.slice(0, index + 1));
-    }
+  const handleSearch = (val: string) => {
+    setSearch(val);
+    fetchFiles(ALL_KEY, val);
+    if (val) setActiveTab(ALL_KEY);
   };
 
-  const handleCreateFolder = async () => {
-    if (!comunidad) return;
-    setCreating(true);
-    setError("");
-
+  const handleDownload = async (file: CachedFile) => {
+    setDownloading(file.id);
     try {
-      const sitesRes = await fetch("/api/onedrive?action=sites");
-      const sitesData = await sitesRes.json();
-      const sites = sitesData.sites || [];
-
-      if (sites.length === 0) {
-        setError("No se encontraron sitios SharePoint. Verifica la conexión.");
-        setCreating(false);
-        return;
-      }
-
-      const drivesRes = await fetch(`/api/onedrive?action=drives&siteId=${sites[0].id}`);
-      const drivesData = await drivesRes.json();
-      const drives = drivesData.drives || [];
-
-      if (drives.length === 0) {
-        setError("No se encontraron bibliotecas de documentos.");
-        setCreating(false);
-        return;
-      }
-
-      const folderName = `${comunidad.codigo}. ${comunidad.nombre}`;
-
-      const res = await fetch(`/api/comunidades/${comunidadId}/sharepoint`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "create-folder",
-          driveId: drives[0].id,
-          siteId: sites[0].id,
-          folderName,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Error al crear la carpeta");
-      } else {
-        await fetchComunidad();
-        setCurrentFolderId(null);
-        setBreadcrumbs([]);
+      const res = await fetch(`/api/files/download?driveId=${file.driveId}&itemId=${file.id}`);
+      const data = await res.json();
+      if (data.url) {
+        const a = document.createElement("a");
+        a.href = data.url;
+        a.download = file.name;
+        a.click();
       }
     } catch {
-      setError("Error de conexión al crear carpeta");
+      // silently ignore
+    } finally {
+      setDownloading(null);
     }
-    setCreating(false);
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !comunidad?.sharePointDriveId) return;
+  const totalCount = subfolders.reduce((s, g) => s + g.count, 0);
 
-    setUploading(true);
-    setError("");
+  const tabs: { key: string; label: string; count: number }[] = [
+    { key: ALL_KEY, label: "Todos", count: totalCount },
+    ...subfolders.map((g) => ({
+      key: g.name ?? ROOT_KEY,
+      label: g.name ?? "(raíz)",
+      count: g.count,
+    })),
+  ];
 
-    try {
-      const folderId = currentFolderId || comunidad.sharePointFolderId;
-      if (!folderId) return;
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folderId", folderId);
-
-      const res = await fetch(`/api/comunidades/${comunidadId}/sharepoint/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Error al subir archivo");
-      } else {
-        await fetchFiles(currentFolderId || undefined);
-      }
-    } catch {
-      setError("Error al subir el archivo");
-    }
-    setUploading(false);
-    e.target.value = "";
-  };
-
-  const openPreview = async (file: FileItem) => {
-    if (!comunidad?.sharePointDriveId) return;
-    setPreviewFile(file);
-    setPreviewLoading(true);
-    setPreviewUrl(null);
-    try {
-      if (file.downloadUrl) {
-        setPreviewUrl(file.downloadUrl);
-      } else {
-        const res = await fetch(`/api/preview?driveId=${comunidad.sharePointDriveId}&itemId=${file.id}`);
-        const data = await res.json();
-        if (data.downloadUrl) setPreviewUrl(data.downloadUrl);
-      }
-    } catch {
-    }
-    setPreviewLoading(false);
-  };
-
-  if (!connected) {
+  if (!linked) {
     return (
-      <div className="card-static py-16 text-center">
-        <div className="text-gray-400 mb-2" style={{ fontSize: 32 }}>
-          🔗
-        </div>
-        <p className="text-gray-500 text-sm mb-2">
-          OneDrive/SharePoint no está conectado
-        </p>
-        <a href="/ajustes" className="text-blue-600 text-sm font-semibold hover:text-blue-800">
-          Configurar conexión →
-        </a>
+      <div style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>📁</div>
+        <div style={{ fontWeight: 600, color: "#475569", marginBottom: 8 }}>Sin carpeta vinculada</div>
+        <div style={{ fontSize: 14 }}>Esta comunidad aún no tiene una carpeta en SharePoint</div>
       </div>
     );
   }
-
-  const hasFolder = !!(comunidad?.sharePointDriveId && comunidad?.sharePointFolderId);
-  const hasFolderName = !!comunidad?.sharePointFolderName;
-
-  if (!hasFolder && !hasFolderName) {
-    return (
-      <div className="card-static py-16 text-center">
-        <div className="text-gray-400 mb-2" style={{ fontSize: 32 }}>
-          📁
-        </div>
-        <p className="text-gray-500 text-sm mb-3">
-          Esta comunidad no tiene carpeta de documentos en OneDrive
-        </p>
-        {error && (
-          <p className="text-red-500 text-xs mb-3">{error}</p>
-        )}
-        <button
-          onClick={handleCreateFolder}
-          disabled={creating}
-          className="btn-primary"
-        >
-          {creating ? "Creando carpeta..." : "Crear carpeta en OneDrive"}
-        </button>
-        <p className="text-gray-400 text-xs mt-3">
-          Se creará: <strong>{comunidad?.codigo}. {comunidad?.nombre}</strong>
-        </p>
-      </div>
-    );
-  }
-
-  if (hasFolderName && !hasFolder) {
-    const isRevisar = comunidad?.sharePointMatchMethod === "REVISAR";
-    return (
-      <div className="card-static py-12 text-center">
-        <div className="text-gray-400 mb-2" style={{ fontSize: 32 }}>
-          📂
-        </div>
-        <p className="text-gray-700 text-sm mb-1 font-semibold">
-          Carpeta asignada: {comunidad?.sharePointFolderName}
-        </p>
-        {isRevisar && (
-          <div
-            className="mx-auto mb-3 text-xs font-semibold rounded-lg"
-            style={{
-              maxWidth: 480,
-              padding: "10px 16px",
-              background: "#fef3c7",
-              color: "#92400e",
-              border: "1px solid #fde68a",
-            }}
-          >
-            ⚠ Coincidencia automática ({comunidad?.sharePointMatchScore}%) — Revisa que esta carpeta corresponde realmente a esta comunidad antes de vincular.
-          </div>
-        )}
-        <p className="text-gray-500 text-xs mb-4">
-          La carpeta existe en OneDrive pero no está vinculada todavía. Vincula la carpeta para ver los documentos.
-        </p>
-        {error && (
-          <p className="text-red-500 text-xs mb-3">{error}</p>
-        )}
-        <button
-          onClick={handleCreateFolder}
-          disabled={creating}
-          className="btn-primary"
-        >
-          {creating ? "Vinculando..." : "Vincular carpeta"}
-        </button>
-      </div>
-    );
-  }
-
-  const folders = files.filter((f) => f.isFolder);
-  const regularFiles = files.filter((f) => !f.isFolder);
-  const filteredFiles = search.trim()
-    ? regularFiles.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()))
-    : regularFiles;
-  const filteredFolders = search.trim()
-    ? folders.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()))
-    : folders;
-
-  const totalSize = regularFiles.reduce((sum, f) => sum + (f.size || 0), 0);
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigateToBreadcrumb(-1)}
-            className={`text-xs font-semibold cursor-pointer bg-transparent border-none ${breadcrumbs.length > 0 ? "text-blue-600 hover:text-blue-800" : "text-gray-700"}`}
-          >
-            {comunidad?.sharePointFolderName || "Raíz"}
-          </button>
-          {breadcrumbs.map((bc, i) => {
-            const isLast = i === breadcrumbs.length - 1;
-            return (
-              <span key={i} className="flex items-center gap-2">
-                <span className="text-gray-400 text-xs">/</span>
-                <button
-                  onClick={() => navigateToBreadcrumb(i)}
-                  className={`text-xs font-semibold cursor-pointer bg-transparent border-none ${isLast ? "text-gray-700" : "text-blue-600 hover:text-blue-800"}`}
-                >
-                  {bc.name}
-                </button>
-              </span>
-            );
-          })}
+    <div style={{ display: "flex", flexDirection: "column", gap: 0, minHeight: 400 }}>
+      {/* Header */}
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ fontSize: 13, color: "#64748b" }}>
+          {folderName && <span style={{ fontWeight: 600, color: "#1e293b" }}>{folderName}</span>}
+          {" · "}
+          <span>{totalCount} archivos</span>
         </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">
-            {regularFiles.length} archivos · {formatSize(totalSize)}
-          </span>
-          {breadcrumbs.length === 0 && (
-            <button
-              onClick={async () => {
-                if (!comunidad?.sharePointDriveId || !comunidad?.sharePointFolderId) return;
-                setError("");
-                try {
-                  const res = await fetch(`/api/comunidades/${comunidadId}/sharepoint`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      action: "normalize",
-                    }),
-                  });
-                  if (res.ok) {
-                    fetchFiles();
-                  } else {
-                    const data = await res.json();
-                    setError(data.error || "Error al crear subcarpetas");
-                  }
-                } catch {
-                  setError("Error de conexión");
-                }
-              }}
-              className="btn-primary text-xs"
-              style={{ padding: "6px 14px", background: "#6d28d9" }}
-            >
-              Crear subcarpetas
-            </button>
-          )}
-          <label className="btn-primary text-xs cursor-pointer" style={{ padding: "6px 14px" }}>
-            {uploading ? "Subiendo..." : "Subir documento"}
-            <input
-              type="file"
-              onChange={handleUpload}
-              disabled={uploading}
-              className="hidden"
-            />
-          </label>
-        </div>
-      </div>
-
-      <div className="mb-4">
         <input
           type="text"
-          placeholder="Buscar por nombre de archivo..."
+          placeholder="Buscar archivos..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="input-field"
-          style={{ fontSize: 13 }}
+          onChange={(e) => handleSearch(e.target.value)}
+          style={{
+            padding: "6px 12px", borderRadius: 8, border: "1px solid #e2e8f0",
+            fontSize: 13, outline: "none", width: 220, background: "#f8fafc",
+          }}
         />
       </div>
 
-      {error && (
-        <div className="bg-red-50 text-red-600 text-xs p-3 rounded-lg mb-4">
-          {error}
+      {/* Subfolder tabs */}
+      {!search && tabs.length > 1 && (
+        <div style={{
+          display: "flex", gap: 0, overflowX: "auto", borderBottom: "1px solid #e2e8f0",
+          padding: "0 8px", background: "#fafafa",
+        }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key)}
+              style={{
+                padding: "10px 14px", border: "none", background: "none", cursor: "pointer",
+                fontSize: 13, whiteSpace: "nowrap", borderBottom: activeTab === tab.key ? "2px solid #4F7CFF" : "2px solid transparent",
+                color: activeTab === tab.key ? "#4F7CFF" : "#64748b",
+                fontWeight: activeTab === tab.key ? 600 : 400,
+              }}
+            >
+              {tab.label}
+              <span style={{ marginLeft: 6, fontSize: 11, background: activeTab === tab.key ? "#eff4ff" : "#f1f5f9", color: activeTab === tab.key ? "#4F7CFF" : "#94a3b8", borderRadius: 10, padding: "2px 6px" }}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
         </div>
       )}
 
-      {loading ? (
-        <div className="text-gray-500 text-sm py-8 text-center">
-          Cargando documentos...
-        </div>
-      ) : (
-        <div className="card-static p-0 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="table-header text-left">Nombre</th>
-                <th className="table-header text-left" style={{ width: 120 }}>Fecha</th>
-                <th className="table-header text-right" style={{ width: 100 }}>Tamaño</th>
-                <th className="table-header text-right" style={{ width: 120 }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredFolders.map((folder) => (
-                <tr
-                  key={folder.id}
-                  className="table-row cursor-pointer"
-                  onClick={() => navigateToFolder(folder.id, folder.name)}
-                >
-                  <td className="table-cell">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-                        style={{ background: "#fef3c7", color: "#d97706" }}
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-                        </svg>
-                      </div>
-                      <span className="font-semibold text-gray-900">{folder.name}</span>
-                    </div>
-                  </td>
-                  <td className="table-cell text-gray-500 text-sm">
-                    {folder.lastModified ? new Date(folder.lastModified).toLocaleDateString("es-ES") : "-"}
-                  </td>
-                  <td className="table-cell text-right text-gray-400 text-sm">
-                    -
-                  </td>
-                  <td className="table-cell text-right">
-                    <span className="text-xs text-blue-600 font-semibold">Abrir →</span>
-                  </td>
-                </tr>
-              ))}
-              {filteredFiles.map((file) => {
-                const icon = getFileIcon(file.name, file.mimeType);
-                return (
-                  <tr key={file.id} className="table-row">
-                    <td className="table-cell">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold"
-                          style={{ background: icon.bg, color: icon.color }}
-                        >
-                          {icon.label}
-                        </div>
-                        <span className="font-semibold text-gray-900 truncate">{file.name}</span>
-                      </div>
-                    </td>
-                    <td className="table-cell text-gray-500 text-sm">
-                      {file.lastModified ? new Date(file.lastModified).toLocaleDateString("es-ES") : "-"}
-                    </td>
-                    <td className="table-cell text-right text-gray-500 text-sm">
-                      {formatSize(file.size)}
-                    </td>
-                    <td className="table-cell text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        {isPreviewable(file.name, file.mimeType) && (
-                          <button
-                            onClick={() => openPreview(file)}
-                            className="text-xs font-semibold text-purple-600 hover:text-purple-800 bg-transparent border-none cursor-pointer"
-                          >
-                            Vista previa
-                          </button>
-                        )}
-                        {file.webUrl && (
-                          <a
-                            href={file.webUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Ver
-                          </a>
-                        )}
-                        {file.downloadUrl && (
-                          <a
-                            href={file.downloadUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-semibold text-gray-600 hover:text-gray-800"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Descargar
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filteredFolders.length === 0 && filteredFiles.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="py-12 text-center text-gray-400 text-sm">
-                    {search ? "No se encontraron archivos con ese nombre" : "Esta carpeta está vacía"}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {previewFile && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.6)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          onClick={() => { setPreviewFile(null); setPreviewUrl(null); }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              width: "80vw",
-              maxWidth: 900,
-              height: "80vh",
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #e2e8f0" }}>
-              <span className="font-semibold text-sm text-gray-800 truncate">{previewFile.name}</span>
-              <button
-                onClick={() => { setPreviewFile(null); setPreviewUrl(null); }}
-                className="text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-lg"
-              >
-                x
-              </button>
-            </div>
-            <div className="flex-1 flex items-center justify-center overflow-hidden" style={{ background: "#f8fafc" }}>
-              {previewLoading ? (
-                <span className="text-gray-400 text-sm">Cargando vista previa...</span>
-              ) : previewUrl ? (
-                (() => {
-                  const ext = previewFile.name.split(".").pop()?.toLowerCase() || "";
-                  const isImage = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"].includes(ext) || previewFile.mimeType?.startsWith("image/");
-                  if (isImage) {
-                    return <img src={previewUrl} alt={previewFile.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />;
-                  }
-                  return <iframe src={previewUrl} style={{ width: "100%", height: "100%", border: "none" }} title={previewFile.name} />;
-                })()
-              ) : (
-                <span className="text-gray-400 text-sm">No se pudo cargar la vista previa</span>
-              )}
-            </div>
+      {/* File list */}
+      <div style={{ flex: 1 }}>
+        {loading ? (
+          <div style={{ padding: 40, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>Cargando...</div>
+        ) : files.length === 0 ? (
+          <div style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>📄</div>
+            <div style={{ fontSize: 14 }}>{search ? "No hay archivos que coincidan" : "Sin archivos en esta carpeta"}</div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div>
+            {files.map((file) => {
+              const icon = getFileIcon(file.name, file.mimeType);
+              return (
+                <div
+                  key={file.id}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "10px 20px", borderBottom: "1px solid #f1f5f9",
+                    transition: "background 0.1s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+                >
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 8, background: icon.bg,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 10, fontWeight: 700, color: icon.color, flexShrink: 0,
+                  }}>
+                    {icon.label}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {file.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, display: "flex", gap: 8 }}>
+                      <span>{formatSize(file.sizeBytes)}</span>
+                      <span>·</span>
+                      <span>{formatDate(file.lastModified)}</span>
+                      {file.subfolder && activeTab === ALL_KEY && !search && (
+                        <>
+                          <span>·</span>
+                          <span style={{ color: "#4F7CFF" }}>{file.subfolder}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                    {file.webUrl && (
+                      <a
+                        href={file.webUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Abrir en SharePoint"
+                        style={{
+                          padding: "5px 10px", borderRadius: 6, background: "#f1f5f9",
+                          color: "#475569", fontSize: 12, textDecoration: "none",
+                          border: "1px solid #e2e8f0", cursor: "pointer",
+                        }}
+                      >
+                        Abrir
+                      </a>
+                    )}
+                    <button
+                      onClick={() => handleDownload(file)}
+                      disabled={downloading === file.id}
+                      title="Descargar"
+                      style={{
+                        padding: "5px 10px", borderRadius: 6, background: downloading === file.id ? "#f1f5f9" : "#4F7CFF",
+                        color: downloading === file.id ? "#94a3b8" : "#fff", fontSize: 12,
+                        border: "none", cursor: downloading === file.id ? "default" : "pointer",
+                      }}
+                    >
+                      {downloading === file.id ? "..." : "↓"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -170,7 +170,7 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
           const spModified = file.lastModified ? new Date(file.lastModified) : null;
 
           if (existing) {
-            if (existing.sharePointHash !== contentHash || existing.name !== file.name) {
+            if (existing.sharePointHash !== contentHash || existing.name !== file.name || !existing.webUrl) {
               await prisma.fileCache.update({
                 where: { id: existing.id },
                 data: {
@@ -182,6 +182,7 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
                   mimeType: file.mimeType,
                   sharePointModified: spModified,
                   sharePointHash: contentHash,
+                  webUrl: file.webUrl,
                   lastSyncedAt: new Date(),
                 },
               });
@@ -201,6 +202,7 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
                 mimeType: file.mimeType,
                 sharePointModified: spModified,
                 sharePointHash: contentHash,
+                webUrl: file.webUrl,
                 lastSyncedAt: new Date(),
               },
             });
@@ -296,7 +298,7 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
 
         const existingCache = await prisma.fileCache.findMany({
           where: { comunidadId: com.id },
-          select: { id: true, sharePointItemId: true, sharePointHash: true, name: true },
+          select: { id: true, sharePointItemId: true, sharePointHash: true, name: true, webUrl: true },
         });
         const existingMap = new Map(existingCache.map((e) => [e.sharePointItemId, e]));
         const seenItemIds = new Set<string>();
@@ -309,7 +311,7 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
           const spModified = file.lastModified ? new Date(file.lastModified) : null;
 
           if (existing) {
-            if (existing.sharePointHash !== contentHash || existing.name !== file.name) {
+            if (existing.sharePointHash !== contentHash || existing.name !== file.name || !existing.webUrl) {
               await prisma.fileCache.update({
                 where: { id: existing.id },
                 data: {
@@ -321,6 +323,7 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
                   mimeType: file.mimeType,
                   sharePointModified: spModified,
                   sharePointHash: contentHash,
+                  webUrl: file.webUrl,
                   lastSyncedAt: new Date(),
                 },
               });
@@ -340,6 +343,7 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
                 mimeType: file.mimeType,
                 sharePointModified: spModified,
                 sharePointHash: contentHash,
+                webUrl: file.webUrl,
                 lastSyncedAt: new Date(),
               },
             });

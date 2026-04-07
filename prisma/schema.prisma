@@ -165,6 +165,7 @@ model FileCache {
   isFolder        Boolean  @default(false)
   sharePointModified DateTime?
   sharePointHash  String?
+  webUrl          String?
   lastSyncedAt    DateTime @default(now())
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
