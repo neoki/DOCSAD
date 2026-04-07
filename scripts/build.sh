@@ -4,11 +4,11 @@ set -e
 echo "==> Generating Prisma Client..."
 npx prisma generate
 
-echo "==> Resolving any failed migrations..."
-npx prisma migrate resolve --applied 20240101000000_init 2>/dev/null || echo "Migration already applied, continuing..."
+echo "==> Syncing database schema..."
+npx prisma db push --accept-data-loss
 
-echo "==> Running migrations..."
-npx prisma migrate deploy
+echo "==> Seeding communities..."
+npx tsx prisma/seed.ts
 
 echo "==> Building Next.js..."
 next build
