@@ -3,40 +3,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
-  listFiles,
   listAllFilesRecursive,
-  listDrives,
-  listSharePointSites,
   moveFile,
   getOrCreateSubfolder,
   STANDARD_SUBFOLDERS,
 } from "@/lib/microsoft-graph";
 import { classifyFile } from "@/lib/scanner-classifier";
+import { getEscanerRoot } from "@/lib/sharepoint-roots";
 
 export const maxDuration = 300;
 
-let cachedScannerFolder: { driveId: string; folderId: string } | null = null;
 let cachedScannedFileIds: Set<string> | null = null;
-
-async function findScannerFolder(): Promise<{ driveId: string; folderId: string } | null> {
-  if (cachedScannerFolder) return cachedScannerFolder;
-
-  const sites = await listSharePointSites();
-  for (const site of sites) {
-    const drives = await listDrives(site.id);
-    for (const drive of drives) {
-      const rootItems = await listFiles(drive.id, "root");
-      const scannerFolder = rootItems.find(
-        (item) => item.isFolder && item.name.toLowerCase().includes("escaner"),
-      );
-      if (scannerFolder) {
-        cachedScannerFolder = { driveId: drive.id, folderId: scannerFolder.id };
-        return cachedScannerFolder;
-      }
-    }
-  }
-  return null;
-}
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -46,15 +23,15 @@ export async function GET(req: NextRequest) {
   const action = searchParams.get("action") || "scan";
 
   if (action === "find-folder") {
-    const folder = await findScannerFolder();
+    const folder = await getEscanerRoot();
     if (!folder) {
       return NextResponse.json({ found: false });
     }
-    return NextResponse.json({ found: true, ...folder });
+    return NextResponse.json({ found: true, driveId: folder.driveId, folderId: folder.folderId });
   }
 
   if (action === "scan") {
-    const scanner = await findScannerFolder();
+    const scanner = await getEscanerRoot();
     if (!scanner) {
       return NextResponse.json({ error: "Carpeta Escáner no encontrada" }, { status: 404 });
     }
@@ -140,7 +117,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Máximo 50 archivos por lote" }, { status: 400 });
     }
 
-    const scanner = await findScannerFolder();
+    const scanner = await getEscanerRoot();
     if (!scanner) {
       return NextResponse.json({ error: "Carpeta Escáner no encontrada" }, { status: 404 });
     }

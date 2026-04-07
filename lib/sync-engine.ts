@@ -1,10 +1,9 @@
 import { prisma } from "./prisma";
 import {
-  listSharePointSites,
-  listDrives,
   listFiles,
   listAllFilesRecursive,
 } from "./microsoft-graph";
+import { getComunidadesRoot } from "./sharepoint-roots";
 
 type SyncResult = {
   added: number;
@@ -56,33 +55,12 @@ export async function getSyncState(key: string): Promise<string | null> {
   return record?.value ?? null;
 }
 
-export async function findComunidadesFolder(): Promise<{
-  siteId: string;
-  driveId: string;
-  folderId: string;
-} | null> {
-  const sites = await listSharePointSites();
-  for (const site of sites) {
-    const drives = await listDrives(site.id);
-    for (const drive of drives) {
-      const rootItems = await listFiles(drive.id, "root");
-      const folder = rootItems.find(
-        (item) => item.isFolder && item.name.toLowerCase().includes("comunidades"),
-      );
-      if (folder) {
-        return { siteId: site.id, driveId: drive.id, folderId: folder.id };
-      }
-    }
-  }
-  return null;
-}
-
 export async function syncCommunityFolders(): Promise<{
   linked: number;
   alreadyLinked: number;
   noMatch: number;
 }> {
-  const root = await findComunidadesFolder();
+  const root = await getComunidadesRoot();
   if (!root) throw new Error("Carpeta Comunidades no encontrada en SharePoint");
 
   const folders = await listFiles(root.driveId, root.folderId);

@@ -85,6 +85,12 @@ export default function AjustesPage() {
   const [onedriveLoading, setOnedriveLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [spRoots, setSpRoots] = useState<{
+    comunidades: { siteId: string; driveId: string; folderId: string; folderName: string } | null;
+    escaner: { siteId: string; driveId: string; folderId: string; folderName: string } | null;
+  } | null>(null);
+  const [spRootsLoading, setSpRootsLoading] = useState(true);
+  const [rediscovering, setRediscovering] = useState(false);
 
   useEffect(() => {
     fetch("/api/ajustes")
@@ -115,6 +121,12 @@ export default function AjustesPage() {
       .then((data) => setOnedriveStatus({ connected: !!data.connected, email: data.email, expiresAt: data.expiresAt }))
       .catch(() => setOnedriveStatus({ connected: false }))
       .finally(() => setOnedriveLoading(false));
+
+    fetch("/api/sharepoint-roots")
+      .then((r) => r.json())
+      .then((data) => setSpRoots(data))
+      .catch(() => setSpRoots(null))
+      .finally(() => setSpRootsLoading(false));
   }, []);
 
   const updateProvider = (id: string, field: keyof ProviderConfig, value: string | boolean) => {
@@ -512,6 +524,62 @@ export default function AjustesPage() {
           >
             {syncing ? "Sincronizando..." : "Sincronizar ahora"}
           </button>
+        </div>
+
+        {/* SP Roots panel */}
+        <div style={{ marginTop: 32, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>Carpetas permitidas</div>
+              <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>Solo se accede a estas carpetas en SharePoint. El resto queda completamente aislado.</div>
+            </div>
+            <button
+              onClick={async () => {
+                setRediscovering(true);
+                try {
+                  const r = await fetch("/api/sharepoint-roots", { method: "POST" });
+                  const data = await r.json();
+                  setSpRoots(data);
+                } catch {
+                  // ignore
+                } finally {
+                  setRediscovering(false);
+                }
+              }}
+              disabled={rediscovering}
+              style={{ padding: "8px 16px", borderRadius: 8, background: "#4F7CFF", color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, opacity: rediscovering ? 0.7 : 1 }}
+            >
+              {rediscovering ? "Redescubriendo..." : "Redescubrir"}
+            </button>
+          </div>
+
+          {spRootsLoading ? (
+            <div style={{ fontSize: 13, color: "#94a3b8" }}>Cargando...</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {[
+                { label: "Comunidades", data: spRoots?.comunidades },
+                { label: "Escáner", data: spRoots?.escaner },
+              ].map(({ label, data }) => (
+                <div key={label} style={{ background: "#fff", border: `1px solid ${data ? "#86efac" : "#fca5a5"}`, borderRadius: 10, padding: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 18 }}>{data ? "✅" : "❌"}</span>
+                    <span style={{ fontWeight: 600, fontSize: 14, color: "#1e293b" }}>{label}</span>
+                  </div>
+                  {data ? (
+                    <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.6 }}>
+                      <div><span style={{ color: "#94a3b8" }}>Carpeta:</span> {data.folderName}</div>
+                      <div style={{ fontFamily: "monospace", fontSize: 11, marginTop: 4, color: "#94a3b8", wordBreak: "break-all" }}>
+                        Drive: {data.driveId.slice(0, 20)}...
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: "#dc2626" }}>No encontrada. Verifica que la carpeta existe en SharePoint.</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {syncResult?.error && (
