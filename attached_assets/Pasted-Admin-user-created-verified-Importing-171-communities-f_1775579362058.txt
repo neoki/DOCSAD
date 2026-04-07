@@ -1,0 +1,60 @@
+Admin user created/verified
+
+Importing 171 communities from Gesfincas...
+
+PrismaClientKnownRequestError: 
+Invalid `prisma.comunidad.findUnique()` invocation in
+/home/runner/workspace/prisma/seed.ts:44:45
+
+  41 let skipped = 0;
+  42 
+  43 for (const c of comunidades) {
+→ 44   const existing = await prisma.comunidad.findUnique(
+The column `comunidades.codigo` does not exist in the current database.
+    at $n.handleRequestError (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async main (/home/runner/workspace/prisma/seed.ts:44:22) {
+  code: 'P2022',
+  clientVersion: '5.22.0',
+  meta: { modelName: 'Comunidad', column: 'comunidades.codigo' }
+}
+
+PrismaClientKnownRequestError: 
+Invalid `prisma.comunidad.findUnique()` invocation in
+/home/runner/workspace/prisma/seed.ts:44:45
+
+  41 let skipped = 0;
+  42 
+  43 for (const c of comunidades) {
+→ 44   const existing = await prisma.comunidad.findUnique(
+The column `comunidades.codigo` does not exist in the current database.
+    at $n.handleRequestError (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async main (/home/runner/workspace/prisma/seed.ts:44:22) {
+  code: 'P2022',
+  clientVersion: '5.22.0',
+  meta: { modelName: 'Comunidad', column: 'comunidades.codigo' }
+}
+
+PrismaClientKnownRequestError: 
+Invalid `prisma.comunidad.findUnique()` invocation in
+/home/runner/workspace/prisma/seed.ts:44:45
+
+  41 let skipped = 0;
+  42 
+  43 for (const c of comunidades) {
+→ 44   const existing = await prisma.comunidad.findUnique(
+The column `comunidades.codigo` does not exist in the current database.
+    at $n.handleRequestError (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/home/runner/workspace/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async main (/home/runner/workspace/prisma/seed.ts:44:22) {
+  code: 'P2022',
+  clientVersion: '5.22.0',
+  meta: { modelName: 'Comunidad', column: 'comunidades.codigo' }
+}
