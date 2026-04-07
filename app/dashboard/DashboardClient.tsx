@@ -120,8 +120,12 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
   } | null>(null);
   const [syncError, setSyncError] = useState("");
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
-  const [autoSyncDone, setAutoSyncDone] = useState(false);
   const [trends, setTrends] = useState<TrendMonth[]>([]);
+
+  // Calcula si los datos están desactualizados (más de 24h sin sincronizar)
+  const syncOutdated = syncStats.lastSync
+    ? Date.now() - new Date(syncStats.lastSync).getTime() > 24 * 60 * 60 * 1000
+    : false;
 
   useEffect(() => {
     fetch("/api/alertas")
@@ -135,37 +139,16 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (autoSyncDone || syncing) return;
-    if (!syncStats.lastSync) return;
-    const lastSyncTime = new Date(syncStats.lastSync).getTime();
-    const twoHours = 2 * 60 * 60 * 1000;
-    if (Date.now() - lastSyncTime > twoHours) {
-      setAutoSyncDone(true);
-      setSyncing(true);
-      fetch("/api/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "incremental" }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.result) {
-            setSyncResult(data.result);
-            setTimeout(() => window.location.reload(), 3000);
-          }
-        })
-        .catch(() => {})
-        .finally(() => setSyncing(false));
-    }
-  }, [syncStats.lastSync, autoSyncDone, syncing]);
-
-  const runSync = async () => {
+  const runSync = async (mode: "incremental" | "full" = "incremental") => {
     setSyncing(true);
     setSyncResult(null);
     setSyncError("");
     try {
-      const res = await fetch("/api/sync", { method: "POST" });
+      const res = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
       const data = await res.json();
       if (data.error) {
         setSyncError(data.error);
@@ -204,13 +187,25 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
             Informe ejecutivo
           </a>
           <button
-            onClick={runSync}
+            onClick={() => runSync("incremental")}
             disabled={syncing}
             className="btn-primary"
             style={{ minWidth: 180 }}
+            title="Añade solo los archivos nuevos o modificados desde la última sincronización"
           >
-            {syncing ? "Sincronizando..." : "Sincronizar ahora"}
+            {syncing ? "Sincronizando..." : "Sincronizar cambios"}
           </button>
+          {!syncStats.lastSync && (
+            <button
+              onClick={() => runSync("full")}
+              disabled={syncing}
+              className="btn-primary"
+              style={{ minWidth: 180, background: "#6d28d9" }}
+              title="Analiza todos los archivos de SharePoint desde cero"
+            >
+              Sincronización completa
+            </button>
+          )}
         </div>
       </div>
 
@@ -225,6 +220,14 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
       {syncError && (
         <div className="card-static mb-4" style={{ borderLeft: "4px solid #dc2626", padding: "12px 16px", background: "#fef2f2" }}>
           <span className="text-sm font-semibold text-red-700">{syncError}</span>
+        </div>
+      )}
+
+      {syncOutdated && !syncing && !syncResult && (
+        <div className="card-static mb-4" style={{ borderLeft: "4px solid #f59e0b", padding: "12px 16px", background: "#fffbeb" }}>
+          <span className="text-sm font-semibold text-amber-700">
+            Los datos llevan más de 24 horas sin actualizarse. Pulsa &ldquo;Sincronizar ahora&rdquo; para añadir los cambios de SharePoint.
+          </span>
         </div>
       )}
 
