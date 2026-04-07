@@ -1,14 +1,12 @@
-import { prisma } from "./prisma";
+import { isSharePointConfigured } from "./microsoft-graph";
 import { getSyncState, incrementalSync, fullSync } from "./sync-engine";
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
 
 export async function maybeAutoSync(): Promise<void> {
   try {
-    const tokenRecord = await prisma.settings.findUnique({
-      where: { key: "onedrive_access_token" },
-    });
-    if (!tokenRecord?.value) return;
+    // Solo sincronizar si las credenciales de aplicación están configuradas
+    if (!isSharePointConfigured()) return;
 
     const [lastSync, syncStatus] = await Promise.all([
       getSyncState("sync_completed_at"),

@@ -373,10 +373,10 @@ export default function AjustesPage() {
         )}
       </div>
 
-      <h2 className="section-title">Conexión OneDrive / SharePoint</h2>
+      <h2 className="section-title">Conexión SharePoint</h2>
       <div
         className="card-static"
-        style={{ borderLeft: `4px solid ${onedriveStatus?.connected ? "#22c55e" : "#3b82f6"}`, maxWidth: 720 }}
+        style={{ borderLeft: `4px solid ${onedriveStatus?.connected ? "#22c55e" : "#dc2626"}`, maxWidth: 720 }}
       >
         <div className="flex items-center gap-3" style={{ marginBottom: 16 }}>
           <div
@@ -384,7 +384,7 @@ export default function AjustesPage() {
               width: 44,
               height: 44,
               borderRadius: 12,
-              background: onedriveStatus?.connected ? "#22c55e" : "#3b82f6",
+              background: onedriveStatus?.connected ? "#22c55e" : "#dc2626",
               color: "#fff",
               display: "flex",
               alignItems: "center",
@@ -398,14 +398,14 @@ export default function AjustesPage() {
           </div>
           <div style={{ flex: 1 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>
-              Microsoft OneDrive / SharePoint
+              Microsoft SharePoint — Conexión de aplicación
             </h3>
             <p style={{ color: "#64748b", fontSize: 14, margin: 0 }}>
               {onedriveLoading
-                ? "Comprobando estado..."
+                ? "Verificando credenciales..."
                 : onedriveStatus?.connected
-                  ? "Conectado y funcionando"
-                  : "No conectado"}
+                  ? "Conectado permanentemente — sin dependencia de cuenta personal"
+                  : "Credenciales no configuradas o sin permisos"}
             </p>
           </div>
           {!onedriveLoading && (
@@ -419,99 +419,59 @@ export default function AjustesPage() {
                 color: onedriveStatus?.connected ? "#16a34a" : "#dc2626",
               }}
             >
-              {onedriveStatus?.connected ? "CONECTADO" : "DESCONECTADO"}
+              {onedriveStatus?.connected ? "ACTIVO" : "SIN CONEXIÓN"}
             </div>
           )}
         </div>
 
         {onedriveStatus?.connected ? (
           <div>
-            {onedriveStatus.email && (
-              <p style={{ fontSize: 14, color: "#334155", marginBottom: 8 }}>
-                Cuenta: <strong>{onedriveStatus.email}</strong>
+            <div style={{ padding: 12, background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: "#15803d", margin: 0 }}>
+                La aplicación se autentica directamente en Microsoft Graph usando sus propias credenciales
+                (Client ID + Secret). El token se renueva automáticamente cada hora sin intervención manual.
+                No depende de ninguna cuenta personal de usuario.
               </p>
-            )}
-            {onedriveStatus.expiresAt && (
-              <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
-                Token válido hasta: {new Date(onedriveStatus.expiresAt).toLocaleString("es-ES")}
-              </p>
-            )}
-            <div className="flex items-center gap-3">
-              <button
-                className="btn-primary"
-                onClick={async () => {
-                  setConnecting(true);
-                  try {
-                    const res = await fetch("/api/onedrive/auth");
-                    const data = await res.json();
-                    if (data.authUrl) window.location.href = data.authUrl;
-                  } catch { }
-                  setConnecting(false);
-                }}
-                disabled={connecting}
-                style={{ minWidth: 180 }}
-              >
-                {connecting ? "Redirigiendo..." : "Reconectar cuenta"}
-              </button>
-              <button
-                className="btn-secondary"
-                onClick={async () => {
-                  if (!confirm("¿Seguro que quieres desconectar OneDrive? Tendrás que volver a autorizar la cuenta.")) return;
-                  setDisconnecting(true);
-                  try {
-                    await fetch("/api/onedrive/disconnect", { method: "POST" });
-                    setOnedriveStatus({ connected: false });
-                  } catch { }
-                  setDisconnecting(false);
-                }}
-                disabled={disconnecting}
-                style={{ color: "#dc2626" }}
-              >
-                {disconnecting ? "Desconectando..." : "Desconectar"}
-              </button>
             </div>
-          </div>
-        ) : (
-          <div>
-            <p style={{ color: "#475569", fontSize: 14, marginBottom: 16 }}>
-              Conecta tu cuenta de Microsoft para acceder a los archivos de SharePoint / OneDrive.
-              Las credenciales de Azure (Client ID, Secret, Tenant ID) deben estar configuradas como variables de entorno.
-            </p>
             <button
-              className="btn-primary"
+              className="btn-secondary"
               onClick={async () => {
                 setConnecting(true);
                 try {
-                  const res = await fetch("/api/onedrive/auth");
+                  const res = await fetch("/api/onedrive");
                   const data = await res.json();
-                  if (data.authUrl) {
-                    window.location.href = data.authUrl;
-                  } else {
-                    alert(data.error || "Error al iniciar la autorización. Verifica que las variables de entorno MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET y MICROSOFT_TENANT_ID estén configuradas.");
-                  }
+                  setOnedriveStatus({ connected: !!data.connected });
+                  alert(data.connected ? "Conexión verificada correctamente." : "La verificación falló. Revisa los permisos en Azure Portal.");
                 } catch {
-                  alert("Error de conexión. Inténtalo de nuevo.");
+                  alert("Error al verificar la conexión.");
                 }
                 setConnecting(false);
               }}
               disabled={connecting}
-              style={{
-                minWidth: 220,
-                background: "#0078d4",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-              }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
-              </svg>
-              {connecting ? "Redirigiendo..." : "Conectar con Microsoft"}
+              {connecting ? "Verificando..." : "Verificar conexión"}
             </button>
-            <div style={{ marginTop: 16, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
-              <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>
-                Redirect URI para Azure AD: <code style={{ background: "#f1f5f9", padding: "2px 8px", borderRadius: 4, fontSize: 12 }}>{appUrl}/api/onedrive/callback</code>
+          </div>
+        ) : (
+          <div>
+            <div style={{ padding: 12, background: "#fef2f2", borderRadius: 8, border: "1px solid #fecaca", marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: "#dc2626", margin: "0 0 8px 0", fontWeight: 600 }}>
+                La conexión no está funcionando. Causas posibles:
               </p>
+              <ul style={{ fontSize: 13, color: "#7f1d1d", margin: 0, paddingLeft: 18 }}>
+                <li>Las variables MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET o MICROSOFT_TENANT_ID no están configuradas</li>
+                <li>La aplicación en Azure no tiene permisos de aplicación (Application permissions) para <code>Sites.Read.All</code> y <code>Files.ReadWrite.All</code></li>
+                <li>No se ha concedido el &ldquo;Admin consent&rdquo; en Azure Portal para esos permisos</li>
+              </ul>
+            </div>
+            <div style={{ padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+              <p style={{ fontSize: 13, color: "#475569", margin: "0 0 4px 0", fontWeight: 600 }}>Cómo configurarlo en Azure Portal:</p>
+              <ol style={{ fontSize: 13, color: "#64748b", margin: 0, paddingLeft: 18 }}>
+                <li>Ve a Azure Portal → App registrations → tu aplicación</li>
+                <li>Sección &ldquo;API permissions&rdquo; → Add permission → Microsoft Graph → Application permissions</li>
+                <li>Añade: <code>Sites.Read.All</code> y <code>Files.ReadWrite.All</code></li>
+                <li>Pulsa &ldquo;Grant admin consent&rdquo; para tu organización</li>
+              </ol>
             </div>
           </div>
         )}

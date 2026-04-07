@@ -5,6 +5,73 @@ const CLIENT_SECRET = process.env.MICROSOFT_CLIENT_SECRET!;
 const TENANT_ID = process.env.MICROSOFT_TENANT_ID!;
 const SCOPES = "Files.ReadWrite.All Sites.Read.All User.Read offline_access";
 
+/** Comprueba si las credenciales de aplicación están configuradas en las variables de entorno */
+export function isSharePointConfigured(): boolean {
+  return !!(CLIENT_ID && CLIENT_SECRET && TENANT_ID);
+}
+
+/**
+ * Obtiene un token de acceso usando Client Credentials Flow (sin usuario).
+ * La aplicación se autentica sola con su client_id y client_secret.
+ * El token se cachea en la BD y se renueva automáticamente al expirar.
+ */
+export async function getAppToken(): Promise<string | null> {
+  if (!isSharePointConfigured()) return null;
+
+  // Comprobar caché en BD (evitar llamadas innecesarias a Microsoft)
+  const settings = await prisma.setting.findMany({
+    where: { key: { in: ["app_access_token", "app_token_expires_at"] } },
+  });
+  const tokenMap: Record<string, string> = {};
+  for (const s of settings) tokenMap[s.key] = s.value;
+
+  const cachedToken = tokenMap["app_access_token"];
+  const expiresAt = tokenMap["app_token_expires_at"];
+
+  // Token válido si expira en más de 5 minutos
+  if (cachedToken && expiresAt && new Date(expiresAt) > new Date(Date.now() + 5 * 60 * 1000)) {
+    return cachedToken;
+  }
+
+  // Obtener nuevo token con client_credentials
+  const body = new URLSearchParams({
+    client_id: CLIENT_ID,
+    client_secret: CLIENT_SECRET,
+    scope: "https://graph.microsoft.com/.default",
+    grant_type: "client_credentials",
+  });
+
+  try {
+    const res = await fetch(
+      `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token`,
+      { method: "POST", body, headers: { "Content-Type": "application/x-www-form-urlencoded" } },
+    );
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const accessToken: string = data.access_token;
+    const expiresIn: number = data.expires_in || 3600;
+    const newExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+
+    // Guardar en caché
+    for (const [key, value] of [
+      ["app_access_token", accessToken],
+      ["app_token_expires_at", newExpiresAt],
+    ] as [string, string][]) {
+      await prisma.setting.upsert({
+        where: { key },
+        create: { key, value },
+        update: { value },
+      });
+    }
+
+    return accessToken;
+  } catch {
+    return null;
+  }
+}
+
 export function getRedirectUri() {
   const base =
     process.env.REPLIT_DEPLOYMENT_URL ||
@@ -100,6 +167,7 @@ export async function storeTokens(accessToken: string, refreshToken: string, exp
 }
 
 export async function getValidAccessToken(): Promise<string | null> {
+  // Primero intentar con el token de usuario (OAuth delegado)
   const settings = await prisma.setting.findMany({
     where: {
       key: {
@@ -117,19 +185,21 @@ export async function getValidAccessToken(): Promise<string | null> {
   const refreshToken = tokenMap["onedrive_refresh_token"];
   const expiresAt = tokenMap["onedrive_token_expires_at"];
 
-  if (!accessToken || !refreshToken) return null;
-
-  if (expiresAt && new Date(expiresAt) > new Date(Date.now() + 60000)) {
-    return accessToken;
+  if (accessToken && refreshToken) {
+    if (expiresAt && new Date(expiresAt) > new Date(Date.now() + 60000)) {
+      return accessToken;
+    }
+    try {
+      const tokens = await refreshAccessToken(refreshToken);
+      await storeTokens(tokens.access_token, tokens.refresh_token, tokens.expires_in);
+      return tokens.access_token;
+    } catch {
+      // Token de usuario caducado — caer al token de aplicación
+    }
   }
 
-  try {
-    const tokens = await refreshAccessToken(refreshToken);
-    await storeTokens(tokens.access_token, tokens.refresh_token, tokens.expires_in);
-    return tokens.access_token;
-  } catch {
-    return null;
-  }
+  // Fallback: token de aplicación (client_credentials, sin usuario)
+  return getAppToken();
 }
 
 export async function isOneDriveConnected(): Promise<boolean> {
