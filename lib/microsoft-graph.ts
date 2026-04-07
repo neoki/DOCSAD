@@ -203,6 +203,8 @@ export async function getValidAccessToken(): Promise<string | null> {
 }
 
 export async function isOneDriveConnected(): Promise<boolean> {
+  // Accept either user OAuth token OR app-level client credentials
+  if (isSharePointConfigured()) return true;
   const token = await prisma.setting.findUnique({
     where: { key: "onedrive_refresh_token" },
   });
