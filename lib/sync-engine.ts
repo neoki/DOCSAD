@@ -55,6 +55,33 @@ export async function getSyncState(key: string): Promise<string | null> {
   return record?.value ?? null;
 }
 
+/**
+ * Atomically claim the sync lock.
+ * Uses a single SQL UPDATE WHERE to prevent two concurrent instances
+ * (prod + dev) from both starting a sync at the same time.
+ * Returns true if this caller claimed the lock, false if already running.
+ */
+export async function claimSyncLock(startedAt: string): Promise<boolean> {
+  // First ensure the row exists
+  await prisma.syncState.upsert({
+    where: { key: "sync_status" },
+    update: {},
+    create: { key: "sync_status", value: "idle" },
+  });
+
+  // Atomic: only update if NOT already running (single SQL statement = atomic in Postgres)
+  const result = await prisma.syncState.updateMany({
+    where: { key: "sync_status", value: { not: "running" } },
+    data: { value: "running" },
+  });
+
+  if (result.count === 0) return false;
+
+  // We have the lock — write the start time
+  await setSyncState("sync_started_at", startedAt);
+  return true;
+}
+
 export async function syncCommunityFolders(): Promise<{
   linked: number;
   alreadyLinked: number;
@@ -220,8 +247,8 @@ async function syncFilesForCommunity(
 
 export async function fullSync(onProgress?: (msg: string) => void): Promise<SyncResult> {
   const startTime = Date.now();
-  await setSyncState("sync_status", "running");
-  await setSyncState("sync_started_at", new Date().toISOString());
+  const claimed = await claimSyncLock(new Date().toISOString());
+  if (!claimed) throw new Error("Sync already running");
 
   const result: SyncResult = {
     added: 0,
@@ -292,8 +319,8 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
   }
 
   const startTime = Date.now();
-  await setSyncState("sync_status", "running");
-  await setSyncState("sync_started_at", new Date().toISOString());
+  const claimed = await claimSyncLock(new Date().toISOString());
+  if (!claimed) throw new Error("Sync already running");
 
   const result: SyncResult = {
     added: 0,
