@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     const ageMinutes = startedAt
       ? (Date.now() - new Date(startedAt).getTime()) / 60000
       : 999;
-    if (ageMinutes < 30) {
+    if (ageMinutes < 10) {
       return NextResponse.json(
         { error: "Ya hay una sincronización en curso" },
         { status: 409 },

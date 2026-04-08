@@ -178,18 +178,6 @@ async function syncFilesForCommunity(
 }
 
 export async function fullSync(onProgress?: (msg: string) => void): Promise<SyncResult> {
-  // Guard: prevent concurrent runs
-  const currentStatus = await getSyncState("sync_status");
-  if (currentStatus === "running") {
-    const startedAt = await getSyncState("sync_started_at");
-    const startedMs = startedAt ? new Date(startedAt).getTime() : 0;
-    const ageMinutes = (Date.now() - startedMs) / 60000;
-    // Allow override if stuck for more than 30 minutes
-    if (ageMinutes < 30) {
-      throw new Error("Sync already running");
-    }
-  }
-
   const startTime = Date.now();
   await setSyncState("sync_status", "running");
   await setSyncState("sync_started_at", new Date().toISOString());
@@ -257,17 +245,6 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
 }
 
 export async function incrementalSync(onProgress?: (msg: string) => void): Promise<SyncResult> {
-  // Guard: prevent concurrent runs
-  const currentStatus = await getSyncState("sync_status");
-  if (currentStatus === "running") {
-    const startedAt = await getSyncState("sync_started_at");
-    const startedMs = startedAt ? new Date(startedAt).getTime() : 0;
-    const ageMinutes = (Date.now() - startedMs) / 60000;
-    if (ageMinutes < 30) {
-      throw new Error("Sync already running");
-    }
-  }
-
   const lastSync = await getSyncState("sync_completed_at");
   if (!lastSync) {
     return fullSync(onProgress);

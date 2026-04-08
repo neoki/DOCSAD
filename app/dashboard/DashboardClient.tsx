@@ -124,6 +124,7 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
   const [liveElapsed, setLiveElapsed] = useState(0);
   const [liveLogs, setLiveLogs] = useState<Array<{ operation: string; status: string; fileName?: string; details?: string; error?: string; createdAt: string }>>([]);
   const [liveStartedAt, setLiveStartedAt] = useState<string | null>(null);
+  const [liveCompletedAt, setLiveCompletedAt] = useState<string | null>(null);
 
   const syncOutdated = syncStats.lastSync
     ? Date.now() - new Date(syncStats.lastSync).getTime() > 24 * 60 * 60 * 1000
@@ -147,6 +148,7 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
         setLiveStatus(isRunning ? "running" : "idle");
         setLiveLogs(logsData.logs || []);
         setLiveStartedAt(statusData.startedAt || null);
+        if (statusData.completedAt) setLiveCompletedAt(statusData.completedAt);
 
         if (isRunning) {
           if (!startMs) {
@@ -229,8 +231,8 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
         <div>
           <h1 className="page-title">Panel de control</h1>
           <p className="page-subtitle">
-            {syncStats.lastSync
-              ? `Última sincronización: ${timeAgo(syncStats.lastSync)}`
+            {(liveCompletedAt || syncStats.lastSync)
+              ? `Última sincronización: ${timeAgo((liveCompletedAt || syncStats.lastSync)!)}`
               : "Sin sincronizar todavía — pulsa Sincronizar para empezar"}
           </p>
         </div>
