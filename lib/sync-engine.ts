@@ -59,10 +59,25 @@ export async function getSyncState(key: string): Promise<string | null> {
  * Atomically claim the sync lock.
  * Uses a single SQL UPDATE WHERE to prevent two concurrent instances
  * (prod + dev) from both starting a sync at the same time.
+ * Stale locks older than STALE_MINUTES are automatically expired first.
  * Returns true if this caller claimed the lock, false if already running.
  */
+const STALE_LOCK_MINUTES = 10;
+
 export async function claimSyncLock(startedAt: string): Promise<boolean> {
-  // First ensure the row exists
+  // Auto-expire stale locks: if sync has been "running" for > STALE_LOCK_MINUTES, reset it
+  const startedAtRecord = await prisma.syncState.findUnique({ where: { key: "sync_started_at" } });
+  const statusRecord = await prisma.syncState.findUnique({ where: { key: "sync_status" } });
+
+  if (statusRecord?.value === "running" && startedAtRecord?.value) {
+    const ageMs = Date.now() - new Date(startedAtRecord.value).getTime();
+    if (ageMs > STALE_LOCK_MINUTES * 60 * 1000) {
+      // Lock is stale — forcibly reset so we can claim it
+      await setSyncState("sync_status", "idle");
+    }
+  }
+
+  // Ensure the row exists
   await prisma.syncState.upsert({
     where: { key: "sync_status" },
     update: {},
