@@ -551,6 +551,137 @@ export async function listAllFilesRecursive(
   return results;
 }
 
+export type DeltaFile = {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  isFolder: boolean;
+  mimeType: string | null;
+  lastModified: string | null;
+  webUrl: string | null;
+  deleted: boolean;
+};
+
+/**
+ * Llama al endpoint delta de SharePoint.
+ * - Primera vez (sin deltaToken): devuelve todos los ítems + deltaLink para futuras llamadas.
+ * - Llamadas siguientes (con deltaToken): devuelve solo lo que cambió/añadió/borró.
+ * El deltaLink que devuelve ya incluye el token — se guarda tal cual y se reutiliza.
+ */
+export async function listFilesDelta(
+  driveId: string,
+  folderId: string,
+  deltaToken?: string | null,
+  folderAbsPath?: string | null,
+): Promise<{ files: DeltaFile[]; nextDeltaLink: string }> {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const select = "$select=id,name,size,folder,file,lastModifiedDateTime,webUrl,deleted,parentReference";
+
+  let url: string | null = deltaToken
+    ? deltaToken
+    : `/drives/${driveId}/items/${folderId}/delta?${select}`;
+
+  const allItems: DeltaFile[] = [];
+  let finalDeltaLink = "";
+
+  // Build id→relativePath map for resolving paths within this batch
+  const idToPath = new Map<string, string>();
+  idToPath.set(folderId, "");
+
+  while (url) {
+    const isFullUrl = url.startsWith("https://");
+    const data = isFullUrl
+      ? await graphGetFull(url, accessToken)
+      : await graphGet(url, accessToken);
+
+    for (const item of data.value || []) {
+      const isDeleted = !!(item.deleted);
+      const isFolder = !!(item.folder);
+      const itemName = (item.name as string) || "";
+
+      let itemPath: string;
+
+      // Try resolving path from in-batch idToPath map first (works for full scan)
+      const parentId: string = (item.parentReference as Record<string, unknown>)?.id as string || folderId;
+      if (idToPath.has(parentId)) {
+        const parentPath = idToPath.get(parentId)!;
+        itemPath = parentPath ? `${parentPath}/${itemName}` : itemName;
+      } else if (folderAbsPath) {
+        // Incremental delta: parent not in batch — reconstruct from parentReference.path
+        const parentRefPath = ((item.parentReference as Record<string, unknown>)?.path as string) || "";
+        // parentRefPath looks like "/drives/XXX/root:/Comunidades/74.../Contratos"
+        // Strip the folderAbsPath prefix to get the relative parent path
+        const relativeParent = parentRefPath.startsWith(folderAbsPath)
+          ? parentRefPath.slice(folderAbsPath.length).replace(/^\//, "")
+          : "";
+        itemPath = relativeParent ? `${relativeParent}/${itemName}` : itemName;
+      } else {
+        // Fallback: just use the item name
+        itemPath = itemName;
+      }
+
+      if (isFolder && !isDeleted) {
+        idToPath.set(item.id as string, itemPath);
+      }
+
+      allItems.push({
+        id: item.id as string,
+        name: itemName,
+        path: itemPath,
+        size: (item.size as number) || 0,
+        isFolder,
+        mimeType: ((item.file as Record<string, unknown> | undefined)?.mimeType as string | null) ?? null,
+        lastModified: (item.lastModifiedDateTime as string) || null,
+        webUrl: (item.webUrl as string) || null,
+        deleted: isDeleted,
+      });
+    }
+
+    if (data["@odata.deltaLink"]) {
+      finalDeltaLink = data["@odata.deltaLink"] as string;
+      url = null;
+    } else if (data["@odata.nextLink"]) {
+      url = data["@odata.nextLink"] as string;
+    } else {
+      url = null;
+    }
+  }
+
+  return { files: allItems, nextDeltaLink: finalDeltaLink };
+}
+
+/**
+ * Obtiene el path absoluto de SharePoint de una carpeta.
+ * Devuelve algo como "/drives/XXX/root:/Comunidades/74. C.P. NOVOA SANTOS, 6-8"
+ * Se usa para destilar las rutas relativas de items del delta.
+ */
+export async function getFolderAbsPath(driveId: string, folderId: string): Promise<string> {
+  const accessToken = await getValidAccessToken();
+  if (!accessToken) throw new Error("Not connected");
+
+  const data = await graphGet(
+    `/drives/${driveId}/items/${folderId}?$select=name,parentReference`,
+    accessToken,
+  );
+  const parentPath = (data.parentReference?.path as string) || "";
+  const name = (data.name as string) || "";
+  return `${parentPath}/${name}`;
+}
+
+async function graphGetFull(url: string, accessToken: string): Promise<Record<string, unknown>> {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Graph API error ${res.status}: ${err}`);
+  }
+  return res.json() as Promise<Record<string, unknown>>;
+}
+
 export async function moveFile(
   driveId: string,
   itemId: string,

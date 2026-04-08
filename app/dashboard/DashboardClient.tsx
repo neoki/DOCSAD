@@ -321,11 +321,11 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
       <div className="grid grid-cols-6 gap-3 mb-6">
         {[
           { label: "Comunidades", value: syncStats.totalComunidades, color: "#4F7CFF" },
-          { label: "Vinculadas SP", value: linked, color: "#22c55e" },
-          { label: "Con archivos", value: withFiles, color: "#8B5CF6" },
+          { label: "En SharePoint", value: linked, color: "#22c55e" },
+          { label: "Con documentos", value: withFiles, color: "#8B5CF6" },
           { label: "Archivos", value: syncStats.totalFiles.toLocaleString("es-ES"), color: "#f59e0b" },
           { label: "Tamaño total", value: formatSize(syncStats.totalSizeBytes), color: "#06b6d4" },
-          { label: "Sin actividad 3m", value: docInsights.staleCommunityCount, color: docInsights.staleCommunityCount > 0 ? "#dc2626" : "#22c55e" },
+          { label: "Inactivas +3 meses", value: docInsights.staleCommunityCount, color: docInsights.staleCommunityCount > 0 ? "#dc2626" : "#22c55e" },
         ].map((k) => (
           <div key={k.label} className="kpi-card">
             <div>

@@ -1,7 +1,8 @@
 import { prisma } from "./prisma";
 import {
   listFiles,
-  listAllFilesRecursive,
+  listFilesDelta,
+  getFolderAbsPath,
 } from "./microsoft-graph";
 import { getComunidadesRoot } from "./sharepoint-roots";
 import { logAudit } from "./audit";
@@ -157,50 +158,36 @@ export async function syncCommunityFolders(): Promise<{
   return { linked, alreadyLinked, noMatch };
 }
 
-async function syncFilesForCommunity(
+async function upsertDeltaFiles(
   comId: string,
   driveId: string,
-  folderId: string,
-): Promise<{ added: number; updated: number; removed: number; total: number }> {
-  const spFiles = await listAllFilesRecursive(driveId, folderId, 10000);
-
-  // Fetch existing cache including hash so we can skip unchanged files
-  const existingCache = await prisma.fileCache.findMany({
-    where: { comunidadId: comId },
-    select: { id: true, sharePointItemId: true, sharePointHash: true },
+  files: { id: string; name: string; path: string; size: number; isFolder: boolean; mimeType: string | null; lastModified: string | null; webUrl: string | null }[],
+  now: Date,
+): Promise<{ added: number; updated: number }> {
+  // Check which items already exist in DB
+  const itemIds = files.map((f) => f.id);
+  const existing = await prisma.fileCache.findMany({
+    where: { sharePointItemId: { in: itemIds } },
+    select: { sharePointItemId: true, sharePointHash: true },
   });
-  const existingMap = new Map(existingCache.map((e) => [e.sharePointItemId, e]));
-  const seenItemIds = new Set<string>();
+  const existingMap = new Map(existing.map((e) => [e.sharePointItemId, e.sharePointHash]));
 
+  const toInsert = files.filter((f) => !existingMap.has(f.id));
+  const toUpdate = files.filter((f) => {
+    const oldHash = existingMap.get(f.id);
+    const newHash = `${f.size}:${f.lastModified || ""}`;
+    return oldHash !== undefined && oldHash !== newHash;
+  });
+
+  const BATCH = 50;
   let added = 0;
   let updated = 0;
 
-  // Separate new files from changed files — skip unchanged ones entirely
-  const toInsert: typeof spFiles = [];
-  const toUpdate: typeof spFiles = [];
-
-  for (const file of spFiles) {
-    seenItemIds.add(file.id);
-    const contentHash = `${file.size}:${file.lastModified || ""}`;
-    const existing = existingMap.get(file.id);
-    if (!existing) {
-      toInsert.push(file);
-    } else if (existing.sharePointHash !== contentHash) {
-      toUpdate.push(file);
-    }
-    // unchanged → skip
-  }
-
-  const now = new Date();
-  const BATCH = 50;
-
-  // Batch inserts
   for (let i = 0; i < toInsert.length; i += BATCH) {
     const batch = toInsert.slice(i, i + BATCH);
     await prisma.$transaction(
-      batch.map((file) => {
-        const contentHash = `${file.size}:${file.lastModified || ""}`;
-        return prisma.fileCache.create({
+      batch.map((file) =>
+        prisma.fileCache.create({
           data: {
             sharePointItemId: file.id,
             comunidad: { connect: { id: comId } },
@@ -212,23 +199,21 @@ async function syncFilesForCommunity(
             isFolder: file.isFolder,
             mimeType: file.mimeType,
             sharePointModified: file.lastModified ? new Date(file.lastModified) : null,
-            sharePointHash: contentHash,
+            sharePointHash: `${file.size}:${file.lastModified || ""}`,
             webUrl: file.webUrl,
             lastSyncedAt: now,
           },
-        });
-      }),
+        }),
+      ),
     );
     added += batch.length;
   }
 
-  // Batch updates
   for (let i = 0; i < toUpdate.length; i += BATCH) {
     const batch = toUpdate.slice(i, i + BATCH);
     await prisma.$transaction(
-      batch.map((file) => {
-        const contentHash = `${file.size}:${file.lastModified || ""}`;
-        return prisma.fileCache.update({
+      batch.map((file) =>
+        prisma.fileCache.update({
           where: { sharePointItemId: file.id },
           data: {
             comunidadId: comId,
@@ -240,25 +225,107 @@ async function syncFilesForCommunity(
             isFolder: file.isFolder,
             mimeType: file.mimeType,
             sharePointModified: file.lastModified ? new Date(file.lastModified) : null,
-            sharePointHash: contentHash,
+            sharePointHash: `${file.size}:${file.lastModified || ""}`,
             webUrl: file.webUrl,
             lastSyncedAt: now,
           },
-        });
-      }),
+        }),
+      ),
     );
     updated += batch.length;
   }
 
-  // Remove files no longer in SharePoint
-  const toRemove = existingCache.filter((e) => !seenItemIds.has(e.sharePointItemId));
-  if (toRemove.length > 0) {
-    await prisma.fileCache.deleteMany({
-      where: { id: { in: toRemove.map((r) => r.id) } },
-    });
+  return { added, updated };
+}
+
+async function syncFilesForCommunity(
+  comId: string,
+  driveId: string,
+  folderId: string,
+): Promise<{ added: number; updated: number; removed: number; total: number }> {
+  const deltaTokenKey = `delta:${comId}`;
+  const folderPathKey = `delta_folder_path:${comId}`;
+  const storedToken = await getSyncState(deltaTokenKey);
+  const storedFolderPath = await getSyncState(folderPathKey);
+  const now = new Date();
+
+  // ── INCREMENTAL DELTA MODE (token exists) ──────────────────────────────────
+  if (storedToken && storedFolderPath) {
+    let changedItems: Awaited<ReturnType<typeof listFilesDelta>>["files"] = [];
+    let nextDeltaLink = "";
+    let tokenValid = true;
+
+    try {
+      const result = await listFilesDelta(driveId, folderId, storedToken, storedFolderPath);
+      changedItems = result.files;
+      nextDeltaLink = result.nextDeltaLink;
+    } catch (err) {
+      // Token expired (410 Gone) or invalid — fall through to full scan
+      const msg = String(err);
+      if (msg.includes("410") || msg.includes("resyncRequired") || msg.includes("syncStateNotFound")) {
+        await setSyncState(deltaTokenKey, "");
+        tokenValid = false;
+      } else {
+        throw err;
+      }
+    }
+
+    if (tokenValid) {
+      if (changedItems.length === 0) {
+        // Nothing changed — save refreshed token and return immediately
+        if (nextDeltaLink) await setSyncState(deltaTokenKey, nextDeltaLink);
+        const total = await prisma.fileCache.count({ where: { comunidadId: comId } });
+        return { added: 0, updated: 0, removed: 0, total };
+      }
+
+      const deleted = changedItems.filter((f) => f.deleted);
+      const changed = changedItems.filter((f) => !f.deleted);
+
+      let removed = 0;
+      if (deleted.length > 0) {
+        const { count } = await prisma.fileCache.deleteMany({
+          where: { sharePointItemId: { in: deleted.map((d) => d.id) } },
+        });
+        removed = count;
+      }
+
+      const { added, updated } = await upsertDeltaFiles(comId, driveId, changed, now);
+      if (nextDeltaLink) await setSyncState(deltaTokenKey, nextDeltaLink);
+
+      const total = await prisma.fileCache.count({ where: { comunidadId: comId } });
+      return { added, updated, removed, total };
+    }
+    // Fall through to full scan if token was invalid
   }
 
-  return { added, updated, removed: toRemove.length, total: spFiles.length };
+  // ── INITIAL FULL SCAN (no token yet) ──────────────────────────────────────
+  // Fetch full delta (== all items) AND get initial delta token in one pass
+  let folderAbsPath = storedFolderPath;
+  if (!folderAbsPath) {
+    folderAbsPath = await getFolderAbsPath(driveId, folderId);
+    await setSyncState(folderPathKey, folderAbsPath);
+  }
+
+  const { files: spFiles, nextDeltaLink } = await listFilesDelta(driveId, folderId, null);
+  const nonDeleted = spFiles.filter((f) => !f.deleted);
+
+  // Full scan: compare against existing cache to detect removals
+  const existingCache = await prisma.fileCache.findMany({
+    where: { comunidadId: comId },
+    select: { id: true, sharePointItemId: true, sharePointHash: true },
+  });
+  const seenItemIds = new Set(nonDeleted.map((f) => f.id));
+  const toRemove = existingCache.filter((e) => !seenItemIds.has(e.sharePointItemId));
+  if (toRemove.length > 0) {
+    await prisma.fileCache.deleteMany({ where: { id: { in: toRemove.map((r) => r.id) } } });
+  }
+
+  const { added, updated } = await upsertDeltaFiles(comId, driveId, nonDeleted, now);
+
+  // Save delta token for next sync
+  if (nextDeltaLink) await setSyncState(deltaTokenKey, nextDeltaLink);
+
+  return { added, updated, removed: toRemove.length, total: nonDeleted.length };
 }
 
 export async function fullSync(onProgress?: (msg: string) => void): Promise<SyncResult> {
