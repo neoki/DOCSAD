@@ -118,7 +118,7 @@ async function syncFilesForCommunity(
   comId: string,
   driveId: string,
   folderId: string,
-): Promise<{ added: number; updated: number; removed: number }> {
+): Promise<{ added: number; updated: number; removed: number; total: number }> {
   const spFiles = await listAllFilesRecursive(driveId, folderId, 10000);
 
   // Fetch existing cache including hash so we can skip unchanged files
