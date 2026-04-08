@@ -215,7 +215,7 @@ async function syncFilesForCommunity(
     });
   }
 
-  return { added, updated, removed: toRemove.length };
+  return { added, updated, removed: toRemove.length, total: spFiles.length };
 }
 
 export async function fullSync(onProgress?: (msg: string) => void): Promise<SyncResult> {
@@ -256,7 +256,7 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
         result.added += stats.added;
         result.updated += stats.updated;
         result.removed += stats.removed;
-        result.totalFiles += stats.added + stats.updated;
+        result.totalFiles += stats.total;
       } catch (err) {
         const msg = String(err);
         if (msg === "Sync already running") throw err;
@@ -325,7 +325,7 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
         result.added += stats.added;
         result.updated += stats.updated;
         result.removed += stats.removed;
-        result.totalFiles += stats.added + stats.updated;
+        result.totalFiles += stats.total;
       } catch (err) {
         const msg = String(err);
         if (msg === "Sync already running") throw err;
