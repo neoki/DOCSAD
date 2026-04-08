@@ -172,14 +172,18 @@ async function upsertDeltaFiles(
   });
   const existingMap = new Map(existing.map((e) => [e.sharePointItemId, e.sharePointHash]));
 
-  const existingSet = new Set(existingMap.keys());
+  const toProcess = files.filter((f) => {
+    const oldHash = existingMap.get(f.id);
+    const newHash = `${f.size}:${f.lastModified || ""}`;
+    return oldHash === undefined || oldHash !== newHash;
+  });
 
   const BATCH = 50;
   let added = 0;
   let updated = 0;
 
-  for (let i = 0; i < files.length; i += BATCH) {
-    const batch = files.slice(i, i + BATCH);
+  for (let i = 0; i < toProcess.length; i += BATCH) {
+    const batch = toProcess.slice(i, i + BATCH);
     const results = await prisma.$transaction(
       batch.map((file) => {
         const newHash = `${file.size}:${file.lastModified || ""}`;
@@ -219,7 +223,7 @@ async function upsertDeltaFiles(
       }),
     );
     for (const r of results) {
-      if (existingSet.has(r.sharePointItemId)) updated++;
+      if (existingMap.has(r.sharePointItemId)) updated++;
       else added++;
     }
   }

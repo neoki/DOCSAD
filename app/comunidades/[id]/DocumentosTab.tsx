@@ -229,7 +229,7 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
   const loadFolderFiles = useCallback(async (folderId: string) => {
     setLoadingFiles(true);
     try {
-      const res = await fetch(`/api/comunidades/${comunidadId}/sharepoint?action=files&folderId=${folderId}`);
+      const res = await fetch(`/api/comunidades/${comunidadId}/sharepoint?action=files&folderId=${encodeURIComponent(folderId)}`);
       const data = await res.json();
       setFolderFiles((data.files || []).filter((f: SPFile) => !f.isFolder));
     } catch {
