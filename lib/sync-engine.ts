@@ -172,23 +172,20 @@ async function upsertDeltaFiles(
   });
   const existingMap = new Map(existing.map((e) => [e.sharePointItemId, e.sharePointHash]));
 
-  const toInsert = files.filter((f) => !existingMap.has(f.id));
-  const toUpdate = files.filter((f) => {
-    const oldHash = existingMap.get(f.id);
-    const newHash = `${f.size}:${f.lastModified || ""}`;
-    return oldHash !== undefined && oldHash !== newHash;
-  });
+  const existingSet = new Set(existingMap.keys());
 
   const BATCH = 50;
   let added = 0;
   let updated = 0;
 
-  for (let i = 0; i < toInsert.length; i += BATCH) {
-    const batch = toInsert.slice(i, i + BATCH);
-    await prisma.$transaction(
-      batch.map((file) =>
-        prisma.fileCache.create({
-          data: {
+  for (let i = 0; i < files.length; i += BATCH) {
+    const batch = files.slice(i, i + BATCH);
+    const results = await prisma.$transaction(
+      batch.map((file) => {
+        const newHash = `${file.size}:${file.lastModified || ""}`;
+        return prisma.fileCache.upsert({
+          where: { sharePointItemId: file.id },
+          create: {
             sharePointItemId: file.id,
             comunidad: { connect: { id: comId } },
             driveId,
@@ -199,23 +196,11 @@ async function upsertDeltaFiles(
             isFolder: file.isFolder,
             mimeType: file.mimeType,
             sharePointModified: file.lastModified ? new Date(file.lastModified) : null,
-            sharePointHash: `${file.size}:${file.lastModified || ""}`,
+            sharePointHash: newHash,
             webUrl: file.webUrl,
             lastSyncedAt: now,
           },
-        }),
-      ),
-    );
-    added += batch.length;
-  }
-
-  for (let i = 0; i < toUpdate.length; i += BATCH) {
-    const batch = toUpdate.slice(i, i + BATCH);
-    await prisma.$transaction(
-      batch.map((file) =>
-        prisma.fileCache.update({
-          where: { sharePointItemId: file.id },
-          data: {
+          update: {
             comunidadId: comId,
             driveId,
             name: file.name,
@@ -225,14 +210,18 @@ async function upsertDeltaFiles(
             isFolder: file.isFolder,
             mimeType: file.mimeType,
             sharePointModified: file.lastModified ? new Date(file.lastModified) : null,
-            sharePointHash: `${file.size}:${file.lastModified || ""}`,
+            sharePointHash: newHash,
             webUrl: file.webUrl,
             lastSyncedAt: now,
           },
-        }),
-      ),
+          select: { sharePointItemId: true },
+        });
+      }),
     );
-    updated += batch.length;
+    for (const r of results) {
+      if (existingSet.has(r.sharePointItemId)) updated++;
+      else added++;
+    }
   }
 
   return { added, updated };

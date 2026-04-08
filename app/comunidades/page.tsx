@@ -164,9 +164,19 @@ export default function ComunidadesPage() {
             {" · "}
             <span style={{ color: "#22C55E" }}>{conCarpeta} con documentos</span>
             {" · "}
-            <span style={{ color: "#F59E0B" }}>{porRevisar} por revisar</span>
+            <button
+              onClick={() => setFilterSP(filterSP === "revisar" ? "all" : "revisar")}
+              style={{ color: "#F59E0B", background: filterSP === "revisar" ? "#fef3c7" : "none", border: filterSP === "revisar" ? "1px solid #fde68a" : "none", borderRadius: 6, padding: filterSP === "revisar" ? "1px 6px" : 0, cursor: "pointer", fontSize: "inherit", fontWeight: filterSP === "revisar" ? 700 : 400 }}
+            >
+              {porRevisar} por revisar
+            </button>
             {" · "}
-            <span style={{ color: "#94a3b8" }}>{sinCarpeta} sin carpeta</span>
+            <button
+              onClick={() => setFilterSP(filterSP === "unlinked" ? "all" : "unlinked")}
+              style={{ color: "#94a3b8", background: filterSP === "unlinked" ? "#f1f5f9" : "none", border: filterSP === "unlinked" ? "1px solid #e2e8f0" : "none", borderRadius: 6, padding: filterSP === "unlinked" ? "1px 6px" : 0, cursor: "pointer", fontSize: "inherit", fontWeight: filterSP === "unlinked" ? 700 : 400 }}
+            >
+              {sinCarpeta} sin carpeta
+            </button>
           </p>
         </div>
         <div className="flex items-center gap-2">
