@@ -325,7 +325,7 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
           { label: "Con documentos", value: withFiles, color: "#8B5CF6" },
           { label: "Archivos", value: syncStats.totalFiles.toLocaleString("es-ES"), color: "#f59e0b" },
           { label: "Tamaño total", value: formatSize(syncStats.totalSizeBytes), color: "#06b6d4" },
-          { label: "Inactivas +3 meses", value: docInsights.staleCommunityCount, color: docInsights.staleCommunityCount > 0 ? "#dc2626" : "#22c55e" },
+          { label: "Sin docs nuevos (3 meses)", value: docInsights.staleCommunityCount, color: docInsights.staleCommunityCount > 0 ? "#dc2626" : "#22c55e" },
         ].map((k) => (
           <div key={k.label} className="kpi-card">
             <div>
