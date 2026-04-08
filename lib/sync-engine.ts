@@ -42,7 +42,7 @@ async function logOp(
   });
 }
 
-async function setSyncState(key: string, value: string) {
+export async function setSyncState(key: string, value: string) {
   await prisma.syncState.upsert({
     where: { key },
     update: { value },

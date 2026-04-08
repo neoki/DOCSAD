@@ -524,6 +524,25 @@ export default function AjustesPage() {
           >
             {syncing ? "Sincronizando..." : "Sincronizar ahora"}
           </button>
+          <button
+            className="btn-secondary"
+            onClick={async () => {
+              if (!confirm("¿Resetear el estado de sincronización? Usa esto si el sync se queda bloqueado en 'en curso'.")) return;
+              try {
+                const res = await fetch("/api/sync", { method: "DELETE" });
+                const data = await res.json();
+                if (data.success) setSyncResult({ summary: { message: "Estado reseteado correctamente" } as any });
+                else setSyncResult({ error: data.error });
+              } catch (err) {
+                setSyncResult({ error: String(err) });
+              }
+            }}
+            disabled={syncing}
+            style={{ minWidth: 160 }}
+            title="Usar solo si el sync se queda bloqueado indefinidamente"
+          >
+            Resetear sync
+          </button>
         </div>
 
         {/* SP Roots panel */}

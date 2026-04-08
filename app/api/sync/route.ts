@@ -7,6 +7,7 @@ import {
   getSyncStats,
   getRecentSyncLogs,
   getSyncState,
+  setSyncState,
 } from "@/lib/sync-engine";
 
 export const maxDuration = 300;
@@ -49,10 +50,18 @@ export async function POST(req: NextRequest) {
 
   const currentStatus = await getSyncState("sync_status");
   if (currentStatus === "running") {
-    return NextResponse.json(
-      { error: "Ya hay una sincronización en curso" },
-      { status: 409 },
-    );
+    const startedAt = await getSyncState("sync_started_at");
+    const ageMinutes = startedAt
+      ? (Date.now() - new Date(startedAt).getTime()) / 60000
+      : 999;
+    if (ageMinutes < 30) {
+      return NextResponse.json(
+        { error: "Ya hay una sincronización en curso" },
+        { status: 409 },
+      );
+    }
+    // Stuck for >30 min — auto-reset before proceeding
+    await setSyncState("sync_status", "idle");
   }
 
   try {
@@ -70,4 +79,11 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  await setSyncState("sync_status", "idle");
+  return NextResponse.json({ success: true, message: "Estado de sincronización reseteado" });
 }
