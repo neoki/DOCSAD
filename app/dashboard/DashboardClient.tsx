@@ -113,26 +113,77 @@ interface TrendMonth {
 export default function DashboardClient({ comunidades, syncStats, docInsights, recentLogs }: Props) {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{
-    added?: number;
-    updated?: number;
-    removed?: number;
-    errors?: number;
+    added?: number; updated?: number; removed?: number; errors?: number;
   } | null>(null);
   const [syncError, setSyncError] = useState("");
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [trends, setTrends] = useState<TrendMonth[]>([]);
 
-  // Calcula si los datos están desactualizados (más de 24h sin sincronizar)
+  // Live sync state
+  const [liveStatus, setLiveStatus] = useState<"idle" | "running" | null>(null);
+  const [liveElapsed, setLiveElapsed] = useState(0);
+  const [liveLogs, setLiveLogs] = useState<Array<{ operation: string; status: string; fileName?: string; details?: string; error?: string; createdAt: string }>>([]);
+  const [liveStartedAt, setLiveStartedAt] = useState<string | null>(null);
+
   const syncOutdated = syncStats.lastSync
     ? Date.now() - new Date(syncStats.lastSync).getTime() > 24 * 60 * 60 * 1000
     : false;
+
+  // Persistent polling — always checks sync status every 4 seconds
+  useEffect(() => {
+    let startMs: number | null = null;
+    let timerInterval: ReturnType<typeof setInterval> | null = null;
+
+    const poll = async () => {
+      try {
+        const [statusRes, logsRes] = await Promise.all([
+          fetch("/api/sync?action=status"),
+          fetch("/api/sync?action=logs&limit=10"),
+        ]);
+        const statusData = await statusRes.json();
+        const logsData = await logsRes.json();
+
+        const isRunning = statusData.status === "running";
+        setLiveStatus(isRunning ? "running" : "idle");
+        setLiveLogs(logsData.logs || []);
+        setLiveStartedAt(statusData.startedAt || null);
+
+        if (isRunning) {
+          if (!startMs) {
+            startMs = statusData.startedAt
+              ? new Date(statusData.startedAt).getTime()
+              : Date.now();
+          }
+          if (!timerInterval) {
+            timerInterval = setInterval(() => {
+              setLiveElapsed(Math.floor((Date.now() - startMs!) / 1000));
+            }, 1000);
+          }
+        } else {
+          if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+          startMs = null;
+          setSyncing(false);
+          if (liveStatus === "running") {
+            // just finished — reload to update stats
+            setTimeout(() => window.location.reload(), 1500);
+          }
+        }
+      } catch {}
+    };
+
+    poll();
+    const pollInterval = setInterval(poll, 4000);
+    return () => {
+      clearInterval(pollInterval);
+      if (timerInterval) clearInterval(timerInterval);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch("/api/alertas")
       .then((r) => r.json())
       .then((data) => setAlerts(data.alerts || []))
       .catch(() => {});
-
     fetch("/api/tendencias")
       .then((r) => r.json())
       .then((data) => setTrends(data.monthly || []))
@@ -152,15 +203,20 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
       const data = await res.json();
       if (data.error) {
         setSyncError(data.error);
-      } else {
-        setSyncResult(data.result);
-        setTimeout(() => window.location.reload(), 2000);
+        setSyncing(false);
       }
+      // If started OK, polling will detect completion and reload
     } catch (err) {
       setSyncError(String(err));
-    } finally {
       setSyncing(false);
     }
+  };
+
+  const resetSync = async () => {
+    if (!confirm("¿Cancelar la sincronización actual y resetear el estado?")) return;
+    await fetch("/api/sync", { method: "DELETE" });
+    setLiveStatus("idle");
+    setSyncing(false);
   };
 
   const linked = comunidades.filter((c) => c.linked).length;
@@ -188,36 +244,65 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
           </a>
           <button
             onClick={() => runSync("incremental")}
-            disabled={syncing}
+            disabled={liveStatus === "running" || syncing}
             className="btn-primary"
             style={{ minWidth: 180 }}
             title="Añade solo los archivos nuevos o modificados desde la última sincronización"
           >
-            {syncing ? "Sincronizando..." : "Sincronizar cambios"}
+            {liveStatus === "running" ? "Sincronizando..." : "Sincronizar cambios"}
           </button>
-          {!syncStats.lastSync && (
-            <button
-              onClick={() => runSync("full")}
-              disabled={syncing}
-              className="btn-primary"
-              style={{ minWidth: 180, background: "#6d28d9" }}
-              title="Analiza todos los archivos de SharePoint desde cero"
-            >
-              Sincronización completa
-            </button>
-          )}
+          <button
+            onClick={() => runSync("full")}
+            disabled={liveStatus === "running" || syncing}
+            className="btn-primary"
+            style={{ minWidth: 180, background: "#6d28d9" }}
+            title="Analiza todos los archivos de SharePoint desde cero"
+          >
+            Sincronización completa
+          </button>
         </div>
       </div>
 
-      {syncResult && (
-        <div className="card-static mb-4" style={{ borderLeft: "4px solid #22c55e", padding: "12px 16px", background: "#f0fdf4" }}>
-          <span className="text-sm font-semibold text-green-700">
-            Sincronización completada — {syncResult.added} nuevos, {syncResult.updated} actualizados, {syncResult.removed} eliminados
-            {(syncResult.errors ?? 0) > 0 && `, ${syncResult.errors} errores`}
-          </span>
+      {/* Live sync progress panel */}
+      {liveStatus === "running" && (
+        <div className="card-static mb-4" style={{ borderLeft: "4px solid #3b82f6", background: "#eff6ff", padding: 0, overflow: "hidden" }}>
+          <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2.5px solid #3b82f6", borderTopColor: "transparent", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
+              <span style={{ fontWeight: 700, fontSize: 14, color: "#1e40af" }}>
+                Sincronizando con SharePoint...
+              </span>
+              {liveElapsed > 0 && (
+                <span style={{ fontSize: 13, color: "#3b82f6", fontWeight: 600 }}>
+                  {Math.floor(liveElapsed / 60) > 0 && `${Math.floor(liveElapsed / 60)}m `}{liveElapsed % 60}s
+                </span>
+              )}
+            </div>
+            <button
+              onClick={resetSync}
+              style={{ fontSize: 12, padding: "4px 12px", borderRadius: 6, border: "1px solid #93c5fd", background: "#fff", color: "#1d4ed8", cursor: "pointer", fontWeight: 600 }}
+            >
+              Cancelar
+            </button>
+          </div>
+          {liveLogs.length > 0 && (
+            <div style={{ fontFamily: "monospace", fontSize: 12, background: "#0f172a", color: "#e2e8f0", padding: "10px 16px", maxHeight: 180, overflowY: "auto", lineHeight: 1.8 }}>
+              {liveLogs.map((log, i) => (
+                <div key={i} style={{ color: log.status === "error" ? "#f87171" : log.status === "success" ? "#4ade80" : "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span style={{ color: "#475569", marginRight: 6 }}>{new Date(log.createdAt).toLocaleTimeString("es-ES")}</span>
+                  <span style={{ color: log.status === "error" ? "#f87171" : "#60a5fa", marginRight: 6 }}>[{log.operation}]</span>
+                  {log.fileName && <span style={{ marginRight: 4 }}>{log.fileName}</span>}
+                  {log.details && <span style={{ color: "#64748b" }}>{log.details}</span>}
+                  {log.error && <span style={{ color: "#f87171" }}> ✕ {log.error.slice(0, 60)}</span>}
+                </div>
+              ))}
+            </div>
+          )}
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
-      {syncError && (
+
+      {syncError && liveStatus !== "running" && (
         <div className="card-static mb-4" style={{ borderLeft: "4px solid #dc2626", padding: "12px 16px", background: "#fef2f2" }}>
           <span className="text-sm font-semibold text-red-700">{syncError}</span>
         </div>

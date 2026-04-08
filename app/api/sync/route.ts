@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import {
@@ -60,25 +61,31 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
-    // Stuck for >30 min — auto-reset before proceeding
     await setSyncState("sync_status", "idle");
   }
 
-  try {
-    let body: { mode?: string } = {};
-    try { body = await req.json(); } catch { body = {}; }
-    const mode = body.mode || "full";
+  let body: { mode?: string } = {};
+  try { body = await req.json(); } catch { body = {}; }
+  const mode = body.mode || "full";
 
-    const result = mode === "incremental"
-      ? await incrementalSync()
-      : await fullSync();
-    return NextResponse.json({ success: true, result, mode });
-  } catch (err) {
-    return NextResponse.json(
-      { error: String(err) },
-      { status: 500 },
-    );
-  }
+  // Mark as running immediately so the UI knows
+  await setSyncState("sync_status", "running");
+  await setSyncState("sync_started_at", new Date().toISOString());
+
+  // Run sync in background — response returns right away
+  after(async () => {
+    try {
+      if (mode === "incremental") {
+        await incrementalSync();
+      } else {
+        await fullSync();
+      }
+    } catch {
+      await setSyncState("sync_status", "idle");
+    }
+  });
+
+  return NextResponse.json({ started: true, mode });
 }
 
 export async function DELETE(req: NextRequest) {
