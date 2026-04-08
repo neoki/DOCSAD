@@ -121,52 +121,93 @@ async function syncFilesForCommunity(
 ): Promise<{ added: number; updated: number; removed: number }> {
   const spFiles = await listAllFilesRecursive(driveId, folderId, 10000);
 
+  // Fetch existing cache including hash so we can skip unchanged files
   const existingCache = await prisma.fileCache.findMany({
     where: { comunidadId: comId },
-    select: { id: true, sharePointItemId: true },
+    select: { id: true, sharePointItemId: true, sharePointHash: true },
   });
+  const existingMap = new Map(existingCache.map((e) => [e.sharePointItemId, e]));
   const seenItemIds = new Set<string>();
+
   let added = 0;
   let updated = 0;
+
+  // Separate new files from changed files — skip unchanged ones entirely
+  const toInsert: typeof spFiles = [];
+  const toUpdate: typeof spFiles = [];
 
   for (const file of spFiles) {
     seenItemIds.add(file.id);
     const contentHash = `${file.size}:${file.lastModified || ""}`;
-    const subfolder = extractSubfolder(file.path);
-    const spModified = file.lastModified ? new Date(file.lastModified) : null;
-
-    const sharedFields = {
-      driveId,
-      name: file.name,
-      path: file.path,
-      subfolder,
-      sizeBytes: file.size,
-      isFolder: file.isFolder,
-      mimeType: file.mimeType,
-      sharePointModified: spModified,
-      sharePointHash: contentHash,
-      webUrl: file.webUrl,
-      lastSyncedAt: new Date(),
-    };
-
-    const result = await prisma.fileCache.upsert({
-      where: { sharePointItemId: file.id },
-      create: {
-        sharePointItemId: file.id,
-        comunidad: { connect: { id: comId } },
-        ...sharedFields,
-      },
-      update: {
-        comunidadId: comId,
-        ...sharedFields,
-      },
-    });
-
-    const wasNew = existingCache.every((e) => e.sharePointItemId !== file.id);
-    if (wasNew) added++;
-    else if (result) updated++;
+    const existing = existingMap.get(file.id);
+    if (!existing) {
+      toInsert.push(file);
+    } else if (existing.sharePointHash !== contentHash) {
+      toUpdate.push(file);
+    }
+    // unchanged → skip
   }
 
+  const now = new Date();
+  const BATCH = 50;
+
+  // Batch inserts
+  for (let i = 0; i < toInsert.length; i += BATCH) {
+    const batch = toInsert.slice(i, i + BATCH);
+    await prisma.$transaction(
+      batch.map((file) => {
+        const contentHash = `${file.size}:${file.lastModified || ""}`;
+        return prisma.fileCache.create({
+          data: {
+            sharePointItemId: file.id,
+            comunidad: { connect: { id: comId } },
+            driveId,
+            name: file.name,
+            path: file.path,
+            subfolder: extractSubfolder(file.path),
+            sizeBytes: file.size,
+            isFolder: file.isFolder,
+            mimeType: file.mimeType,
+            sharePointModified: file.lastModified ? new Date(file.lastModified) : null,
+            sharePointHash: contentHash,
+            webUrl: file.webUrl,
+            lastSyncedAt: now,
+          },
+        });
+      }),
+    );
+    added += batch.length;
+  }
+
+  // Batch updates
+  for (let i = 0; i < toUpdate.length; i += BATCH) {
+    const batch = toUpdate.slice(i, i + BATCH);
+    await prisma.$transaction(
+      batch.map((file) => {
+        const contentHash = `${file.size}:${file.lastModified || ""}`;
+        return prisma.fileCache.update({
+          where: { sharePointItemId: file.id },
+          data: {
+            comunidadId: comId,
+            driveId,
+            name: file.name,
+            path: file.path,
+            subfolder: extractSubfolder(file.path),
+            sizeBytes: file.size,
+            isFolder: file.isFolder,
+            mimeType: file.mimeType,
+            sharePointModified: file.lastModified ? new Date(file.lastModified) : null,
+            sharePointHash: contentHash,
+            webUrl: file.webUrl,
+            lastSyncedAt: now,
+          },
+        });
+      }),
+    );
+    updated += batch.length;
+  }
+
+  // Remove files no longer in SharePoint
   const toRemove = existingCache.filter((e) => !seenItemIds.has(e.sharePointItemId));
   if (toRemove.length > 0) {
     await prisma.fileCache.deleteMany({
