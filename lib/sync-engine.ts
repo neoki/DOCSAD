@@ -4,6 +4,7 @@ import {
   listAllFilesRecursive,
 } from "./microsoft-graph";
 import { getComunidadesRoot } from "./sharepoint-roots";
+import { logAudit } from "./audit";
 
 type SyncResult = {
   added: number;
@@ -317,6 +318,11 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
     await logOp("full_sync", "success", {
       details: `Added ${result.added}, updated ${result.updated}, removed ${result.removed}, errors ${result.errors}. ${result.communities} communities, ${result.totalFiles} files. ${elapsed}s`,
     });
+    void logAudit({
+      action: "sync",
+      entity: "sync",
+      details: `Sync completo: +${result.added} nuevos, ~${result.updated} actualizados, -${result.removed} eliminados. ${result.communities} comunidades, ${result.totalFiles} archivos. ${elapsed}s`,
+    });
 
     return result;
   } catch (err) {
@@ -384,6 +390,11 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
 
     await logOp("incremental_sync", "success", {
       details: `Added ${result.added}, updated ${result.updated}, removed ${result.removed}. ${elapsed}s`,
+    });
+    void logAudit({
+      action: "sync",
+      entity: "sync",
+      details: `Sync automático: +${result.added} nuevos, ~${result.updated} actualizados, -${result.removed} eliminados. ${result.totalFiles} archivos. ${elapsed}s`,
     });
 
     return result;

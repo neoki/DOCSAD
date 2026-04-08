@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import { logAudit } from "./audit";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -51,6 +52,18 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
+  },
+  events: {
+    async signIn({ user }) {
+      await logAudit({
+        userId: user.id,
+        userEmail: user.email ?? undefined,
+        action: "login",
+        entity: "user",
+        entityId: user.id,
+        details: `Inicio de sesión: ${user.email}`,
+      });
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
