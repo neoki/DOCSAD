@@ -19,7 +19,7 @@ DocFincas is a document management system for community property management ("Ge
   - `app/comunidades/` — Community list with advanced filters (SP link status, completitud %, favorites), sortable columns
   - `app/comunidades/[id]/` — Detail page with 6 tabs: Resumen documental, Documentos, Notas, Historial, Checklist, Info. Operativa
   - `app/comunidades/[id]/ResumenDocTab.tsx` — Document analysis with CSV export
-  - `app/comunidades/[id]/DocumentosTab.tsx` — SharePoint file browser with breadcrumbs, upload, document preview, create subfolders
+  - `app/comunidades/[id]/DocumentosTab.tsx` — SharePoint file browser with breadcrumbs, upload, document preview, create subfolders, color-coded expiry badges per file, expiry modal (set/edit/delete via /api/vencimientos)
   - `app/comunidades/[id]/NotasTab.tsx` — Notes/observations per community (CRUD)
   - `app/comunidades/[id]/HistorialTab.tsx` — Activity timeline from SyncLog
   - `app/comunidades/[id]/ChecklistTab.tsx` — Document checklist with auto-complete from documents button
@@ -31,7 +31,8 @@ DocFincas is a document management system for community property management ("Ge
   - `app/escaner/` — Scanner migration tool
   - `app/ajustes/` — Settings: OneDrive credentials, sync trigger
   - `app/api/sync/` — Sync API: POST triggers full/incremental sync, GET returns stats/logs/status
-  - `app/api/alertas/` — Alerts from Operativa dates with urgency levels
+  - `app/api/alertas/` — Alerts from Operativa dates + document expiry dates with urgency levels
+  - `app/api/vencimientos/` — Document expiry CRUD (GET list, POST upsert, DELETE)
   - `app/api/busqueda/` — Global file search API
   - `app/api/pendientes/` — Missing documentation API
   - `app/api/exportar/` — CSV export

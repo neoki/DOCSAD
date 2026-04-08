@@ -55,12 +55,13 @@ model Comunidad {
   sharePointMatchMethod String?
   sharePointMatchScore Int?
 
-  operativa  Operativa?
-  checklists Checklist[]
-  documentos Documento[]
-  alertas    Alerta[]
-  fileCache  FileCache[]
-  notas      Nota[]
+  operativa        Operativa?
+  checklists       Checklist[]
+  documentos       Documento[]
+  alertas          Alerta[]
+  fileCache        FileCache[]
+  notas            Nota[]
+  documentExpiries DocumentExpiry[]
 
   @@map("comunidades")
 }
@@ -224,6 +225,23 @@ model Favorite {
   @@unique([userId, comunidadId])
   @@index([userId])
   @@map("favorites")
+}
+
+model DocumentExpiry {
+  id               String    @id @default(cuid())
+  sharePointItemId String    @unique
+  comunidadId      String
+  comunidad        Comunidad @relation(fields: [comunidadId], references: [id], onDelete: Cascade)
+  fileName         String
+  label            String
+  expiresAt        DateTime
+  notificado       Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([comunidadId])
+  @@index([expiresAt])
+  @@map("document_expiry")
 }
 
 model AuditLog {
