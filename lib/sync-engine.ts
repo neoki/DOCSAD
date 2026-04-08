@@ -135,8 +135,7 @@ async function syncFilesForCommunity(
     const subfolder = extractSubfolder(file.path);
     const spModified = file.lastModified ? new Date(file.lastModified) : null;
 
-    const payload = {
-      comunidadId: comId,
+    const sharedFields = {
       driveId,
       name: file.name,
       path: file.path,
@@ -152,8 +151,15 @@ async function syncFilesForCommunity(
 
     const result = await prisma.fileCache.upsert({
       where: { sharePointItemId: file.id },
-      create: { sharePointItemId: file.id, ...payload },
-      update: payload,
+      create: {
+        sharePointItemId: file.id,
+        comunidad: { connect: { id: comId } },
+        ...sharedFields,
+      },
+      update: {
+        comunidadId: comId,
+        ...sharedFields,
+      },
     });
 
     const wasNew = existingCache.every((e) => e.sharePointItemId !== file.id);
