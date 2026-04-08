@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { after } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import {
@@ -72,8 +71,9 @@ export async function POST(req: NextRequest) {
   await setSyncState("sync_status", "running");
   await setSyncState("sync_started_at", new Date().toISOString());
 
-  // Run sync in background — response returns right away
-  after(async () => {
+  // Fire-and-forget: Node.js keeps the event loop alive while this runs,
+  // so the response returns immediately and the sync continues in background.
+  void (async () => {
     try {
       if (mode === "incremental") {
         await incrementalSync();
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     } catch {
       await setSyncState("sync_status", "idle");
     }
-  });
+  })();
 
   return NextResponse.json({ started: true, mode });
 }
