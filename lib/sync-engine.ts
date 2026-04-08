@@ -114,7 +114,76 @@ export async function syncCommunityFolders(): Promise<{
   return { linked, alreadyLinked, noMatch };
 }
 
+async function syncFilesForCommunity(
+  comId: string,
+  driveId: string,
+  folderId: string,
+): Promise<{ added: number; updated: number; removed: number }> {
+  const spFiles = await listAllFilesRecursive(driveId, folderId, 10000);
+
+  const existingCache = await prisma.fileCache.findMany({
+    where: { comunidadId: comId },
+    select: { id: true, sharePointItemId: true },
+  });
+  const seenItemIds = new Set<string>();
+  let added = 0;
+  let updated = 0;
+
+  for (const file of spFiles) {
+    seenItemIds.add(file.id);
+    const contentHash = `${file.size}:${file.lastModified || ""}`;
+    const subfolder = extractSubfolder(file.path);
+    const spModified = file.lastModified ? new Date(file.lastModified) : null;
+
+    const payload = {
+      comunidadId: comId,
+      driveId,
+      name: file.name,
+      path: file.path,
+      subfolder,
+      sizeBytes: file.size,
+      isFolder: file.isFolder,
+      mimeType: file.mimeType,
+      sharePointModified: spModified,
+      sharePointHash: contentHash,
+      webUrl: file.webUrl,
+      lastSyncedAt: new Date(),
+    };
+
+    const result = await prisma.fileCache.upsert({
+      where: { sharePointItemId: file.id },
+      create: { sharePointItemId: file.id, ...payload },
+      update: payload,
+    });
+
+    const wasNew = existingCache.every((e) => e.sharePointItemId !== file.id);
+    if (wasNew) added++;
+    else if (result) updated++;
+  }
+
+  const toRemove = existingCache.filter((e) => !seenItemIds.has(e.sharePointItemId));
+  if (toRemove.length > 0) {
+    await prisma.fileCache.deleteMany({
+      where: { id: { in: toRemove.map((r) => r.id) } },
+    });
+  }
+
+  return { added, updated, removed: toRemove.length };
+}
+
 export async function fullSync(onProgress?: (msg: string) => void): Promise<SyncResult> {
+  // Guard: prevent concurrent runs
+  const currentStatus = await getSyncState("sync_status");
+  if (currentStatus === "running") {
+    const startedAt = await getSyncState("sync_started_at");
+    const startedMs = startedAt ? new Date(startedAt).getTime() : 0;
+    const ageMinutes = (Date.now() - startedMs) / 60000;
+    // Allow override if stuck for more than 30 minutes
+    if (ageMinutes < 30) {
+      throw new Error("Sync already running");
+    }
+  }
+
   const startTime = Date.now();
   await setSyncState("sync_status", "running");
   await setSyncState("sync_started_at", new Date().toISOString());
@@ -148,92 +217,16 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
 
     for (const com of comunidades) {
       try {
-        const driveId = com.sharePointDriveId!;
-        const folderId = com.sharePointFolderId!;
-
-        const spFiles = await listAllFilesRecursive(driveId, folderId, 10000);
-
-        const existingCache = await prisma.fileCache.findMany({
-          where: { comunidadId: com.id },
-          select: { id: true, sharePointItemId: true, sharePointHash: true, name: true },
-        });
-        const existingMap = new Map(existingCache.map((e) => [e.sharePointItemId, e]));
-
-        const seenItemIds = new Set<string>();
-
-        for (const file of spFiles) {
-          seenItemIds.add(file.id);
-          const existing = existingMap.get(file.id);
-
-          const contentHash = `${file.size}:${file.lastModified || ""}`;
-          const subfolder = extractSubfolder(file.path);
-          const spModified = file.lastModified ? new Date(file.lastModified) : null;
-
-          if (existing) {
-            if (existing.sharePointHash !== contentHash || existing.name !== file.name || !existing.webUrl) {
-              await prisma.fileCache.update({
-                where: { id: existing.id },
-                data: {
-                  name: file.name,
-                  path: file.path,
-                  sizeBytes: file.size,
-                  isFolder: file.isFolder,
-                  subfolder,
-                  mimeType: file.mimeType,
-                  sharePointModified: spModified,
-                  sharePointHash: contentHash,
-                  webUrl: file.webUrl,
-                  lastSyncedAt: new Date(),
-                },
-              });
-              result.updated++;
-            }
-          } else {
-            await prisma.fileCache.create({
-              data: {
-                comunidadId: com.id,
-                sharePointItemId: file.id,
-                driveId,
-                name: file.name,
-                path: file.path,
-                subfolder,
-                sizeBytes: file.size,
-                isFolder: file.isFolder,
-                mimeType: file.mimeType,
-                sharePointModified: spModified,
-                sharePointHash: contentHash,
-                webUrl: file.webUrl,
-                lastSyncedAt: new Date(),
-              },
-            });
-            result.added++;
-          }
-        }
-
-        const toRemove = existingCache.filter((e) => !seenItemIds.has(e.sharePointItemId));
-        if (toRemove.length > 0) {
-          await prisma.fileCache.deleteMany({
-            where: { id: { in: toRemove.map((r) => r.id) } },
-          });
-          result.removed += toRemove.length;
-
-          for (const r of toRemove) {
-            await logOp("file_removed", "info", {
-              comunidadId: com.id,
-              fileName: r.name,
-              sourceItemId: r.sharePointItemId,
-              details: "Archivo eliminado de SharePoint, eliminado de caché",
-            });
-          }
-        }
-
-        result.totalFiles += spFiles.filter((f) => !f.isFolder).length;
+        const stats = await syncFilesForCommunity(com.id, com.sharePointDriveId!, com.sharePointFolderId!);
+        result.added += stats.added;
+        result.updated += stats.updated;
+        result.removed += stats.removed;
+        result.totalFiles += stats.added + stats.updated;
       } catch (err) {
+        const msg = String(err);
+        if (msg === "Sync already running") throw err;
         result.errors++;
-        await logOp("sync_community_error", "error", {
-          comunidadId: com.id,
-          error: String(err),
-        });
+        await logOp("sync_community_error", "error", { comunidadId: com.id, error: msg });
       }
     }
 
@@ -258,6 +251,17 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
 }
 
 export async function incrementalSync(onProgress?: (msg: string) => void): Promise<SyncResult> {
+  // Guard: prevent concurrent runs
+  const currentStatus = await getSyncState("sync_status");
+  if (currentStatus === "running") {
+    const startedAt = await getSyncState("sync_started_at");
+    const startedMs = startedAt ? new Date(startedAt).getTime() : 0;
+    const ageMinutes = (Date.now() - startedMs) / 60000;
+    if (ageMinutes < 30) {
+      throw new Error("Sync already running");
+    }
+  }
+
   const lastSync = await getSyncState("sync_completed_at");
   if (!lastSync) {
     return fullSync(onProgress);
@@ -265,6 +269,7 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
 
   const startTime = Date.now();
   await setSyncState("sync_status", "running");
+  await setSyncState("sync_started_at", new Date().toISOString());
 
   const result: SyncResult = {
     added: 0,
@@ -292,80 +297,16 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
 
     for (const com of comunidades) {
       try {
-        const driveId = com.sharePointDriveId!;
-        const folderId = com.sharePointFolderId!;
-        const spFiles = await listAllFilesRecursive(driveId, folderId, 10000);
-
-        const existingCache = await prisma.fileCache.findMany({
-          where: { comunidadId: com.id },
-          select: { id: true, sharePointItemId: true, sharePointHash: true, name: true, webUrl: true },
-        });
-        const existingMap = new Map(existingCache.map((e) => [e.sharePointItemId, e]));
-        const seenItemIds = new Set<string>();
-
-        for (const file of spFiles) {
-          seenItemIds.add(file.id);
-          const existing = existingMap.get(file.id);
-          const contentHash = `${file.size}:${file.lastModified || ""}`;
-          const subfolder = extractSubfolder(file.path);
-          const spModified = file.lastModified ? new Date(file.lastModified) : null;
-
-          if (existing) {
-            if (existing.sharePointHash !== contentHash || existing.name !== file.name || !existing.webUrl) {
-              await prisma.fileCache.update({
-                where: { id: existing.id },
-                data: {
-                  name: file.name,
-                  path: file.path,
-                  sizeBytes: file.size,
-                  isFolder: file.isFolder,
-                  subfolder,
-                  mimeType: file.mimeType,
-                  sharePointModified: spModified,
-                  sharePointHash: contentHash,
-                  webUrl: file.webUrl,
-                  lastSyncedAt: new Date(),
-                },
-              });
-              result.updated++;
-            }
-          } else {
-            await prisma.fileCache.create({
-              data: {
-                comunidadId: com.id,
-                sharePointItemId: file.id,
-                driveId,
-                name: file.name,
-                path: file.path,
-                subfolder,
-                sizeBytes: file.size,
-                isFolder: file.isFolder,
-                mimeType: file.mimeType,
-                sharePointModified: spModified,
-                sharePointHash: contentHash,
-                webUrl: file.webUrl,
-                lastSyncedAt: new Date(),
-              },
-            });
-            result.added++;
-          }
-        }
-
-        const toRemove = existingCache.filter((e) => !seenItemIds.has(e.sharePointItemId));
-        if (toRemove.length > 0) {
-          await prisma.fileCache.deleteMany({
-            where: { id: { in: toRemove.map((r) => r.id) } },
-          });
-          result.removed += toRemove.length;
-        }
-
-        result.totalFiles += spFiles.filter((f) => !f.isFolder).length;
+        const stats = await syncFilesForCommunity(com.id, com.sharePointDriveId!, com.sharePointFolderId!);
+        result.added += stats.added;
+        result.updated += stats.updated;
+        result.removed += stats.removed;
+        result.totalFiles += stats.added + stats.updated;
       } catch (err) {
+        const msg = String(err);
+        if (msg === "Sync already running") throw err;
         result.errors++;
-        await logOp("incremental_sync_error", "error", {
-          comunidadId: com.id,
-          error: String(err),
-        });
+        await logOp("incremental_sync_error", "error", { comunidadId: com.id, error: msg });
       }
     }
 
