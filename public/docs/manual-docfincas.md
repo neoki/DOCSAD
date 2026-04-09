@@ -416,8 +416,10 @@ Una vez revisada la lista:
 El sistema detecta a qué comunidad pertenece cada archivo leyendo su nombre. Cuanto más claro sea el nombre, más fiable será la clasificación automática. Seguir este formato garantiza una confianza **Alta** en la mayoría de los casos:
 
 ```
-CODIGO_TipoDocumento_Fecha.pdf
+CODIGO_TipoDocumento_Fecha.extension
 ```
+
+La extensión puede ser cualquiera (`.pdf`, `.docx`, `.xlsx`, `.jpg`…). Lo que importa es que el nombre empiece por el **código de la comunidad**.
 
 Ejemplos correctos:
 
