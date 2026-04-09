@@ -42,9 +42,12 @@ async function buildVencimientoItems(daysAhead: number): Promise<VencimientoItem
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() + daysAhead);
 
+  const lowerBound = new Date();
+  lowerBound.setDate(lowerBound.getDate() - 90);
+
   const expiries = await prisma.documentExpiry.findMany({
     where: {
-      expiresAt: { lte: cutoff },
+      expiresAt: { gte: lowerBound, lte: cutoff },
       notificado: false,
     },
     include: { comunidad: { select: { codigo: true, nombre: true } } },
