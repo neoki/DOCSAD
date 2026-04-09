@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { unstable_after as after } from "next/server";
+import { DOC_TYPES } from "@/lib/doctypes";
+import { seedMissingChecklists, EXPECTED_CHECKLIST_COUNT } from "@/lib/seed-checklists";
+
+const DOC_TYPE_IDS = DOC_TYPES.map((dt) => dt.id);
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -42,6 +47,22 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
+  const unseeded = comunidades
+    .filter((c) => c._count.checklists < EXPECTED_CHECKLIST_COUNT)
+    .map((c) => c.id);
+
+  if (unseeded.length > 0) {
+    after(async () => {
+      try {
+        console.log(`[seed-checklists] Seeding ${unseeded.length} communities with missing checklists…`);
+        const created = await seedMissingChecklists(unseeded);
+        console.log(`[seed-checklists] Created ${created} checklist entries.`);
+      } catch (err) {
+        console.error("[seed-checklists] Error:", err);
+      }
+    });
+  }
+
   return NextResponse.json({ comunidades, total, page, pageSize });
 }
 
@@ -56,9 +77,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
   }
 
-  const { DOC_TYPES } = await import("@/lib/doctypes");
-  const docTypeIds = DOC_TYPES.map((dt) => dt.id);
-
   const comunidad = await prisma.comunidad.create({
     data: {
       codigo,
@@ -72,7 +90,7 @@ export async function POST(req: NextRequest) {
       },
       checklists: {
         createMany: {
-          data: docTypeIds.map((docTypeId) => ({ docTypeId })),
+          data: DOC_TYPE_IDS.map((docTypeId) => ({ docTypeId })),
         },
       },
     },
