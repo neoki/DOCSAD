@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { DOC_TYPES, CATEGORIAS } from "./doctypes";
 
 export type AiConfig = {
   provider: string;
@@ -6,20 +7,31 @@ export type AiConfig = {
   apiKey: string;
 };
 
+type ProviderEntry = {
+  apiKey?: string;
+  model?: string;
+  active?: boolean;
+};
+
+type AiConfigData = {
+  providers?: Record<string, ProviderEntry>;
+};
+
 export async function getActiveAiConfig(): Promise<AiConfig | null> {
   const setting = await prisma.setting.findUnique({ where: { key: "ai_config" } });
   if (!setting) return null;
 
-  let config: Record<string, { apiKey?: string; model?: string; active?: boolean }>;
+  let config: AiConfigData;
   try {
-    config = JSON.parse(setting.value);
+    config = JSON.parse(setting.value) as AiConfigData;
   } catch {
     return null;
   }
 
-  if (!config.providers) return null;
+  const providers = config.providers;
+  if (!providers) return null;
 
-  for (const [id, cfg] of Object.entries(config.providers)) {
+  for (const [id, cfg] of Object.entries(providers)) {
     if (cfg.active && cfg.apiKey && cfg.model) {
       return { provider: id, model: cfg.model, apiKey: cfg.apiKey };
     }
@@ -32,26 +44,44 @@ function fmtDate(d: Date | null | undefined): string {
   return d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-export async function buildSystemContext(lastUserMessage: string): Promise<string> {
-  const parts: string[] = [];
+const CHAR_BUDGET = 28000;
 
-  parts.push(
+function truncate(sections: string[][], budget: number): string {
+  let total = 0;
+  const kept: string[] = [];
+  for (const section of sections) {
+    const joined = section.join("\n");
+    if (total + joined.length <= budget) {
+      kept.push(joined);
+      total += joined.length;
+    } else {
+      const remaining = budget - total;
+      if (remaining > 80) {
+        kept.push(joined.slice(0, remaining) + "\n[...truncado por límite de contexto]");
+      }
+      break;
+    }
+  }
+  return kept.join("\n\n");
+}
+
+export async function buildSystemContext(lastUserMessage: string): Promise<string> {
+  const header = [
     `Eres el asistente de DocFincas, un sistema de gestión documental para comunidades de propietarios gestionadas por Asesoría Díaz.`,
-    `Tienes acceso a los metadatos actualizados del sistema (nombres de archivos, subcarpetas, fechas, checklists, vencimientos y notas).`,
+    `Tienes acceso a los metadatos actualizados del sistema: nombres de archivos, subcarpetas, fechas, checklists, vencimientos y notas.`,
     `NO tienes acceso al contenido interno de los PDFs. Responde siempre en español, de forma concisa y útil.`,
     `Hoy es ${fmtDate(new Date())}.`,
-    ``
-  );
+  ];
 
-  const [comunidades, expiriesRaw] = await Promise.all([
+  const [comunidades, expiriesRaw, recentFiles] = await Promise.all([
     prisma.comunidad.findMany({
       select: {
         id: true,
         codigo: true,
         nombre: true,
         sharePointFolderId: true,
-        checklists: { select: { estado: true } },
-        _count: { select: { fileCache: true } },
+        checklists: { select: { docTypeId: true, estado: true } },
+        _count: { select: { fileCache: true, notas: true } },
       },
       orderBy: { codigo: "asc" },
     }),
@@ -66,46 +96,92 @@ export async function buildSystemContext(lastUserMessage: string): Promise<strin
       orderBy: { expiresAt: "asc" },
       take: 50,
     }),
+    prisma.fileCache.findMany({
+      where: { isFolder: false },
+      select: { name: true, comunidadId: true, subfolder: true, sharePointModified: true },
+      orderBy: { sharePointModified: "desc" },
+      take: 80,
+    }),
   ]);
 
-  parts.push("=== LISTADO DE COMUNIDADES ===");
-  parts.push("código | nombre | carpeta_SP | archivos | completitud_checklist");
+  const comunidadSummary: string[] = [
+    "=== LISTADO DE COMUNIDADES ===",
+    "código | nombre | SP | archivos | notas | completitud",
+  ];
+
+  const catIds = Object.keys(CATEGORIAS);
+
   for (const c of comunidades) {
     const total = c.checklists.length;
     const completados = c.checklists.filter((ch) => ch.estado === "COMPLETADO").length;
     const noAplica = c.checklists.filter((ch) => ch.estado === "NO_APLICA").length;
     const aplicables = total - noAplica;
     const pct = aplicables > 0 ? Math.round((completados / aplicables) * 100) : 0;
-    const spStatus = c.sharePointFolderId ? "vinculada" : "sin_SP";
-    parts.push(`${c.codigo} | ${c.nombre} | ${spStatus} | ${c._count.fileCache} archivos | ${pct}% completitud`);
-  }
-  parts.push("");
+    const spStatus = c.sharePointFolderId ? "SP✓" : "sin_SP";
 
+    const catSummary = catIds.map((catId) => {
+      const relevant = DOC_TYPES.filter((dt) => dt.categoria === catId).map((dt) => dt.id);
+      const catItems = c.checklists.filter((ch) => relevant.includes(ch.docTypeId));
+      const catComp = catItems.filter((ch) => ch.estado === "COMPLETADO").length;
+      const catNA = catItems.filter((ch) => ch.estado === "NO_APLICA").length;
+      const catApl = catItems.length - catNA;
+      return `${CATEGORIAS[catId].label}:${catComp}/${catApl}`;
+    }).join(" ");
+
+    comunidadSummary.push(
+      `${c.codigo} | ${c.nombre} | ${spStatus} | ${c._count.fileCache} arch | ${c._count.notas} notas | ${pct}% [${catSummary}]`
+    );
+  }
+
+  const expiriesSection: string[] = [];
   if (expiriesRaw.length > 0) {
-    parts.push("=== VENCIMIENTOS PRÓXIMOS (30 días) ===");
+    expiriesSection.push("=== VENCIMIENTOS PRÓXIMOS (30 días) ===");
     for (const e of expiriesRaw) {
-      parts.push(`${e.comunidad.codigo} (${e.comunidad.nombre}) — ${e.fileName} — ${e.label} — vence: ${fmtDate(e.expiresAt)}`);
+      expiriesSection.push(
+        `${e.comunidad.codigo} (${e.comunidad.nombre}) — ${e.fileName} — ${e.label} — vence: ${fmtDate(e.expiresAt)}`
+      );
     }
-    parts.push("");
+  }
+
+  const recentSection: string[] = ["=== ARCHIVOS RECIENTES EN EL SISTEMA (últimos 80) ==="];
+  const comMap = new Map(comunidades.map((c) => [c.id, `${c.codigo} ${c.nombre}`]));
+  for (const f of recentFiles) {
+    const comLabel = f.comunidadId ? comMap.get(f.comunidadId) ?? "?" : "sin comunidad";
+    recentSection.push(
+      `[${comLabel}] ${f.subfolder ?? "raiz"} / ${f.name} (${fmtDate(f.sharePointModified)})`
+    );
   }
 
   const detectedComunidad = await detectComunidad(lastUserMessage, comunidades);
+  const detailSection: string[] = [];
   if (detectedComunidad) {
-    const detail = await buildComunidadDetail(detectedComunidad.id, detectedComunidad.nombre);
-    parts.push(`=== DETALLE COMUNIDAD: ${detectedComunidad.codigo} — ${detectedComunidad.nombre} ===`);
-    parts.push(detail);
-    parts.push("");
+    detailSection.push(`=== DETALLE COMUNIDAD: ${detectedComunidad.codigo} — ${detectedComunidad.nombre} ===`);
+    const detail = await buildComunidadDetail(detectedComunidad.id, detectedComunidad.checklists);
+    detailSection.push(detail);
   }
 
-  return parts.join("\n");
+  const sections: string[][] = [
+    header,
+    comunidadSummary,
+    expiriesSection.length > 1 ? expiriesSection : [],
+    recentSection,
+    detailSection.length > 1 ? detailSection : [],
+  ].filter((s) => s.length > 0);
+
+  return truncate(sections, CHAR_BUDGET);
 }
 
 async function detectComunidad(
   text: string,
-  comunidades: { id: string; codigo: string; nombre: string }[]
-): Promise<{ id: string; codigo: string; nombre: string } | null> {
-  const normalized = text.toLowerCase().replace(/[áàä]/g, "a").replace(/[éèë]/g, "e")
-    .replace(/[íìï]/g, "i").replace(/[óòö]/g, "o").replace(/[úùü]/g, "u").replace(/ñ/g, "n");
+  comunidades: { id: string; codigo: string; nombre: string; checklists: { docTypeId: string; estado: string }[] }[]
+): Promise<{ id: string; codigo: string; nombre: string; checklists: { docTypeId: string; estado: string }[] } | null> {
+  const norm = (s: string) =>
+    s.toLowerCase()
+      .replace(/[áàä]/g, "a").replace(/[éèë]/g, "e")
+      .replace(/[íìï]/g, "i").replace(/[óòö]/g, "o")
+      .replace(/[úùü]/g, "u").replace(/ñ/g, "n");
+
+  const normalizedText = norm(text);
 
   const codeMatch = text.match(/\b(\d{3,6})\b/);
   if (codeMatch) {
@@ -115,11 +191,8 @@ async function detectComunidad(
   }
 
   for (const c of comunidades) {
-    const normNombre = c.nombre.toLowerCase()
-      .replace(/[áàä]/g, "a").replace(/[éèë]/g, "e")
-      .replace(/[íìï]/g, "i").replace(/[óòö]/g, "o").replace(/[úùü]/g, "u").replace(/ñ/g, "n");
-    const words = normNombre.split(/\s+/).filter((w) => w.length > 3);
-    const matchCount = words.filter((w) => normalized.includes(w)).length;
+    const words = norm(c.nombre).split(/\s+/).filter((w) => w.length > 3);
+    const matchCount = words.filter((w) => normalizedText.includes(w)).length;
     if (matchCount >= 2 || (words.length === 1 && matchCount === 1)) {
       return c;
     }
@@ -127,11 +200,14 @@ async function detectComunidad(
   return null;
 }
 
-async function buildComunidadDetail(comunidadId: string, nombre: string): Promise<string> {
-  const [files, notas, checklists, expiries, operativa] = await Promise.all([
+async function buildComunidadDetail(
+  comunidadId: string,
+  checklistItems: { docTypeId: string; estado: string }[]
+): Promise<string> {
+  const [files, notas, expiries, syncLogs, operativa] = await Promise.all([
     prisma.fileCache.findMany({
       where: { comunidadId, isFolder: false },
-      select: { name: true, subfolder: true, sharePointModified: true, sizeBytes: true },
+      select: { name: true, subfolder: true, sharePointModified: true },
       orderBy: { sharePointModified: "desc" },
       take: 60,
     }),
@@ -141,14 +217,16 @@ async function buildComunidadDetail(comunidadId: string, nombre: string): Promis
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
-    prisma.checklist.findMany({
-      where: { comunidadId },
-      select: { docTypeId: true, estado: true, fecha: true },
-    }),
     prisma.documentExpiry.findMany({
       where: { comunidadId },
       select: { fileName: true, label: true, expiresAt: true },
       orderBy: { expiresAt: "asc" },
+    }),
+    prisma.syncLog.findMany({
+      where: { comunidadId, status: { not: "success" } },
+      select: { operation: true, status: true, fileName: true, details: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 10,
     }),
     prisma.operativa.findUnique({ where: { comunidadId } }),
   ]);
@@ -156,40 +234,61 @@ async function buildComunidadDetail(comunidadId: string, nombre: string): Promis
   const lines: string[] = [];
 
   if (files.length > 0) {
-    lines.push(`Archivos recientes (${files.length}):`);
+    lines.push(`Archivos (${files.length} recientes):`);
     for (const f of files) {
-      lines.push(`  [${f.subfolder || "raiz"}] ${f.name} — ${fmtDate(f.sharePointModified || null)}`);
+      lines.push(`  [${f.subfolder ?? "raiz"}] ${f.name} — ${fmtDate(f.sharePointModified ?? null)}`);
     }
   }
 
   if (notas.length > 0) {
-    lines.push(`Notas internas (${notas.length}):`);
+    lines.push(`Notas (${notas.length}):`);
     for (const n of notas) {
       lines.push(`  ${fmtDate(n.createdAt)}: ${n.texto.slice(0, 200)}`);
     }
   }
 
-  if (checklists.length > 0) {
-    const completados = checklists.filter((c) => c.estado === "COMPLETADO").length;
-    const pendientes = checklists.filter((c) => c.estado === "PENDIENTE").length;
-    const noAplica = checklists.filter((c) => c.estado === "NO_APLICA").length;
-    lines.push(`Checklist: ${completados} completados, ${pendientes} pendientes, ${noAplica} no aplica`);
+  if (checklistItems.length > 0) {
+    const catIds = Object.keys(CATEGORIAS);
+    lines.push("Checklist por categoría:");
+    for (const catId of catIds) {
+      const relevant = DOC_TYPES.filter((dt) => dt.categoria === catId).map((dt) => dt.id);
+      const catItems = checklistItems.filter((ch) => relevant.includes(ch.docTypeId));
+      const comp = catItems.filter((ch) => ch.estado === "COMPLETADO").length;
+      const pend = catItems.filter((ch) => ch.estado === "PENDIENTE").length;
+      const na = catItems.filter((ch) => ch.estado === "NO_APLICA").length;
+      lines.push(`  ${CATEGORIAS[catId].label}: ${comp} completados, ${pend} pendientes, ${na} no aplica`);
+    }
+    const pendingTypes = checklistItems
+      .filter((ch) => ch.estado === "PENDIENTE")
+      .map((ch) => DOC_TYPES.find((dt) => dt.id === ch.docTypeId)?.label ?? ch.docTypeId)
+      .slice(0, 15);
+    if (pendingTypes.length > 0) {
+      lines.push(`  Pendientes: ${pendingTypes.join(", ")}`);
+    }
   }
 
   if (expiries.length > 0) {
-    lines.push(`Vencimientos registrados:`);
+    lines.push("Vencimientos registrados:");
     for (const e of expiries) {
       lines.push(`  ${e.label} — ${e.fileName} — vence: ${fmtDate(e.expiresAt)}`);
+    }
+  }
+
+  if (syncLogs.length > 0) {
+    lines.push(`Historial sync (errores/avisos recientes):`);
+    for (const s of syncLogs) {
+      lines.push(`  ${fmtDate(s.createdAt)} ${s.status} ${s.operation} ${s.fileName ?? ""} ${s.details ?? ""}`.trim());
     }
   }
 
   if (operativa) {
     const tags: string[] = [];
     if (operativa.usaAgreGasfincas) tags.push("GESFINCAS");
-    if (operativa.somosCorredorSeguro) tags.push("Corredor propio");
+    if (operativa.somosCorredorSeguro) tags.push(`Corredor: ${operativa.corredorSeguroNombre ?? "propio"}`);
     if (operativa.tieneVideovigilancia) tags.push("Videovigilancia");
-    if (operativa.obligadaITE) tags.push(`ITE próxima: ${fmtDate(operativa.fechaProximaITE)}`);
-    if (operativa.tienePortero || operativa.tieneConserje) tags.push("Con personal");
+    if (operativa.obligadaITE) tags.push(`ITE: ${fmtDate(operativa.fechaProximaITE)}`);
+    if (operativa.tienePortero || operativa.tieneConserje) tags.push("Personal en edificio");
+    if (operativa.gestionaConsumos) tags.push(`Consumos: ${operativa.empresaGestionConsumos ?? "sí"}`);
     if (tags.length > 0) lines.push(`Operativa: ${tags.join(", ")}`);
   }
 
