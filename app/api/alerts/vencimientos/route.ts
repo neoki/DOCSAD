@@ -144,8 +144,9 @@ export async function POST(req: NextRequest) {
       const validDays = [7, 15, 30];
       const days = validDays.includes(Number(daysAhead)) ? Number(daysAhead) : 30;
 
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const config: AlertConfig = {
-        recipients: recipients.filter((r) => typeof r === "string" && r.includes("@")),
+        recipients: [...new Set(recipients.filter((r) => typeof r === "string" && emailRegex.test(r.trim())).map((r) => r.trim().toLowerCase()))],
         daysAhead: days,
       };
 
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest) {
         ok: result.ok,
         error: result.error,
         messageId: result.messageId,
-        sentCount: items.length,
+        sentCount: result.ok ? items.length : 0,
         lastSent: result.ok ? now.toISOString() : null,
       });
     }
