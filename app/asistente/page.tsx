@@ -98,7 +98,6 @@ export default function AsistentePage() {
 
       if (data.error === "no_provider") {
         setNoProvider(true);
-        setMessages(messages);
         setLoading(false);
         return;
       }

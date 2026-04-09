@@ -131,10 +131,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
   }
 
-  const messages: Message[] = body.messages ?? [];
-  if (!messages.length) {
+  const allMessages: Message[] = body.messages ?? [];
+  if (!allMessages.length) {
     return NextResponse.json({ error: "messages required" }, { status: 400 });
   }
+  const MAX_HISTORY = 20;
+  const messages: Message[] = allMessages.slice(-MAX_HISTORY);
 
   const aiConfig = await getActiveAiConfig();
   if (!aiConfig) {
