@@ -6,6 +6,7 @@ import {
 } from "./microsoft-graph";
 import { getComunidadesRoot } from "./sharepoint-roots";
 import { logAudit } from "./audit";
+import { seedMissingChecklists, autoCompleteChecklistsFromFiles } from "./seed-checklists";
 
 type SyncResult = {
   added: number;
@@ -384,6 +385,14 @@ export async function fullSync(onProgress?: (msg: string) => void): Promise<Sync
       details: `Sync completo: +${result.added} nuevos, ~${result.updated} actualizados, -${result.removed} eliminados. ${result.communities} comunidades, ${result.totalFiles} archivos. ${elapsed}s`,
     });
 
+    try {
+      const allIds = comunidades.map((c) => c.id);
+      await seedMissingChecklists(allIds);
+      await autoCompleteChecklistsFromFiles(allIds);
+    } catch (e) {
+      console.error("[checklist-auto] Error in post-sync auto-complete:", e);
+    }
+
     return result;
   } catch (err) {
     await setSyncState("sync_status", "error");
@@ -456,6 +465,14 @@ export async function incrementalSync(onProgress?: (msg: string) => void): Promi
       entity: "sync",
       details: `Sync automático: +${result.added} nuevos, ~${result.updated} actualizados, -${result.removed} eliminados. ${result.totalFiles} archivos. ${elapsed}s`,
     });
+
+    try {
+      const allIds = comunidades.map((c) => c.id);
+      await seedMissingChecklists(allIds);
+      await autoCompleteChecklistsFromFiles(allIds);
+    } catch (e) {
+      console.error("[checklist-auto] Error in post-sync auto-complete:", e);
+    }
 
     return result;
   } catch (err) {
