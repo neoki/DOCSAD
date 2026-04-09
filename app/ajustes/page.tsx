@@ -211,8 +211,8 @@ export default function AjustesPage() {
       const data = await res.json();
       if (data.ok) {
         const count = data.sentCount || 0;
-        setEmailSendMsg(count === 0 ? "Sin vencimientos en el horizonte configurado." : `Email enviado con ${count} documento${count !== 1 ? "s" : ""}.`);
-        setEmailLastSent(new Date().toISOString());
+        setEmailSendMsg(count === 0 ? "Sin vencimientos pendientes de notificar." : `Email enviado con ${count} documento${count !== 1 ? "s" : ""}.`);
+        if (data.lastSent) setEmailLastSent(data.lastSent);
       } else {
         setEmailSendMsg(data.error || "Error al enviar el email");
       }

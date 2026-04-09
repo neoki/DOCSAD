@@ -162,11 +162,13 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      const now = new Date();
       return NextResponse.json({
         ok: result.ok,
         error: result.error,
         messageId: result.messageId,
         sentCount: items.length,
+        lastSent: result.ok ? now.toISOString() : null,
       });
     }
 
