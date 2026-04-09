@@ -19,7 +19,7 @@ export async function GET(
 
   const byYear: Record<number, { total: number; count: number }> = {};
   for (const f of facturas) {
-    if (f.importe && f.fechaFactura) {
+    if (f.importe !== null && f.fechaFactura) {
       const year = new Date(f.fechaFactura).getFullYear();
       if (!byYear[year]) byYear[year] = { total: 0, count: 0 };
       byYear[year].total += f.importe;

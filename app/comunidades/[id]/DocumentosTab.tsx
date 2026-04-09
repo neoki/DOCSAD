@@ -200,7 +200,7 @@ function ExpiryModal({
 
 function fmtImporte(importe: number | null, moneda: string): string {
   if (importe === null) return "";
-  return new Intl.NumberFormat("es-ES", { style: "currency", currency: moneda || "EUR", maximumFractionDigits: 0 }).format(importe);
+  return new Intl.NumberFormat("es-ES", { style: "currency", currency: moneda || "EUR" }).format(importe);
 }
 
 export default function DocumentosTab({ comunidadId }: { comunidadId: string }) {
