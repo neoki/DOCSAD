@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { unstable_after as after } from "next/server";
 import { DOC_TYPES } from "@/lib/doctypes";
 import { seedMissingChecklists, EXPECTED_CHECKLIST_COUNT } from "@/lib/seed-checklists";
 
@@ -47,20 +46,35 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
-  const unseeded = comunidades
+  const unseededIds = comunidades
     .filter((c) => c._count.checklists < EXPECTED_CHECKLIST_COUNT)
     .map((c) => c.id);
 
-  if (unseeded.length > 0) {
-    after(async () => {
-      try {
-        console.log(`[seed-checklists] Seeding ${unseeded.length} communities with missing checklists…`);
-        const created = await seedMissingChecklists(unseeded);
-        console.log(`[seed-checklists] Created ${created} checklist entries.`);
-      } catch (err) {
-        console.error("[seed-checklists] Error:", err);
+  if (unseededIds.length > 0 && all) {
+    try {
+      console.log(`[seed-checklists] Seeding ${unseededIds.length} communities synchronously…`);
+      const created = await seedMissingChecklists(unseededIds);
+      console.log(`[seed-checklists] Created ${created} checklist entries.`);
+
+      const freshChecklists = await prisma.checklist.findMany({
+        where: { comunidadId: { in: unseededIds } },
+        select: { comunidadId: true, estado: true },
+      });
+      const byId = new Map<string, { estado: string }[]>();
+      for (const row of freshChecklists) {
+        const arr = byId.get(row.comunidadId) ?? [];
+        arr.push({ estado: row.estado });
+        byId.set(row.comunidadId, arr);
       }
-    });
+      for (const c of comunidades) {
+        if (unseededIds.includes(c.id)) {
+          (c as Record<string, unknown>).checklists = byId.get(c.id) ?? [];
+          c._count.checklists = (byId.get(c.id) ?? []).length;
+        }
+      }
+    } catch (err) {
+      console.error("[seed-checklists] Error:", err);
+    }
   }
 
   return NextResponse.json({ comunidades, total, page, pageSize });
