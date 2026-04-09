@@ -41,18 +41,15 @@ function buildHtmlEmail(items: VencimientoItem[], daysAhead: number): string {
   const rowsHtml = items
     .map((item) => {
       const color = urgencyColor(item.diasRestantes);
-      const label = urgencyLabel(item.diasRestantes);
       const diasText = formatDiasRestantes(item.diasRestantes);
+      const rowStyle = item.diasRestantes < 0 ? "background:#fef2f2;" : "";
       return `
-      <tr style="border-bottom: 1px solid #f1f5f9;">
-        <td style="padding: 10px 12px; font-family: monospace; font-size: 13px; color: #64748b; white-space: nowrap;">${item.comunidadCodigo}</td>
-        <td style="padding: 10px 12px; font-size: 13px; color: #1e293b; max-width: 180px;">${item.comunidadNombre}</td>
-        <td style="padding: 10px 12px; font-size: 13px; color: #475569; max-width: 200px;">${item.label || item.fileName}</td>
+      <tr style="border-bottom: 1px solid #f1f5f9; ${rowStyle}">
+        <td style="padding: 10px 12px; font-size: 13px; color: #1e293b; white-space: nowrap;"><span style="font-family:monospace;color:#64748b;">${item.comunidadCodigo}</span> ${item.comunidadNombre}</td>
+        <td style="padding: 10px 12px; font-size: 13px; color: #475569; max-width: 180px;">${item.fileName}</td>
+        <td style="padding: 10px 12px; font-size: 13px; color: #475569; max-width: 160px; font-style: italic;">${item.label}</td>
         <td style="padding: 10px 12px; font-family: monospace; font-size: 13px; color: #475569; white-space: nowrap;">${formatDate(item.expiresAt)}</td>
         <td style="padding: 10px 12px; font-family: monospace; font-size: 13px; font-weight: 700; color: ${color}; text-align: right; white-space: nowrap;">${diasText}</td>
-        <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
-          <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; background: ${color}18; color: ${color}; font-size: 11px; font-weight: 700;">${label}</span>
-        </td>
       </tr>`;
     })
     .join("");
@@ -89,12 +86,11 @@ function buildHtmlEmail(items: VencimientoItem[], daysAhead: number): string {
       <table style="width: 100%; border-collapse: collapse;">
         <thead>
           <tr style="border-bottom: 2px solid #e2e8f0;">
-            <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Código</th>
             <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Comunidad</th>
             <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Documento</th>
+            <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Etiqueta</th>
             <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Vence</th>
             <th style="padding: 8px 12px; text-align: right; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Días restantes</th>
-            <th style="padding: 8px 12px; text-align: center; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Estado</th>
           </tr>
         </thead>
         <tbody>

@@ -93,7 +93,8 @@ export async function GET(req: NextRequest) {
     const lastSent = await getLastSent();
 
     if (check === "true") {
-      if (!lastSent || Date.now() - lastSent.getTime() >= SEVEN_DAYS_MS) {
+      const isMonday = new Date().getDay() === 1;
+      if (isMonday && (!lastSent || Date.now() - lastSent.getTime() >= SEVEN_DAYS_MS)) {
         if (config.recipients.length > 0) {
           const items = await buildVencimientoItems(config.daysAhead);
           if (items.length > 0) {
