@@ -20,6 +20,14 @@ type SPSubfolder = {
   isStandard: boolean;
 };
 
+type OcrData = {
+  sharePointItemId: string;
+  importe: number | null;
+  moneda: string;
+  proveedor: string | null;
+  status: string;
+};
+
 type Expiry = {
   sharePointItemId: string;
   label: string;
@@ -189,16 +197,34 @@ function ExpiryModal({
   );
 }
 
+function isInvoiceFolderName(name: string | null | undefined): boolean {
+  if (!name) return false;
+  const lower = name.toLowerCase();
+  return (
+    lower.includes("factura") ||
+    lower.includes("invoice") ||
+    lower.includes("recibo") ||
+    lower.includes("04_fact")
+  );
+}
+
+function fmtImporte(importe: number | null, moneda: string): string {
+  if (importe === null) return "";
+  return new Intl.NumberFormat("es-ES", { style: "currency", currency: moneda || "EUR", maximumFractionDigits: 0 }).format(importe);
+}
+
 export default function DocumentosTab({ comunidadId }: { comunidadId: string }) {
   const [subfolders, setSubfolders] = useState<SPSubfolder[]>([]);
   const [rootFiles, setRootFiles] = useState<SPFile[]>([]);
   const [folderFiles, setFolderFiles] = useState<SPFile[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [expiries, setExpiries] = useState<Map<string, Expiry>>(new Map());
+  const [ocrMap, setOcrMap] = useState<Map<string, OcrData>>(new Map());
   const [loading, setLoading] = useState(true);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [linked, setLinked] = useState(true);
   const [folderName, setFolderName] = useState<string | null>(null);
+  const [currentSubfolderName, setCurrentSubfolderName] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [downloading, setDownloading] = useState<string | null>(null);
   const [expiryModal, setExpiryModal] = useState<SPFile | null>(null);
@@ -253,13 +279,30 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
     }
   }, [comunidadId]);
 
+  const loadOcr = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/comunidades/${comunidadId}/facturas`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const map = new Map<string, OcrData>();
+      for (const f of data.facturas ?? []) {
+        map.set(f.sharePointItemId, f);
+      }
+      setOcrMap(map);
+    } catch {
+      // silently ignore
+    }
+  }, [comunidadId]);
+
   useEffect(() => {
     loadSubfolders();
     loadExpiries();
-  }, [loadSubfolders, loadExpiries]);
+    loadOcr();
+  }, [loadSubfolders, loadExpiries, loadOcr]);
 
-  function handleTabChange(folderId: string | null) {
+  function handleTabChange(folderId: string | null, subName?: string) {
     setCurrentFolderId(folderId);
+    setCurrentSubfolderName(subName ?? null);
     setSearch("");
     setFolderFiles([]);
     if (folderId !== null) {
@@ -299,6 +342,7 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
       const formData = new FormData();
       formData.append("file", file);
       if (currentFolderId) formData.append("folderId", currentFolderId);
+      if (currentSubfolderName) formData.append("folderName", currentSubfolderName);
       const res = await fetch(`/api/comunidades/${comunidadId}/sharepoint/upload`, { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) {
@@ -394,7 +438,7 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
           {subfolders.map((sf) => (
             <button
               key={sf.id}
-              onClick={() => handleTabChange(sf.id)}
+              onClick={() => handleTabChange(sf.id, sf.name)}
               style={{ padding: "10px 14px", border: "none", background: "none", cursor: "pointer", fontSize: 13, whiteSpace: "nowrap", borderBottom: currentFolderId === sf.id ? "2px solid #4F7CFF" : "2px solid transparent", color: currentFolderId === sf.id ? "#4F7CFF" : "#64748b", fontWeight: currentFolderId === sf.id ? 600 : 400 }}
             >
               {sf.name}
@@ -424,6 +468,7 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
               const expiry = expiries.get(file.id);
               const days = expiry ? daysUntil(expiry.expiresAt) : null;
               const expiryStyle = days !== null ? expiryColor(days) : null;
+              const ocr = ocrMap.get(file.id);
 
               return (
                 <div
@@ -447,6 +492,16 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
                       {expiry && expiryStyle && (
                         <span style={{ background: expiryStyle.bg, color: expiryStyle.color, border: `1px solid ${expiryStyle.border}`, borderRadius: 10, padding: "1px 8px", fontSize: 10, fontWeight: 600 }}>
                           {expiry.label} · {days! < 0 ? `Vencido hace ${Math.abs(days!)}d` : days === 0 ? "Vence hoy" : `Vence en ${days}d`}
+                        </span>
+                      )}
+                      {ocr && ocr.status === "pending" && (
+                        <span style={{ background: "#fef3c7", color: "#92400e", borderRadius: 10, padding: "1px 8px", fontSize: 10, fontWeight: 600 }}>
+                          Analizando OCR...
+                        </span>
+                      )}
+                      {ocr && ocr.status === "success" && (
+                        <span style={{ background: "#eff6ff", color: "#1d4ed8", borderRadius: 10, padding: "1px 8px", fontSize: 10, fontWeight: 600, display: "inline-flex", gap: 4 }}>
+                          🧾 {fmtImporte(ocr.importe, ocr.moneda)}{ocr.proveedor ? ` · ${ocr.proveedor}` : ""}
                         </span>
                       )}
                     </div>

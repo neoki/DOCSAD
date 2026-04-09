@@ -773,12 +773,147 @@ export default function AjustesPage() {
         )}
       </div>
 
+      <OcrConfigSection />
+
       <style jsx>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
       `}</style>
+    </div>
+  );
+}
+
+function OcrConfigSection() {
+  const [endpoint, setEndpoint] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [hasKey, setHasKey] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/ajustes/ocr")
+      .then((r) => r.json())
+      .then((d) => {
+        setEndpoint(d.endpoint ?? "");
+        setApiKey(d.apiKeyMasked ?? "");
+        setHasKey(d.hasKey ?? false);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/ajustes/ocr", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint, apiKey }),
+      });
+      if (res.ok) {
+        setMsg("Configuración guardada correctamente");
+        const d = await fetch("/api/ajustes/ocr").then((r) => r.json());
+        setApiKey(d.apiKeyMasked ?? "");
+        setHasKey(d.hasKey ?? false);
+      } else {
+        setMsg("Error al guardar la configuración");
+      }
+    } catch {
+      setMsg("Error al guardar la configuración");
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMsg(null), 4000);
+    }
+  }
+
+  return (
+    <div className="card-static" style={{ marginTop: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+          🧾
+        </div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 16, color: "#1e293b" }}>OCR de Facturas (Azure)</div>
+          <div style={{ fontSize: 13, color: "#64748b" }}>Extracción automática de datos de facturas mediante Azure Document Intelligence</div>
+        </div>
+        {hasKey && !loading && (
+          <span style={{ marginLeft: "auto", background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0", borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 600 }}>
+            Configurado
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div style={{ color: "#94a3b8", fontSize: 13 }}>Cargando configuración...</div>
+      ) : (
+        <>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+              Endpoint de Azure Document Intelligence
+            </label>
+            <input
+              type="url"
+              value={endpoint}
+              onChange={(e) => setEndpoint(e.target.value)}
+              placeholder="https://tu-recurso.cognitiveservices.azure.com"
+              className="form-input"
+              style={{ width: "100%" }}
+            />
+            <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>
+              Puedes encontrarlo en el portal de Azure → tu recurso Document Intelligence → Claves y endpoint.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+              Clave de API (Ocp-Apim-Subscription-Key)
+            </label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={hasKey ? "••••••••••••••••" : "Pega aquí la clave de API"}
+              className="form-input"
+              style={{ width: "100%" }}
+            />
+            {hasKey && (
+              <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>
+                Hay una clave guardada. Introduce una nueva clave para reemplazarla.
+              </p>
+            )}
+          </div>
+
+          <div style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: "12px 16px", marginBottom: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>¿Cómo funciona?</div>
+            <ul style={{ fontSize: 12, color: "#64748b", margin: 0, paddingLeft: 20, lineHeight: 1.8 }}>
+              <li>Cuando se sube un archivo a una carpeta de facturas en SharePoint, el sistema lo analiza automáticamente.</li>
+              <li>El análisis extrae: <strong>importe total, proveedor, fecha y número de factura</strong>.</li>
+              <li>Los datos extraídos aparecen como chips en la pestaña Documentos y en la pestaña Facturas de cada comunidad.</li>
+              <li>El análisis se realiza en segundo plano usando el modelo <em>prebuilt-invoice</em> de Azure Document Intelligence.</li>
+            </ul>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              className="btn-primary"
+              onClick={handleSave}
+              disabled={saving || !endpoint || !apiKey}
+              style={{ minWidth: 160, background: "#4F7CFF" }}
+            >
+              {saving ? "Guardando..." : "Guardar configuración"}
+            </button>
+            {msg && (
+              <span style={{ fontSize: 13, fontWeight: 600, color: msg.includes("correctamente") ? "#16a34a" : "#dc2626" }}>
+                {msg}
+              </span>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

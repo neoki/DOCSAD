@@ -9,6 +9,7 @@ import DocumentosTab from "./DocumentosTab";
 import ResumenDocTab from "./ResumenDocTab";
 import HistorialTab from "./HistorialTab";
 import NotasTab from "./NotasTab";
+import FacturasTab from "./FacturasTab";
 
 type RoutingCandidate = {
   id: string;
@@ -60,6 +61,7 @@ type ChecklistItem = {
 const TABS = [
   { id: "resumen", label: "Resumen documental" },
   { id: "documentos", label: "Documentos" },
+  { id: "facturas", label: "Facturas" },
   { id: "notas", label: "Notas" },
   { id: "historial", label: "Historial" },
   { id: "checklist", label: "Checklist" },
@@ -361,6 +363,7 @@ export default function ComunidadDetailPage() {
 
       {activeTab === "resumen" && <ResumenDocTab comunidadId={id} />}
       {activeTab === "documentos" && <DocumentosTab comunidadId={id} />}
+      {activeTab === "facturas" && <FacturasTab comunidadId={id} />}
       {activeTab === "notas" && <NotasTab comunidadId={id} />}
       {activeTab === "historial" && <HistorialTab comunidadId={id} />}
       {activeTab === "checklist" && <ChecklistTab comunidadId={id} />}

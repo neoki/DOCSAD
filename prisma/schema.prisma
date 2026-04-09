@@ -285,3 +285,24 @@ model RoutingCandidate {
   @@index([communityCode])
   @@map("routing_candidates")
 }
+
+model ExtractedInvoiceData {
+  id               String    @id @default(cuid())
+  sharePointItemId String    @unique
+  comunidadId      String
+  fileName         String    @default("")
+  importe          Float?
+  moneda           String    @default("EUR")
+  proveedor        String?
+  fechaFactura     DateTime?
+  numeroFactura    String?
+  rawJson          Json?
+  status           String    @default("pending")
+  errorMessage     String?
+  processedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([comunidadId])
+  @@map("extracted_invoice_data")
+}

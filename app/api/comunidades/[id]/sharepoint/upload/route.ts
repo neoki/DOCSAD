@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { uploadFileToFolder, isDescendantFolder } from "@/lib/microsoft-graph";
+import { uploadFileToFolder, isDescendantFolder, getFileDownloadUrl } from "@/lib/microsoft-graph";
+import { extractInvoiceData, isInvoiceFolder } from "@/lib/ocr";
+import { unstable_after as after } from "next/server";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
@@ -25,6 +27,7 @@ export async function POST(
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const folderId = formData.get("folderId") as string | null;
+    const folderName = formData.get("folderName") as string | null;
 
     if (!file) {
       return NextResponse.json({ error: "No se proporcionó archivo" }, { status: 400 });
@@ -57,9 +60,23 @@ export async function POST(
       targetFolderId,
       file.name,
       buffer,
-    );
+    ) as { id?: string };
 
-    return NextResponse.json({ success: true, file: result });
+    const uploadedItemId = result?.id;
+    const targetFolderName = folderName ?? null;
+
+    if (uploadedItemId && isInvoiceFolder(targetFolderName)) {
+      after(async () => {
+        try {
+          const downloadUrl = await getFileDownloadUrl(comunidad.sharePointDriveId!, uploadedItemId);
+          await extractInvoiceData(uploadedItemId, comunidad.id, file.name, downloadUrl);
+        } catch (err) {
+          console.error("[OCR] Background extraction failed:", err);
+        }
+      });
+    }
+
+    return NextResponse.json({ success: true, file: result, ocrQueued: !!(uploadedItemId && isInvoiceFolder(targetFolderName)) });
   } catch (err) {
     console.error("Upload error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
