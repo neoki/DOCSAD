@@ -76,14 +76,7 @@ export default function AjustesPage() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  const [syncElapsed, setSyncElapsed] = useState(0);
-  const [syncLogs, setSyncLogs] = useState<Array<{ operation: string; status: string; fileName?: string; details?: string; error?: string; createdAt: string }>>([]);
-  const [syncProgress, setSyncProgress] = useState<{ status: string; startedAt?: string; completedAt?: string; duration?: string } | null>(null);
-  const [syncResult, setSyncResult] = useState<{
-    summary?: { added?: number; updated?: number; removed?: number; errors?: number };
-    error?: string;
-  } | null>(null);
+  const [resetSyncResult, setResetSyncResult] = useState<string | null>(null);
   const [onedriveStatus, setOnedriveStatus] = useState<{ connected: boolean; email?: string; expiresAt?: string } | null>(null);
   const [onedriveLoading, setOnedriveLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -132,24 +125,6 @@ export default function AjustesPage() {
       .finally(() => setSpRootsLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (!syncing) return;
-    const start = Date.now();
-    const timer = setInterval(() => setSyncElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
-    const poll = setInterval(async () => {
-      try {
-        const [statusRes, logsRes] = await Promise.all([
-          fetch("/api/sync?action=status"),
-          fetch("/api/sync?action=logs&limit=8"),
-        ]);
-        const statusData = await statusRes.json();
-        const logsData = await logsRes.json();
-        setSyncProgress(statusData);
-        setSyncLogs(logsData.logs || []);
-      } catch {}
-    }, 2000);
-    return () => { clearInterval(timer); clearInterval(poll); };
-  }, [syncing]);
 
   const updateProvider = (id: string, field: keyof ProviderConfig, value: string | boolean) => {
     setProviders((prev) => {
@@ -516,118 +491,34 @@ export default function AjustesPage() {
         className="card-static"
         style={{ borderLeft: "4px solid #8B5CF6", maxWidth: 720 }}
       >
-        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Sincronizar con SharePoint</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Sincronización automática</h3>
         <p style={{ color: "#475569", fontSize: 14, marginBottom: 16 }}>
-          Escanea todas las carpetas de comunidades en SharePoint, vincula cada carpeta con su comunidad y actualiza la caché local de archivos. Puedes lanzar la sincronización desde el Dashboard.
+          La sincronización con SharePoint se realiza automáticamente cada 5 minutos mientras el Dashboard está abierto. El estado y la última sincronización se muestran en el Dashboard.
         </p>
 
-        <div className="flex items-center gap-3">
-          <button
-            className="btn-primary"
-            onClick={async () => {
-              setSyncing(true);
-              setSyncResult(null);
-              setSyncLogs([]);
-              setSyncProgress(null);
-              setSyncElapsed(0);
-              try {
-                const res = await fetch("/api/sync", { method: "POST" });
-                const data = await res.json();
-                if (data.error) {
-                  setSyncResult({ error: data.error });
-                } else {
-                  setSyncResult({ summary: data.result });
-                }
-              } catch (err) {
-                setSyncResult({ error: String(err) });
-              } finally {
-                setSyncing(false);
-              }
-            }}
-            disabled={syncing}
-            style={{ minWidth: 200 }}
-          >
-            {syncing ? "Sincronizando..." : "Sincronizar ahora"}
-          </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button
             className="btn-secondary"
             onClick={async () => {
-              if (!confirm("¿Resetear el estado de sincronización? Usa esto si el sync se queda bloqueado en 'en curso'.")) return;
+              if (!confirm("¿Resetear el estado de sincronización? Usa esto solo si el sync se ha quedado bloqueado indefinidamente.")) return;
               try {
                 const res = await fetch("/api/sync", { method: "DELETE" });
                 const data = await res.json();
-                if (data.success) setSyncResult({ summary: { message: "Estado reseteado correctamente" } as any });
-                else setSyncResult({ error: data.error });
+                setResetSyncResult(data.success ? "Estado reseteado correctamente." : (data.error ?? "Error desconocido."));
+                setTimeout(() => setResetSyncResult(null), 4000);
               } catch (err) {
-                setSyncResult({ error: String(err) });
+                setResetSyncResult(String(err));
+                setTimeout(() => setResetSyncResult(null), 4000);
               }
             }}
-            disabled={syncing}
             style={{ minWidth: 160 }}
-            title="Usar solo si el sync se queda bloqueado indefinidamente"
           >
             Resetear sync
           </button>
+          {resetSyncResult && (
+            <span style={{ fontSize: 13, color: "#475569" }}>{resetSyncResult}</span>
+          )}
         </div>
-
-        {/* Live sync progress panel */}
-        {(syncing || syncResult) && (
-          <div style={{ marginTop: 20, background: syncing ? "#f0f9ff" : syncResult?.error ? "#fff1f2" : "#f0fdf4", border: `1px solid ${syncing ? "#bae6fd" : syncResult?.error ? "#fecdd3" : "#bbf7d0"}`, borderRadius: 12, padding: 20 }}>
-            {syncing && (
-              <>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #3b82f6", borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
-                  <span style={{ fontWeight: 600, fontSize: 14, color: "#1e40af" }}>
-                    Sincronizando con SharePoint... {syncElapsed > 0 && `(${Math.floor(syncElapsed / 60)}m ${syncElapsed % 60}s)`}
-                  </span>
-                </div>
-                {syncLogs.length > 0 && (
-                  <div style={{ fontFamily: "monospace", fontSize: 12, background: "#0f172a", color: "#e2e8f0", borderRadius: 8, padding: 12, maxHeight: 220, overflowY: "auto", lineHeight: 1.7 }}>
-                    {syncLogs.map((log, i) => (
-                      <div key={i} style={{ color: log.status === "error" ? "#f87171" : log.status === "success" ? "#4ade80" : "#94a3b8" }}>
-                        <span style={{ color: "#64748b", marginRight: 6 }}>{new Date(log.createdAt).toLocaleTimeString("es-ES")}</span>
-                        <span style={{ color: log.status === "error" ? "#f87171" : "#60a5fa", marginRight: 6 }}>[{log.operation}]</span>
-                        {log.fileName && <span style={{ marginRight: 4 }}>{log.fileName}</span>}
-                        {log.details && <span style={{ color: "#94a3b8" }}>{log.details}</span>}
-                        {log.error && <span style={{ color: "#f87171" }}> ✕ {log.error.slice(0, 80)}</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-            {!syncing && syncResult && (
-              syncResult.error ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#be123c", fontSize: 14 }}>
-                  <span>✕</span>
-                  <span style={{ fontWeight: 600 }}>Error: {syncResult.error}</span>
-                </div>
-              ) : (
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                    <span style={{ fontSize: 18 }}>✓</span>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: "#15803d" }}>Sincronización completada en {syncElapsed}s</span>
-                  </div>
-                  <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-                    {[
-                      { label: "Añadidos", value: syncResult.summary?.added ?? 0, color: "#16a34a" },
-                      { label: "Actualizados", value: syncResult.summary?.updated ?? 0, color: "#2563eb" },
-                      { label: "Eliminados", value: syncResult.summary?.removed ?? 0, color: "#9333ea" },
-                      { label: "Errores", value: syncResult.summary?.errors ?? 0, color: "#dc2626" },
-                    ].map(({ label, value, color }) => (
-                      <div key={label} style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: 22, fontWeight: 700, color }}>{value}</div>
-                        <div style={{ fontSize: 11, color: "#64748b" }}>{label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-        )}
-
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
         {/* SP Roots panel */}
         <div style={{ marginTop: 32, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 24 }}>
@@ -685,33 +576,6 @@ export default function AjustesPage() {
           )}
         </div>
 
-        {syncResult?.error && (
-          <div style={{ marginTop: 16, padding: 12, background: "#fef2f2", borderRadius: 8, color: "#dc2626", fontSize: 14 }}>
-            {syncResult.error}
-          </div>
-        )}
-        {syncResult?.summary && (
-          <div style={{ marginTop: 16, padding: 16, background: "#f0fdf4", borderRadius: 8 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#22c55e" }}>{syncResult.summary.added ?? 0}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>Archivos nuevos</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#4F7CFF" }}>{syncResult.summary.updated ?? 0}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>Actualizados</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#f59e0b" }}>{syncResult.summary.removed ?? 0}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>Eliminados</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#dc2626" }}>{syncResult.summary.errors ?? 0}</div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>Errores</div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <style jsx>{`
