@@ -5,13 +5,33 @@ import { prisma } from "@/lib/prisma";
 import { DOC_TYPES } from "@/lib/doctypes";
 
 const SUBFOLDER_TO_DOCTYPE: Record<string, string[]> = {
-  "01_Actas": ["acta_ordinaria", "acta_extraordinaria", "libro_actas"],
-  "02_Seguros": ["poliza_multirriesgo", "poliza_rc", "expedientes_siniestros", "resoluciones_siniestros"],
-  "03_Contratos": ["contrato_ascensor", "contrato_limpieza", "contrato_jardineria", "contrato_luz", "contrato_agua"],
-  "04_Contabilidad": ["presupuesto_anual", "liquidacion_ejercicio", "certificado_cuenta", "extractos_bancarios"],
-  "05_Juridico": ["escritura_division", "nota_simple", "cif_comunidad", "estatutos", "reglamento_interno"],
+  "01_Actas":    ["acta_ordinaria", "acta_extraordinaria", "libro_actas"],
+  "Actas":       ["acta_ordinaria", "acta_extraordinaria", "libro_actas"],
+  "Acta":        ["acta_ordinaria", "acta_extraordinaria"],
+
+  "02_Seguros":  ["poliza_multirriesgo", "poliza_rc", "expedientes_siniestros", "resoluciones_siniestros"],
+  "05_Seguros":  ["poliza_multirriesgo", "poliza_rc", "expedientes_siniestros", "resoluciones_siniestros"],
+  "Seguro":      ["poliza_multirriesgo", "poliza_rc"],
+
+  "03_Contratos":    ["contrato_ascensor", "contrato_limpieza", "contrato_jardineria", "contrato_luz", "contrato_agua"],
+  "Contratos":       ["contrato_ascensor", "contrato_limpieza", "contrato_jardineria", "contrato_luz", "contrato_agua"],
+  "Contrato":        ["contrato_ascensor", "contrato_limpieza", "contrato_jardineria", "contrato_luz", "contrato_agua"],
+  "Mantenimiento":   ["contrato_ascensor", "contrato_limpieza", "contrato_jardineria"],
+  "10_Mantenimiento":["contrato_ascensor", "contrato_limpieza", "contrato_jardineria"],
+
+  "04_Contabilidad":         ["presupuesto_anual", "liquidacion_ejercicio", "certificado_cuenta", "extractos_bancarios"],
+  "02_Presupuestos_y_Cuentas":["presupuesto_anual", "liquidacion_ejercicio", "certificado_cuenta", "extractos_bancarios"],
+  "04_Facturas":             ["presupuesto_anual", "liquidacion_ejercicio"],
+
+  "05_Juridico":          ["escritura_division", "nota_simple", "cif_comunidad", "estatutos", "reglamento_interno"],
+  "09_Documentacion_Legal":["escritura_division", "nota_simple", "cif_comunidad", "estatutos", "reglamento_interno"],
+  "Documentación":        ["escritura_division", "nota_simple", "cif_comunidad", "estatutos", "reglamento_interno"],
+  "Documentaciób":        ["escritura_division", "nota_simple", "cif_comunidad", "estatutos", "reglamento_interno"],
+  "Estatutos":            ["estatutos", "reglamento_interno"],
+
   "06_Gobierno": ["nombramiento_presidente", "poder_administrador"],
-  "07_PRL": ["evaluacion_riesgos", "plan_emergencia", "certificados_prl", "fichas_seguridad"],
+
+  "07_PRL":      ["evaluacion_riesgos", "plan_emergencia", "certificados_prl", "fichas_seguridad"],
 };
 
 export async function POST(
@@ -42,7 +62,7 @@ export async function POST(
   }
 
   const validDocTypeIds = DOC_TYPES.map((dt) => dt.id);
-  const filtered = docTypeIds.filter((id) => validDocTypeIds.includes(id));
+  const filtered = [...new Set(docTypeIds)].filter((id) => validDocTypeIds.includes(id));
 
   let updated = 0;
   for (const docTypeId of filtered) {
