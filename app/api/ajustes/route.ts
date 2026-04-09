@@ -8,6 +8,15 @@ function maskKey(key: string): string {
   return key.slice(0, 4) + "****" + key.slice(-4);
 }
 
+function isValidAzureEndpoint(endpoint: string): boolean {
+  try {
+    const url = new URL(endpoint);
+    return url.protocol === "https:" && url.hostname.endsWith(".openai.azure.com");
+  } catch {
+    return false;
+  }
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -60,6 +69,16 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
 
+  if (body.providers?.azure_openai) {
+    const azureCfg = body.providers.azure_openai;
+    if (azureCfg.endpoint && !isValidAzureEndpoint(azureCfg.endpoint)) {
+      return NextResponse.json(
+        { error: "El Endpoint de Azure OpenAI debe ser una URL HTTPS de *.openai.azure.com" },
+        { status: 400 }
+      );
+    }
+  }
+
   try {
     const existing = await prisma.setting.findUnique({
       where: { key: "ai_config" },
@@ -70,8 +89,15 @@ export async function PUT(request: Request) {
       const existingConfig = JSON.parse(existing.value);
       if (existingConfig.providers) {
         for (const id of Object.keys(body.providers)) {
-          if (body.providers[id].apiKey === "" && existingConfig.providers[id]?.apiKey) {
-            body.providers[id].apiKey = existingConfig.providers[id].apiKey;
+          const incoming = body.providers[id];
+          const stored = existingConfig.providers[id] ?? {};
+          if (incoming.apiKey === "" && stored.apiKey) {
+            incoming.apiKey = stored.apiKey;
+          }
+          if (id === "azure_openai") {
+            if (incoming.endpoint === undefined) incoming.endpoint = stored.endpoint ?? "";
+            if (incoming.deploymentName === undefined) incoming.deploymentName = stored.deploymentName ?? "";
+            if (incoming.apiVersion === undefined) incoming.apiVersion = stored.apiVersion ?? "2024-08-01-preview";
           }
         }
       }

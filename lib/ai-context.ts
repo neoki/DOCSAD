@@ -7,6 +7,7 @@ export type AiConfig = {
   model: string;
   apiKey: string;
   endpoint?: string;
+  deploymentName?: string;
   apiVersion?: string;
 };
 
@@ -15,6 +16,7 @@ type ProviderEntry = {
   model?: string;
   active?: boolean;
   endpoint?: string;
+  deploymentName?: string;
   apiVersion?: string;
 };
 
@@ -37,12 +39,16 @@ export async function getActiveAiConfig(): Promise<AiConfig | null> {
   if (!providers) return null;
 
   for (const [id, cfg] of Object.entries(providers)) {
-    if (cfg.active && cfg.apiKey && cfg.model) {
+    const hasModel = id === "azure_openai"
+      ? !!(cfg.apiKey && cfg.endpoint && cfg.deploymentName)
+      : !!(cfg.apiKey && cfg.model);
+    if (cfg.active && hasModel) {
       return {
         provider: id,
-        model: cfg.model,
-        apiKey: cfg.apiKey,
+        model: cfg.model ?? "",
+        apiKey: cfg.apiKey!,
         endpoint: cfg.endpoint,
+        deploymentName: cfg.deploymentName,
         apiVersion: cfg.apiVersion,
       };
     }

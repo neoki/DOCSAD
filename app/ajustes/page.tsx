@@ -7,6 +7,7 @@ interface ProviderConfig {
   model: string;
   active: boolean;
   endpoint?: string;
+  deploymentName?: string;
   apiVersion?: string;
 }
 
@@ -69,7 +70,7 @@ function defaultProviders(): Record<string, ProviderConfig> {
       apiKey: "",
       model: p.models[0] ?? "",
       active: i === 0,
-      ...(p.id === "azure_openai" ? { endpoint: "", apiVersion: "2024-08-01-preview" } : {}),
+      ...(p.id === "azure_openai" ? { endpoint: "", deploymentName: "", apiVersion: "2024-08-01-preview" } : {}),
     };
   });
   return result;
@@ -120,6 +121,7 @@ export default function AjustesPage() {
                   apiKey: data.providers[key].hasKey ? data.providers[key].apiKeyMasked : "",
                   ...(key === "azure_openai" ? {
                     endpoint: data.providers[key].endpoint ?? merged[key].endpoint ?? "",
+                    deploymentName: data.providers[key].deploymentName ?? merged[key].deploymentName ?? "",
                     apiVersion: data.providers[key].apiVersion ?? merged[key].apiVersion ?? "2024-08-01-preview",
                   } : {}),
                 };
@@ -398,8 +400,8 @@ export default function AjustesPage() {
                     type="text"
                     className="input-field"
                     placeholder="gpt-4o"
-                    value={cfg?.model ?? ""}
-                    onChange={(e) => updateProvider(prov.id, "model", e.target.value)}
+                    value={cfg?.deploymentName ?? ""}
+                    onChange={(e) => updateProvider(prov.id, "deploymentName", e.target.value)}
                     style={{ marginBottom: 12 }}
                   />
                   <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>

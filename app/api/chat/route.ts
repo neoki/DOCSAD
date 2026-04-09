@@ -191,15 +191,30 @@ export async function POST(req: NextRequest) {
 
     if (provider === "azure_openai") {
       const azureEndpoint = endpoint ?? "";
-      const deploymentName = model;
+      const azureDeployment = aiConfig.deploymentName ?? "";
       const version = apiVersion ?? "2024-08-01-preview";
-      if (!azureEndpoint || !deploymentName) {
+      if (!azureEndpoint || !azureDeployment) {
         return NextResponse.json(
           { error: "config_error", message: "Azure OpenAI requiere Endpoint URL y Nombre de despliegue. Configúralos en Ajustes." },
           { status: 200 }
         );
       }
-      reply = await callAzureOpenAI(apiKey, azureEndpoint, deploymentName, version, systemPrompt, messages);
+      let parsedUrl: URL;
+      try {
+        parsedUrl = new URL(azureEndpoint);
+      } catch {
+        return NextResponse.json(
+          { error: "config_error", message: "El Endpoint de Azure OpenAI no es una URL válida." },
+          { status: 200 }
+        );
+      }
+      if (parsedUrl.protocol !== "https:" || !parsedUrl.hostname.endsWith(".openai.azure.com")) {
+        return NextResponse.json(
+          { error: "config_error", message: "El Endpoint de Azure OpenAI debe ser una URL HTTPS de *.openai.azure.com." },
+          { status: 200 }
+        );
+      }
+      reply = await callAzureOpenAI(apiKey, azureEndpoint, azureDeployment, version, systemPrompt, messages);
     } else if (provider === "openai") {
       reply = await callOpenAI(apiKey, model, systemPrompt, messages);
     } else if (provider === "anthropic") {
