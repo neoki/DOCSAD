@@ -764,7 +764,7 @@ export default function AjustesPage() {
                 </span>
               )}
               {emailSendMsg && (
-                <span style={{ fontSize: 13, fontWeight: 600, color: emailSendMsg.toLowerCase().includes("error") || emailSendMsg.toLowerCase().includes("no configurada") ? "#dc2626" : "#16a34a" }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: ["error", "no configurada", "no hay destinatarios"].some((s) => emailSendMsg.toLowerCase().includes(s)) ? "#dc2626" : "#16a34a" }}>
                   {emailSendMsg}
                 </span>
               )}
