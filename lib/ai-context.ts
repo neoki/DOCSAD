@@ -39,6 +39,7 @@ export async function getActiveAiConfig(): Promise<AiConfig | null> {
   if (!providers) return null;
 
   for (const [id, cfg] of Object.entries(providers)) {
+    if (id === "copilot") continue;
     const hasModel = id === "azure_openai"
       ? !!(cfg.apiKey && cfg.endpoint && cfg.deploymentName)
       : !!(cfg.apiKey && cfg.model);

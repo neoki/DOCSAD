@@ -129,7 +129,7 @@ async function callAzureOpenAI(
   messages: Message[]
 ): Promise<string> {
   const base = endpoint.replace(/\/$/, "");
-  const url = `${base}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
+  const url = `${base}/openai/deployments/${encodeURIComponent(deploymentName)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
