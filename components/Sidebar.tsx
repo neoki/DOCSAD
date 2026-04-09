@@ -71,6 +71,18 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    label: "Asistente IA",
+    href: "/asistente",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2a9 9 0 0 1 9 9c0 3.4-1.9 6.4-4.7 8L12 22l-4.3-3C4.9 17.4 3 14.4 3 11a9 9 0 0 1 9-9z" />
+        <circle cx="9" cy="11" r="1" fill="currentColor" />
+        <circle cx="12" cy="11" r="1" fill="currentColor" />
+        <circle cx="15" cy="11" r="1" fill="currentColor" />
+      </svg>
+    ),
+  },
 ];
 
 const BOTTOM_ITEMS = [
