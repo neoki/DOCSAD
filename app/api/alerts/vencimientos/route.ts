@@ -43,7 +43,10 @@ async function buildVencimientoItems(daysAhead: number): Promise<VencimientoItem
   cutoff.setDate(cutoff.getDate() + daysAhead);
 
   const expiries = await prisma.documentExpiry.findMany({
-    where: { expiresAt: { lte: cutoff } },
+    where: {
+      expiresAt: { lte: cutoff },
+      notificado: false,
+    },
     include: { comunidad: { select: { codigo: true, nombre: true } } },
     orderBy: { expiresAt: "asc" },
   });
@@ -56,6 +59,7 @@ async function buildVencimientoItems(daysAhead: number): Promise<VencimientoItem
     expDate.setHours(0, 0, 0, 0);
     const diasRestantes = Math.round((expDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     return {
+      sharePointItemId: e.sharePointItemId,
       comunidadCodigo: e.comunidad.codigo,
       comunidadNombre: e.comunidad.nombre,
       fileName: e.fileName,
@@ -68,12 +72,9 @@ async function buildVencimientoItems(daysAhead: number): Promise<VencimientoItem
 
 async function markNotificado(items: VencimientoItem[]): Promise<void> {
   if (items.length === 0) return;
-  const codes = new Set(items.map((i) => i.comunidadCodigo));
+  const ids = items.map((i) => i.sharePointItemId);
   await prisma.documentExpiry.updateMany({
-    where: {
-      comunidad: { codigo: { in: Array.from(codes) } },
-      notificado: false,
-    },
+    where: { sharePointItemId: { in: ids } },
     data: { notificado: true },
   });
 }

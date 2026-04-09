@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 
 export interface VencimientoItem {
+  sharePointItemId: string;
   comunidadCodigo: string;
   comunidadNombre: string;
   fileName: string;
@@ -21,10 +22,16 @@ function urgencyColor(dias: number): string {
 }
 
 function urgencyLabel(dias: number): string {
-  if (dias < 0) return `VENCIDO (${Math.abs(dias)}d)`;
+  if (dias < 0) return `VENCIDO`;
   if (dias <= 7) return "URGENTE";
   if (dias <= 30) return "PRONTO";
   return "OK";
+}
+
+function formatDiasRestantes(dias: number): string {
+  if (dias < 0) return `${Math.abs(dias)}d vencido`;
+  if (dias === 0) return "Hoy";
+  return `${dias}d`;
 }
 
 function buildHtmlEmail(items: VencimientoItem[], daysAhead: number): string {
@@ -35,12 +42,14 @@ function buildHtmlEmail(items: VencimientoItem[], daysAhead: number): string {
     .map((item) => {
       const color = urgencyColor(item.diasRestantes);
       const label = urgencyLabel(item.diasRestantes);
+      const diasText = formatDiasRestantes(item.diasRestantes);
       return `
       <tr style="border-bottom: 1px solid #f1f5f9;">
         <td style="padding: 10px 12px; font-family: monospace; font-size: 13px; color: #64748b; white-space: nowrap;">${item.comunidadCodigo}</td>
-        <td style="padding: 10px 12px; font-size: 13px; color: #1e293b; max-width: 200px;">${item.comunidadNombre}</td>
-        <td style="padding: 10px 12px; font-size: 13px; color: #475569; max-width: 220px;">${item.label || item.fileName}</td>
+        <td style="padding: 10px 12px; font-size: 13px; color: #1e293b; max-width: 180px;">${item.comunidadNombre}</td>
+        <td style="padding: 10px 12px; font-size: 13px; color: #475569; max-width: 200px;">${item.label || item.fileName}</td>
         <td style="padding: 10px 12px; font-family: monospace; font-size: 13px; color: #475569; white-space: nowrap;">${formatDate(item.expiresAt)}</td>
+        <td style="padding: 10px 12px; font-family: monospace; font-size: 13px; font-weight: 700; color: ${color}; text-align: right; white-space: nowrap;">${diasText}</td>
         <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
           <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; background: ${color}18; color: ${color}; font-size: 11px; font-weight: 700;">${label}</span>
         </td>
@@ -60,7 +69,7 @@ function buildHtmlEmail(items: VencimientoItem[], daysAhead: number): string {
 <title>Resumen semanal de vencimientos — DocFincas</title>
 </head>
 <body style="margin: 0; padding: 0; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-  <div style="max-width: 720px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+  <div style="max-width: 760px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
 
     <!-- Header -->
     <div style="background: linear-gradient(135deg, #4F7CFF 0%, #8B5CF6 100%); padding: 28px 32px;">
@@ -84,6 +93,7 @@ function buildHtmlEmail(items: VencimientoItem[], daysAhead: number): string {
             <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Comunidad</th>
             <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Documento</th>
             <th style="padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Vence</th>
+            <th style="padding: 8px 12px; text-align: right; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Días restantes</th>
             <th style="padding: 8px 12px; text-align: center; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Estado</th>
           </tr>
         </thead>
@@ -96,8 +106,8 @@ function buildHtmlEmail(items: VencimientoItem[], daysAhead: number): string {
     <!-- Footer -->
     <div style="padding: 20px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
       <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-        Este mensaje se genera automáticamente cada lunes desde DocFincas · Asesoría Díaz<br>
-        Para gestionar alertas, accede a <strong>Ajustes → Alertas por email</strong>.
+        Este mensaje se genera automáticamente cada semana desde DocFincas · Asesoría Díaz<br>
+        Para gestionar alertas accede a <strong>Ajustes → Alertas por email</strong>.
       </p>
     </div>
   </div>
@@ -115,9 +125,10 @@ function buildTextEmail(items: VencimientoItem[], daysAhead: number): string {
 
   for (const item of items) {
     const label = urgencyLabel(item.diasRestantes);
+    const diasText = formatDiasRestantes(item.diasRestantes);
     lines.push(`[${label}] ${item.comunidadCodigo} — ${item.comunidadNombre}`);
     lines.push(`  Documento: ${item.label || item.fileName}`);
-    lines.push(`  Vence: ${formatDate(item.expiresAt)} (${item.diasRestantes < 0 ? `${Math.abs(item.diasRestantes)}d vencido` : `en ${item.diasRestantes}d`})`);
+    lines.push(`  Vence: ${formatDate(item.expiresAt)} · Días restantes: ${diasText}`);
     lines.push("");
   }
 
@@ -132,7 +143,7 @@ export async function sendWeeklyVencimientosEmail(
 ): Promise<{ ok: boolean; error?: string; messageId?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    return { ok: false, error: "RESEND_API_KEY no configurada. Añade la clave en los ajustes del servidor." };
+    return { ok: false, error: "RESEND_API_KEY no configurada. Añade la clave en los secrets del servidor." };
   }
 
   if (recipients.length === 0) {
@@ -144,10 +155,9 @@ export async function sendWeeklyVencimientosEmail(
   }
 
   const resend = new Resend(apiKey);
+  const fromAddress = process.env.RESEND_FROM_EMAIL || "DocFincas <onboarding@resend.dev>";
 
   try {
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "DocFincas <onboarding@resend.dev>";
-
     const { data, error } = await resend.emails.send({
       from: fromAddress,
       to: recipients,
