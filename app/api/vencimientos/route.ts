@@ -48,6 +48,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
     }
 
+    const newExpiresAt = new Date(expiresAt);
+
+    const existing = await prisma.documentExpiry.findUnique({ where: { sharePointItemId } });
+    const expiresAtChanged =
+      !existing || existing.expiresAt.getTime() !== newExpiresAt.getTime();
+
     const expiry = await prisma.documentExpiry.upsert({
       where: { sharePointItemId },
       create: {
@@ -55,13 +61,13 @@ export async function POST(req: NextRequest) {
         comunidadId,
         fileName,
         label,
-        expiresAt: new Date(expiresAt),
+        expiresAt: newExpiresAt,
       },
       update: {
         fileName,
         label,
-        expiresAt: new Date(expiresAt),
-        notificado: false,
+        expiresAt: newExpiresAt,
+        ...(expiresAtChanged ? { notificado: false } : {}),
       },
     });
 
