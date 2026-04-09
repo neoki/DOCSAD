@@ -75,6 +75,8 @@ Botón en la esquina superior derecha. Genera un informe PDF con el estado docum
 
 > **Consejo:** El Dashboard se actualiza solo. No hay que pulsar ningún botón para sincronizar.
 
+> **¿Un archivo no aparece?** Si acabas de subir un documento a SharePoint y todavía no lo ves en la plataforma, es completamente normal. El sistema se actualiza cada 5 minutos de forma automática. No hay que recargar la página ni hacer nada — el archivo aparecerá solo en el próximo ciclo. Este intervalo existe para no saturar la conexión con SharePoint.
+
 ---
 
 ## 3. Comunidades
@@ -409,6 +411,36 @@ Una vez revisada la lista:
 
 > **Importante:** Esta operación mueve los archivos en SharePoint. No se pueden deshacer desde la plataforma, aunque siempre puedes moverlos manualmente desde SharePoint si hay un error.
 
+### Consejo: cómo nombrar los archivos para el Escáner
+
+El sistema detecta a qué comunidad pertenece cada archivo leyendo su nombre. Cuanto más claro sea el nombre, más fiable será la clasificación automática. Seguir este formato garantiza una confianza **Alta** en la mayoría de los casos:
+
+```
+CODIGO_TipoDocumento_Fecha.pdf
+```
+
+Ejemplos correctos:
+
+| Nombre de archivo | Resultado |
+|-------------------|-----------|
+| `0042_Acta_2025-03.pdf` | Comunidad 0042 → carpeta Actas · confianza Alta |
+| `0117_Seguro_Multirriesgo_2025-01.pdf` | Comunidad 0117 → carpeta Seguros · confianza Alta |
+| `0085_Contrato_Limpieza_2024.pdf` | Comunidad 0085 → carpeta Contratos · confianza Alta |
+| `0033_Presupuesto_2025.xlsx` | Comunidad 0033 → carpeta Presupuestos · confianza Alta |
+
+Nombres que generan clasificación Media o Baja (evitar):
+- `Factura.pdf` — sin código de comunidad
+- `Documento enero.pdf` — sin código ni tipo claro
+- `Escaneo0001.pdf` — nombre genérico sin información
+
+> Si el nombre no contiene el código de la comunidad, el sistema puede adivinar la comunidad pero con confianza Baja o Media, lo que obliga a revisión manual.
+
+### La plataforma no puede borrar documentos
+
+Por diseño, **ningún usuario puede eliminar documentos desde esta plataforma**, independientemente de su rol. Todo lo que se ve en la lista de archivos solo puede abrirse o descargarse. Esto significa que nadie puede "romper" nada por accidente al usar la plataforma.
+
+Si necesitas eliminar un documento, deberás hacerlo directamente desde SharePoint con las credenciales de administrador. La plataforma detectará la eliminación en la próxima sincronización y actualizará la vista automáticamente.
+
 ---
 
 ## 9. Usuarios (solo administradores)
@@ -509,7 +541,7 @@ La sincronización ocurre automáticamente cada 5 minutos mientras el Dashboard 
 Los documentos siempre están en **SharePoint**. La plataforma es un espejo que muestra lo que hay en SharePoint, pero los archivos en sí se almacenan ahí. Si abres un documento desde la plataforma, se abre en SharePoint.
 
 **¿Puedo eliminar documentos desde la plataforma?**
-No. Para eliminar documentos hay que hacerlo directamente desde SharePoint. La plataforma es de consulta y organización, no de eliminación.
+No, y esto es intencionado. Ningún usuario, sea administrador o no, puede eliminar documentos desde esta plataforma. La plataforma es solo de consulta y organización: puedes abrir, descargar, clasificar y añadir notas, pero nunca borrar. Puedes usarla con total tranquilidad sabiendo que no es posible eliminar nada por error. Si en algún momento necesitas eliminar un documento, deberás hacerlo directamente desde SharePoint.
 
 **¿Qué significa "por revisar" en una comunidad?**
 Significa que la plataforma ha encontrado una carpeta en SharePoint que probablemente corresponde a esa comunidad, pero no está completamente segura. Hay que confirmar manualmente si el vínculo es correcto.
