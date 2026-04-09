@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "e1Lhl5c4oHKUi5if7Vwd2"
+uri = "file://public/docs/manual-docfincas.md"
+type = "text"
+title = "Manual de usuario — DocFincas"
