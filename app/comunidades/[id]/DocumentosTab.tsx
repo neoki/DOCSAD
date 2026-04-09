@@ -25,6 +25,7 @@ type OcrData = {
   importe: number | null;
   moneda: string;
   proveedor: string | null;
+  fechaFactura: string | null;
   status: string;
 };
 
@@ -229,6 +230,7 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
   const [downloading, setDownloading] = useState<string | null>(null);
   const [expiryModal, setExpiryModal] = useState<SPFile | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [analyzingOcr, setAnalyzingOcr] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -337,6 +339,7 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setAnalyzingOcr(false);
     setUploadError(null);
     try {
       const formData = new FormData();
@@ -352,6 +355,23 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
           await loadFolderFiles(currentFolderId);
         } else {
           await loadSubfolders();
+        }
+        if (data.ocrQueued) {
+          setAnalyzingOcr(true);
+          const pollOcr = async () => {
+            for (let i = 0; i < 15; i++) {
+              await new Promise((r) => setTimeout(r, 4000));
+              await loadOcr();
+              const res2 = await fetch(`/api/comunidades/${comunidadId}/facturas`);
+              if (res2.ok) {
+                const d = await res2.json();
+                const hasPending = (d.facturas ?? []).some((f: { status: string }) => f.status === "pending");
+                if (!hasPending) break;
+              }
+            }
+            setAnalyzingOcr(false);
+          };
+          pollOcr();
         }
       }
     } catch {
@@ -407,11 +427,11 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || analyzingOcr}
             title={`Subir archivo a ${activeName}`}
-            style={{ padding: "6px 14px", borderRadius: 8, background: uploading ? "#e2e8f0" : "#4F7CFF", color: uploading ? "#94a3b8" : "#fff", border: "none", fontSize: 13, cursor: uploading ? "default" : "pointer", fontWeight: 500, whiteSpace: "nowrap" }}
+            style={{ padding: "6px 14px", borderRadius: 8, background: uploading || analyzingOcr ? "#e2e8f0" : "#4F7CFF", color: uploading || analyzingOcr ? "#94a3b8" : "#fff", border: "none", fontSize: 13, cursor: uploading || analyzingOcr ? "default" : "pointer", fontWeight: 500, whiteSpace: "nowrap" }}
           >
-            {uploading ? "Subiendo..." : "+ Subir archivo"}
+            {uploading ? "Subiendo..." : analyzingOcr ? "Analizando..." : "+ Subir archivo"}
           </button>
         </div>
       </div>
@@ -501,7 +521,7 @@ export default function DocumentosTab({ comunidadId }: { comunidadId: string }) 
                       )}
                       {ocr && ocr.status === "success" && (
                         <span style={{ background: "#eff6ff", color: "#1d4ed8", borderRadius: 10, padding: "1px 8px", fontSize: 10, fontWeight: 600, display: "inline-flex", gap: 4 }}>
-                          🧾 {fmtImporte(ocr.importe, ocr.moneda)}{ocr.proveedor ? ` · ${ocr.proveedor}` : ""}
+                          🧾{ocr.importe !== null ? ` ${fmtImporte(ocr.importe, ocr.moneda)}` : ""}{ocr.proveedor ? ` · ${ocr.proveedor}` : ""}{ocr.fechaFactura ? ` · ${new Date(ocr.fechaFactura).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}` : ""}
                         </span>
                       )}
                     </div>

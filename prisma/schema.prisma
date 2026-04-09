@@ -172,6 +172,8 @@ model FileCache {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  extractedInvoice ExtractedInvoiceData?
+
   @@index([comunidadId])
   @@index([path])
   @@map("file_cache")
@@ -287,21 +289,23 @@ model RoutingCandidate {
 }
 
 model ExtractedInvoiceData {
-  id               String    @id @default(cuid())
-  sharePointItemId String    @unique
+  id               String     @id @default(cuid())
+  sharePointItemId String     @unique
   comunidadId      String
-  fileName         String    @default("")
+  fileName         String     @default("")
   importe          Float?
-  moneda           String    @default("EUR")
+  moneda           String     @default("EUR")
   proveedor        String?
   fechaFactura     DateTime?
   numeroFactura    String?
   rawJson          Json?
-  status           String    @default("pending")
+  status           String     @default("pending")
   errorMessage     String?
   processedAt      DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  fileCache        FileCache? @relation(fields: [sharePointItemId], references: [sharePointItemId], onUpdate: Cascade, onDelete: Cascade)
 
   @@index([comunidadId])
   @@map("extracted_invoice_data")

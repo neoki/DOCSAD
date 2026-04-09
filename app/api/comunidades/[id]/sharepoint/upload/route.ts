@@ -63,9 +63,36 @@ export async function POST(
     ) as { id?: string };
 
     const uploadedItemId = result?.id;
+    const uploadedItem = result as { id?: string; name?: string; size?: number; webUrl?: string; lastModifiedDateTime?: string; file?: { mimeType?: string } } | null;
     const targetFolderName = folderName ?? null;
+    const ocrQueued = !!(uploadedItemId && isInvoiceFolder(targetFolderName));
 
-    if (uploadedItemId && isInvoiceFolder(targetFolderName)) {
+    if (uploadedItemId && uploadedItem) {
+      await prisma.fileCache.upsert({
+        where: { sharePointItemId: uploadedItemId },
+        create: {
+          sharePointItemId: uploadedItemId,
+          driveId: comunidad.sharePointDriveId!,
+          name: file.name,
+          path: targetFolderName ? `${targetFolderName}/${file.name}` : file.name,
+          subfolder: targetFolderName ?? undefined,
+          sizeBytes: file.size,
+          mimeType: file.type || null,
+          isFolder: false,
+          webUrl: uploadedItem.webUrl ?? null,
+          sharePointModified: new Date(),
+          comunidadId: comunidad.id,
+        },
+        update: {
+          name: file.name,
+          sizeBytes: file.size,
+          sharePointModified: new Date(),
+          webUrl: uploadedItem.webUrl ?? null,
+        },
+      });
+    }
+
+    if (ocrQueued && uploadedItemId) {
       after(async () => {
         try {
           const downloadUrl = await getFileDownloadUrl(comunidad.sharePointDriveId!, uploadedItemId);
@@ -76,7 +103,7 @@ export async function POST(
       });
     }
 
-    return NextResponse.json({ success: true, file: result, ocrQueued: !!(uploadedItemId && isInvoiceFolder(targetFolderName)) });
+    return NextResponse.json({ success: true, file: result, ocrQueued });
   } catch (err) {
     console.error("Upload error:", err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

@@ -132,19 +132,37 @@ export async function extractInvoiceData(
   fileName: string,
   documentUrl: string
 ): Promise<void> {
-  await prisma.extractedInvoiceData.upsert({
+  const fileCacheExists = await prisma.fileCache.findUnique({
     where: { sharePointItemId },
-    create: {
-      sharePointItemId,
-      comunidadId,
-      fileName,
-      status: "pending",
-    },
-    update: {
-      status: "pending",
-      errorMessage: null,
-    },
+    select: { sharePointItemId: true },
   });
+
+  if (fileCacheExists) {
+    await prisma.extractedInvoiceData.upsert({
+      where: { sharePointItemId },
+      create: {
+        sharePointItemId,
+        comunidadId,
+        fileName,
+        status: "pending",
+      },
+      update: {
+        status: "pending",
+        errorMessage: null,
+      },
+    });
+  } else {
+    const existing = await prisma.extractedInvoiceData.findUnique({ where: { sharePointItemId } });
+    if (existing) {
+      await prisma.extractedInvoiceData.update({
+        where: { sharePointItemId },
+        data: { status: "pending", errorMessage: null },
+      });
+    } else {
+      console.log(`[OCR] FileCache entry not found for ${sharePointItemId}, deferring until next sync`);
+      return;
+    }
+  }
 
   const config = await getOcrConfig();
   if (!config) {
