@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { DOC_TYPES, CATEGORIAS } from "./doctypes";
+import { readRelevantDocuments } from "./document-reader";
 
 export type AiConfig = {
   provider: string;
@@ -44,7 +45,7 @@ function fmtDate(d: Date | null | undefined): string {
   return d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-const CHAR_BUDGET = 28000;
+const CHAR_BUDGET = 40000;
 
 function truncate(sections: string[][], budget: number): string {
   let total = 0;
@@ -68,9 +69,9 @@ function truncate(sections: string[][], budget: number): string {
 export async function buildSystemContext(lastUserMessage: string): Promise<string> {
   const header = [
     `Eres el asistente de DocFincas, un sistema de gestión documental para comunidades de propietarios gestionadas por Asesoría Díaz.`,
-    `Tienes acceso a los metadatos actualizados del sistema: nombres de archivos, subcarpetas, fechas, checklists, vencimientos y notas.`,
-    `NO tienes acceso al contenido interno de los PDFs. Responde siempre en español, de forma concisa y útil.`,
-    `Hoy es ${fmtDate(new Date())}.`,
+    `Tienes acceso a los metadatos del sistema (nombres de archivos, subcarpetas, fechas, checklists, vencimientos y notas) y también al CONTENIDO REAL de los documentos Word y Excel de SharePoint cuando se menciona una comunidad concreta.`,
+    `Cuando se incluya contenido de documentos en el contexto, úsalo para dar respuestas detalladas y precisas sobre lo que dicen esos documentos.`,
+    `Responde siempre en español, de forma concisa y útil. Hoy es ${fmtDate(new Date())}.`,
   ];
 
   const [comunidades, expiriesRaw, recentFiles] = await Promise.all([
@@ -154,10 +155,15 @@ export async function buildSystemContext(lastUserMessage: string): Promise<strin
 
   const detectedComunidad = await detectComunidad(lastUserMessage, comunidades);
   const detailSection: string[] = [];
+  const docContentSection: string[] = [];
   if (detectedComunidad) {
     detailSection.push(`=== DETALLE COMUNIDAD: ${detectedComunidad.codigo} — ${detectedComunidad.nombre} ===`);
-    const detail = await buildComunidadDetail(detectedComunidad.id, detectedComunidad.checklists);
+    const [detail, docContent] = await Promise.all([
+      buildComunidadDetail(detectedComunidad.id, detectedComunidad.checklists),
+      readRelevantDocuments(detectedComunidad.id, lastUserMessage),
+    ]);
     detailSection.push(detail);
+    if (docContent) docContentSection.push(docContent);
   }
 
   const sections: string[][] = [
@@ -166,6 +172,7 @@ export async function buildSystemContext(lastUserMessage: string): Promise<strin
     expiriesSection.length > 1 ? expiriesSection : [],
     recentSection,
     detailSection.length > 1 ? detailSection : [],
+    docContentSection.length > 0 ? docContentSection : [],
   ].filter((s) => s.length > 0);
 
   return truncate(sections, CHAR_BUDGET);

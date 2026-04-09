@@ -108,6 +108,12 @@ DocFincas is a document management system for community property management ("Ge
 24. **Document expiry tags**: Set expiry dates on any SharePoint file, visible in DocumentosTab with color-coded badges
 25. **Auto-Routing / Bandeja de Entrada Inteligente**: Files dropped in Escáner SharePoint folder auto-detected (by community code in filename), staged as RoutingCandidates in DB, shown in a collapsible inbox panel in the Escáner page and as a notification banner in each community page. One-click confirmation moves the file to the correct community subfolder in SharePoint.
 
+### Phase 4 (AI Assistant)
+26. **AI Chat Assistant** (`/asistente`): Multi-provider LLM chat (OpenAI/Anthropic/Google/Moonshot) via `app/api/chat/route.ts`. Context built in `lib/ai-context.ts` — 40K char budget, RAG-lite approach with community detection from user message.
+27. **Real SharePoint document content reading**: When a community is detected in the chat, the AI assistant reads actual Word (.docx/.doc) and Excel (.xlsx/.xls) file content from SharePoint via the Graph API. `lib/document-reader.ts` scores files by subfolder priority + keyword match, downloads up to 4 files per query, and extracts text using `mammoth` (Word) or `xlsx` (Excel). Errors/timeouts are silently handled — if content can't be fetched, the AI falls back to metadata-only answers. CHAR_BUDGET increased from 28K to 40K to accommodate document content.
+    - Key lib: `lib/document-reader.ts`, `lib/ai-context.ts`
+    - Dependencies: `mammoth` ^1.12.0 (moved to production deps), `xlsx` ^0.18.5 (moved to production deps)
+
 ## Community Data
 - 171 communities imported from Gesfincas (source of truth)
 - Each has a `codigo` (6-digit Gesfincas billing code)

@@ -18,11 +18,13 @@
     "@auth/prisma-adapter": "^2.7.2",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
+    "mammoth": "^1.12.0",
     "next": "^15.0.8",
     "next-auth": "^4.24.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "resend": "^6.10.0"
+    "resend": "^6.10.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -34,7 +36,6 @@
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.15",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3",
-    "xlsx": "^0.18.5"
+    "typescript": "^5.6.3"
   }
 }
