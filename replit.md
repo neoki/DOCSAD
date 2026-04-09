@@ -28,11 +28,12 @@ DocFincas is a document management system for community property management ("Ge
   - `app/comparar/` — Side-by-side community comparison (2-5 communities)
   - `app/usuarios/` — User management (admin only)
   - `app/auditoria/` — Audit log viewer (admin only)
-  - `app/escaner/` — Scanner migration tool
+  - `app/escaner/` — Scanner migration tool with "Bandeja de Entrada Inteligente" auto-routing inbox panel
   - `app/ajustes/` — Settings: OneDrive credentials, sync trigger
   - `app/api/sync/` — Sync API: POST triggers full/incremental sync, GET returns stats/logs/status
   - `app/api/alertas/` — Alerts from Operativa dates + document expiry dates with urgency levels
   - `app/api/vencimientos/` — Document expiry CRUD (GET list, POST upsert, DELETE)
+  - `app/api/routing/` — Auto-routing API: process (detect new Escáner files), confirm (move to SP community subfolder), reject
   - `app/api/busqueda/` — Global file search API
   - `app/api/pendientes/` — Missing documentation API
   - `app/api/exportar/` — CSV export
@@ -70,9 +71,11 @@ DocFincas is a document management system for community property management ("Ge
 - **Operativa**: Community operational data including date fields for ITE, reforms
 - **Favorite**: User-community favorites (userId+comunidadId unique)
 - **AuditLog**: User action audit trail (userId, userEmail, action, entity, entityId, details)
+- **DocumentExpiry**: Expiry tags on SharePoint files (sharePointItemId, label, expiresAt, notificado)
+- **RoutingCandidate**: Auto-routing inbox — files detected in Escáner folder pending community classification (sharePointItemId, communityCode, comunidadId, subfolder, confidence, status: pending/confirmed/rejected)
 - **Checklist, Documento, Alerta, Setting**
 
-## Features (22 total)
+## Features (25 total)
 
 ### Phase 1 (Original)
 1. **Alerts & deadlines**: Dashboard panel with upcoming ITE dates, reform deadlines
@@ -99,6 +102,11 @@ DocFincas is a document management system for community property management ("Ge
 20. **Favorites / pinned communities**: Star toggle per community, filterable list
 21. **Advanced filters**: Community list filterable by SP status, completitud %, favorites
 22. **User audit log**: Records who creates/deletes users, viewable in /auditoria
+
+### Phase 3 (New)
+23. **Weekly expiry email alerts**: Resend-powered HTML email with 5-column table (Comunidad/Documento/Etiqueta/Vence/Días), Monday+7d interval gate, ADMIN settings in Ajustes
+24. **Document expiry tags**: Set expiry dates on any SharePoint file, visible in DocumentosTab with color-coded badges
+25. **Auto-Routing / Bandeja de Entrada Inteligente**: Files dropped in Escáner SharePoint folder auto-detected (by community code in filename), staged as RoutingCandidates in DB, shown in a collapsible inbox panel in the Escáner page and as a notification banner in each community page. One-click confirmation moves the file to the correct community subfolder in SharePoint.
 
 ## Community Data
 - 171 communities imported from Gesfincas (source of truth)

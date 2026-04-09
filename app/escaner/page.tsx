@@ -36,6 +36,26 @@ type ComunidadOption = {
   nombre: string;
 };
 
+type RoutingCandidate = {
+  id: string;
+  fileName: string;
+  filePath: string | null;
+  communityCode: string | null;
+  comunidadId: string | null;
+  subfolder: string;
+  confidence: string;
+  reason: string;
+  status: string;
+  comunidad: { id: string; codigo: string; nombre: string } | null;
+};
+
+type RoutingGroup = {
+  communityCode: string | null;
+  comunidadId: string | null;
+  comunidadNombre: string | null;
+  candidates: RoutingCandidate[];
+};
+
 const SUBFOLDERS = [
   "01_Actas",
   "02_Presupuestos_y_Cuentas",
@@ -78,6 +98,13 @@ export default function EscanerPage() {
   const [moveResults, setMoveResults] = useState<MoveResult[]>([]);
   const [movingProgress, setMovingProgress] = useState({ current: 0, total: 0 });
   const [comunidades, setComunidades] = useState<ComunidadOption[]>([]);
+
+  const [inboxGroups, setInboxGroups] = useState<RoutingGroup[]>([]);
+  const [inboxTotal, setInboxTotal] = useState(0);
+  const [inboxLoading, setInboxLoading] = useState(false);
+  const [inboxProcessing, setInboxProcessing] = useState(false);
+  const [inboxExpanded, setInboxExpanded] = useState(true);
+  const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set());
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [editingFile, setEditingFile] = useState<string | null>(null);
   const [editCode, setEditCode] = useState("");
@@ -85,6 +112,66 @@ export default function EscanerPage() {
   const [page, setPage] = useState(1);
   const [totalFiltered, setTotalFiltered] = useState(0);
   const PAGE_SIZE = 100;
+
+  const fetchInbox = useCallback(async () => {
+    setInboxLoading(true);
+    try {
+      const res = await fetch("/api/routing");
+      if (res.ok) {
+        const data = await res.json();
+        setInboxGroups(data.grouped || []);
+        setInboxTotal(data.total || 0);
+      }
+    } finally {
+      setInboxLoading(false);
+    }
+  }, []);
+
+  const processInbox = async () => {
+    setInboxProcessing(true);
+    try {
+      await fetch("/api/routing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "process" }),
+      });
+      await fetchInbox();
+    } finally {
+      setInboxProcessing(false);
+    }
+  };
+
+  const confirmCandidates = async (ids: string[]) => {
+    setConfirmingIds(new Set(ids));
+    try {
+      await fetch("/api/routing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "confirm", ids }),
+      });
+      await fetchInbox();
+    } finally {
+      setConfirmingIds(new Set());
+    }
+  };
+
+  const rejectCandidates = async (ids: string[]) => {
+    setConfirmingIds(new Set(ids));
+    try {
+      await fetch("/api/routing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reject", ids }),
+      });
+      await fetchInbox();
+    } finally {
+      setConfirmingIds(new Set());
+    }
+  };
+
+  useEffect(() => {
+    fetchInbox();
+  }, [fetchInbox]);
 
   useEffect(() => {
     fetch("/api/comunidades?all=true&pageSize=1000")
@@ -250,6 +337,244 @@ export default function EscanerPage() {
     return c ? c.nombre : code;
   };
 
+  const SmartInboxPanel = () => {
+    const allCandidateIds = inboxGroups.flatMap((g) => g.candidates.map((c) => c.id));
+    const classifiableGroups = inboxGroups.filter((g) => g.comunidadId);
+    const classifiableIds = classifiableGroups.flatMap((g) => g.candidates.map((c) => c.id));
+
+    return (
+      <div
+        className="mb-5"
+        style={{
+          border: "2px solid #4F7CFF",
+          borderRadius: 12,
+          overflow: "hidden",
+          background: "white",
+        }}
+      >
+        <div
+          style={{
+            background: "linear-gradient(135deg, #EFF6FF, #E0EAFF)",
+            padding: "14px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            cursor: "pointer",
+          }}
+          onClick={() => setInboxExpanded(!inboxExpanded)}
+        >
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: 20 }}>📥</span>
+            <div>
+              <span className="font-bold text-gray-900" style={{ fontSize: 15 }}>
+                Bandeja de Entrada Inteligente
+              </span>
+              {inboxTotal > 0 && (
+                <span
+                  className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: "#4F7CFF", color: "white" }}
+                >
+                  {inboxTotal} pendiente{inboxTotal !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {inboxTotal === 0 && !inboxLoading && (
+              <span className="text-xs text-gray-500">Sin archivos pendientes</span>
+            )}
+            {inboxLoading && (
+              <span className="text-xs text-gray-500">Cargando...</span>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); processInbox(); }}
+              disabled={inboxProcessing}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border"
+              style={{
+                background: "white",
+                borderColor: "#4F7CFF",
+                color: "#4F7CFF",
+                cursor: inboxProcessing ? "not-allowed" : "pointer",
+                opacity: inboxProcessing ? 0.6 : 1,
+              }}
+            >
+              {inboxProcessing ? "Detectando..." : "🔍 Detectar nuevos archivos"}
+            </button>
+            <span style={{ color: "#94a3b8", fontSize: 14 }}>
+              {inboxExpanded ? "▲" : "▼"}
+            </span>
+          </div>
+        </div>
+
+        {inboxExpanded && (
+          <div style={{ padding: inboxTotal === 0 ? "32px 20px" : "0" }}>
+            {inboxTotal === 0 ? (
+              <div className="text-center">
+                <div style={{ fontSize: 36, marginBottom: 8 }}>✅</div>
+                <p className="text-gray-500 text-sm">
+                  No hay archivos pendientes de clasificar.
+                </p>
+                <p className="text-gray-400 text-xs mt-1">
+                  Pulsa &quot;Detectar nuevos archivos&quot; para buscar en la carpeta Escáner de SharePoint.
+                </p>
+              </div>
+            ) : (
+              <div>
+                {classifiableIds.length > 0 && (
+                  <div
+                    style={{
+                      padding: "10px 20px",
+                      borderBottom: "1px solid #e2e8f0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      background: "#F8FAFF",
+                    }}
+                  >
+                    <span className="text-xs text-gray-600">
+                      {classifiableIds.length} archivos con comunidad identificada listos para confirmar
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => rejectCandidates(allCandidateIds)}
+                        disabled={confirmingIds.size > 0}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg border cursor-pointer"
+                        style={{
+                          borderColor: "#fca5a5",
+                          color: "#dc2626",
+                          background: "#fef2f2",
+                          opacity: confirmingIds.size > 0 ? 0.5 : 1,
+                        }}
+                      >
+                        Descartar todos
+                      </button>
+                      <button
+                        onClick={() => confirmCandidates(classifiableIds)}
+                        disabled={confirmingIds.size > 0}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer"
+                        style={{
+                          background: "#4F7CFF",
+                          color: "white",
+                          border: "none",
+                          opacity: confirmingIds.size > 0 ? 0.5 : 1,
+                        }}
+                      >
+                        {confirmingIds.size > 0 ? "Archivando..." : `✓ Confirmar y archivar todos (${classifiableIds.length})`}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {inboxGroups.map((group) => {
+                  const groupIds = group.candidates.map((c) => c.id);
+                  const isGroupConfirming = groupIds.some((id) => confirmingIds.has(id));
+                  const hasLinkedComunidad = !!group.comunidadId;
+
+                  return (
+                    <div
+                      key={group.communityCode || "sin-codigo"}
+                      style={{ borderBottom: "1px solid #f1f5f9" }}
+                    >
+                      <div
+                        style={{
+                          padding: "10px 20px",
+                          background: hasLinkedComunidad ? "#FAFBFF" : "#FFFBEB",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-gray-600">
+                            {group.communityCode || "—"}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-800">
+                            {group.comunidadNombre || (
+                              <span className="text-amber-600 text-xs">Código no reconocido</span>
+                            )}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {group.candidates.length} archivo{group.candidates.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        {hasLinkedComunidad && (
+                          <button
+                            onClick={() => confirmCandidates(groupIds)}
+                            disabled={isGroupConfirming}
+                            className="text-xs font-semibold px-3 py-1 rounded-lg cursor-pointer"
+                            style={{
+                              background: "#dcfce7",
+                              color: "#16a34a",
+                              border: "1px solid #86efac",
+                              opacity: isGroupConfirming ? 0.5 : 1,
+                            }}
+                          >
+                            {isGroupConfirming ? "Archivando..." : "✓ Confirmar comunidad"}
+                          </button>
+                        )}
+                      </div>
+
+                      {group.candidates.map((c) => {
+                        const conf = confidenceColor(c.confidence);
+                        const isBusy = confirmingIds.has(c.id);
+                        return (
+                          <div
+                            key={c.id}
+                            style={{
+                              padding: "8px 20px 8px 36px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
+                              borderTop: "1px solid #f8fafc",
+                              opacity: isBusy ? 0.5 : 1,
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="text-xs font-medium text-gray-800 truncate" title={c.fileName}>
+                                {c.fileName}
+                              </div>
+                              <div className="text-xs text-gray-400">→ {c.subfolder}</div>
+                            </div>
+                            <span
+                              className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+                              style={{ background: conf.bg, color: conf.color }}
+                            >
+                              {conf.label}
+                            </span>
+                            {c.comunidadId && (
+                              <button
+                                onClick={() => confirmCandidates([c.id])}
+                                disabled={isBusy}
+                                title="Confirmar y archivar"
+                                className="text-xs font-semibold shrink-0 cursor-pointer"
+                                style={{ color: "#16a34a", background: "none", border: "none" }}
+                              >
+                                ✓
+                              </button>
+                            )}
+                            <button
+                              onClick={() => rejectCandidates([c.id])}
+                              disabled={isBusy}
+                              title="Descartar"
+                              className="text-xs shrink-0 cursor-pointer"
+                              style={{ color: "#94a3b8", background: "none", border: "none" }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (step === "find") {
     return (
       <div>
@@ -260,17 +585,19 @@ export default function EscanerPage() {
           </p>
         </div>
 
-        <div className="card-static py-16 text-center">
+        <SmartInboxPanel />
+
+        <div className="card-static py-12 text-center">
           <div style={{ fontSize: 48 }} className="mb-4">📂</div>
           <h2 className="text-lg font-bold text-gray-900 mb-2">
-            Paso 1: Localizar carpeta Escáner
+            Clasificación manual por lotes
           </h2>
           <p className="text-gray-500 text-sm mb-6 max-w-lg mx-auto">
-            Sube la carpeta &quot;Escaner&quot; a tu sitio SharePoint de DocFincas (al mismo nivel que la carpeta de Comunidades). Luego pulsa el botón para buscarla.
+            Analiza todos los archivos del escáner, revisa la clasificación y muévelos en bloque.
           </p>
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
           <button onClick={scanFiles} disabled={loading} className="btn-primary">
-            {loading ? "Buscando..." : "Buscar y analizar carpeta Escáner"}
+            {loading ? "Buscando..." : "Escanear y revisar archivos manualmente"}
           </button>
         </div>
       </div>
@@ -377,6 +704,8 @@ export default function EscanerPage() {
 
   return (
     <div>
+      <SmartInboxPanel />
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="page-title">Clasificador de Escáner</h1>

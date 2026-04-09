@@ -10,6 +10,14 @@ import ResumenDocTab from "./ResumenDocTab";
 import HistorialTab from "./HistorialTab";
 import NotasTab from "./NotasTab";
 
+type RoutingCandidate = {
+  id: string;
+  fileName: string;
+  subfolder: string;
+  confidence: string;
+  comunidadId: string | null;
+};
+
 type Operativa = {
   usaAgreGasfincas: boolean;
   somosCorredorSeguro: boolean;
@@ -79,6 +87,9 @@ export default function ComunidadDetailPage() {
   const [editForm, setEditForm] = useState({ nombre: "", nif: "", direccion: "", cp: "" });
   const [editSaving, setEditSaving] = useState(false);
 
+  const [routingCandidates, setRoutingCandidates] = useState<RoutingCandidate[]>([]);
+  const [routingConfirming, setRoutingConfirming] = useState(false);
+
   const fetchData = useCallback(async () => {
     const [comRes, checkRes] = await Promise.all([
       fetch(`/api/comunidades/${id}`),
@@ -89,9 +100,36 @@ export default function ComunidadDetailPage() {
     setLoading(false);
   }, [id]);
 
+  const fetchRouting = useCallback(async () => {
+    const res = await fetch(`/api/routing?comunidadId=${id}`);
+    if (res.ok) {
+      const data = await res.json();
+      setRoutingCandidates(data.candidates || []);
+    }
+  }, [id]);
+
+  const confirmAllRouting = async () => {
+    if (routingCandidates.length === 0) return;
+    setRoutingConfirming(true);
+    try {
+      await fetch("/api/routing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "confirm",
+          ids: routingCandidates.map((c) => c.id),
+        }),
+      });
+      await fetchRouting();
+    } finally {
+      setRoutingConfirming(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    fetchRouting();
+  }, [fetchData, fetchRouting]);
 
   if (loading) {
     return (
@@ -224,6 +262,86 @@ export default function ComunidadDetailPage() {
               Con personal
             </span>
           )}
+        </div>
+      )}
+
+      {routingCandidates.length > 0 && (
+        <div
+          className="mb-5"
+          style={{
+            border: "2px solid #4F7CFF",
+            borderRadius: 12,
+            overflow: "hidden",
+            background: "white",
+          }}
+        >
+          <div
+            style={{
+              background: "linear-gradient(135deg, #EFF6FF, #E0EAFF)",
+              padding: "12px 18px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <span style={{ fontSize: 18 }}>📥</span>
+              <span className="font-bold text-gray-900" style={{ fontSize: 14 }}>
+                Documentos detectados en el Escáner
+              </span>
+              <span
+                className="text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ background: "#4F7CFF", color: "white" }}
+              >
+                {routingCandidates.length} pendiente{routingCandidates.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <button
+              onClick={confirmAllRouting}
+              disabled={routingConfirming}
+              className="text-xs font-semibold px-4 py-1.5 rounded-lg cursor-pointer"
+              style={{
+                background: routingConfirming ? "#94a3b8" : "#4F7CFF",
+                color: "white",
+                border: "none",
+                opacity: routingConfirming ? 0.7 : 1,
+              }}
+            >
+              {routingConfirming ? "Archivando en SharePoint..." : `✓ Confirmar y archivar todos (${routingCandidates.length})`}
+            </button>
+          </div>
+          <div>
+            {routingCandidates.map((c, i) => (
+              <div
+                key={c.id}
+                style={{
+                  padding: "8px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  borderTop: i === 0 ? "none" : "1px solid #f1f5f9",
+                  background: i % 2 === 0 ? "#FAFBFF" : "white",
+                }}
+              >
+                <span style={{ fontSize: 14 }}>📄</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="text-xs font-medium text-gray-800 truncate">{c.fileName}</div>
+                  <div className="text-xs text-gray-400">
+                    Se archivará en: <span className="font-semibold text-blue-600">{c.subfolder}</span>
+                  </div>
+                </div>
+                <span
+                  className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+                  style={{
+                    background: c.confidence === "high" ? "#dcfce7" : c.confidence === "medium" ? "#fef3c7" : "#f1f5f9",
+                    color: c.confidence === "high" ? "#16a34a" : c.confidence === "medium" ? "#d97706" : "#64748b",
+                  }}
+                >
+                  {c.confidence === "high" ? "Alta" : c.confidence === "medium" ? "Media" : "Baja"}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
