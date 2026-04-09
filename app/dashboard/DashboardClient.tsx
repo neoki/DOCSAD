@@ -168,6 +168,7 @@ export default function DashboardClient({ comunidades, syncStats, docInsights, r
       .then((r) => r.json())
       .then((data) => setTrends(data.monthly || []))
       .catch(() => {});
+    fetch("/api/alerts/vencimientos?check=true").catch(() => {});
   }, []);
 
   useEffect(() => {

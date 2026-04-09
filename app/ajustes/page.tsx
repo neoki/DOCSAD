@@ -77,6 +77,15 @@ export default function AjustesPage() {
   const [saveMsg, setSaveMsg] = useState("");
   const [loading, setLoading] = useState(true);
   const [resetSyncResult, setResetSyncResult] = useState<string | null>(null);
+  const [emailRecipients, setEmailRecipients] = useState("");
+  const [emailDaysAhead, setEmailDaysAhead] = useState<7 | 15 | 30>(30);
+  const [emailLastSent, setEmailLastSent] = useState<string | null>(null);
+  const [emailPendingCount, setEmailPendingCount] = useState<number | null>(null);
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailSaveMsg, setEmailSaveMsg] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSendMsg, setEmailSendMsg] = useState("");
+  const [emailLoading, setEmailLoading] = useState(true);
   const [onedriveStatus, setOnedriveStatus] = useState<{ connected: boolean; email?: string; expiresAt?: string } | null>(null);
   const [onedriveLoading, setOnedriveLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -123,6 +132,19 @@ export default function AjustesPage() {
       .then((data) => setSpRoots(data))
       .catch(() => setSpRoots(null))
       .finally(() => setSpRootsLoading(false));
+
+    fetch("/api/alerts/vencimientos")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.config) {
+          setEmailRecipients((data.config.recipients || []).join(", "));
+          setEmailDaysAhead(data.config.daysAhead || 30);
+        }
+        setEmailLastSent(data.lastSent || null);
+        setEmailPendingCount(data.pendingCount ?? null);
+      })
+      .catch(() => {})
+      .finally(() => setEmailLoading(false));
   }, []);
 
 
@@ -151,6 +173,55 @@ export default function AjustesPage() {
       }));
       setTesting((prev) => ({ ...prev, [id]: false }));
     }, 1500);
+  };
+
+  const saveEmailConfig = async () => {
+    setEmailSaving(true);
+    setEmailSaveMsg("");
+    try {
+      const recipients = emailRecipients
+        .split(/[,;\s]+/)
+        .map((r) => r.trim())
+        .filter((r) => r.includes("@"));
+      const res = await fetch("/api/alerts/vencimientos?action=save-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipients, daysAhead: emailDaysAhead }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setEmailSaveMsg("Configuración guardada correctamente");
+        setEmailPendingCount(null);
+      } else {
+        setEmailSaveMsg(data.error || "Error al guardar");
+      }
+    } catch {
+      setEmailSaveMsg("Error al guardar la configuración");
+    } finally {
+      setEmailSaving(false);
+      setTimeout(() => setEmailSaveMsg(""), 3000);
+    }
+  };
+
+  const sendEmailNow = async () => {
+    setEmailSending(true);
+    setEmailSendMsg("");
+    try {
+      const res = await fetch("/api/alerts/vencimientos?action=send-now", { method: "POST" });
+      const data = await res.json();
+      if (data.ok) {
+        const count = data.sentCount || 0;
+        setEmailSendMsg(count === 0 ? "Sin vencimientos en el horizonte configurado." : `Email enviado con ${count} documento${count !== 1 ? "s" : ""}.`);
+        setEmailLastSent(new Date().toISOString());
+      } else {
+        setEmailSendMsg(data.error || "Error al enviar el email");
+      }
+    } catch {
+      setEmailSendMsg("Error al enviar el email");
+    } finally {
+      setEmailSending(false);
+      setTimeout(() => setEmailSendMsg(""), 6000);
+    }
   };
 
   const saveAll = async () => {
@@ -576,6 +647,130 @@ export default function AjustesPage() {
           )}
         </div>
 
+      </div>
+
+      <h2 className="section-title" style={{ marginTop: 40 }}>Alertas por email</h2>
+      <div className="card-static" style={{ borderLeft: "4px solid #f59e0b", maxWidth: 720 }}>
+        <div className="flex items-center gap-3" style={{ marginBottom: 16 }}>
+          <div
+            style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: "#f59e0b", color: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Resumen semanal de vencimientos</h3>
+            <p style={{ color: "#64748b", fontSize: 14, margin: 0 }}>
+              El sistema comprueba automáticamente cada lunes si hay documentos próximos a vencer y envía un resumen a los destinatarios configurados.
+            </p>
+          </div>
+        </div>
+
+        {emailLoading ? (
+          <p style={{ fontSize: 13, color: "#94a3b8" }}>Cargando configuración...</p>
+        ) : (
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+                Destinatarios (separados por coma o punto y coma)
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="gestor@asesoriadiaz.com, otro@empresa.com"
+                value={emailRecipients}
+                onChange={(e) => setEmailRecipients(e.target.value)}
+                style={{ width: "100%" }}
+              />
+              <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>
+                Los gestores responsables de recibir el email semanal de vencimientos.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 8 }}>
+                Horizonte de alerta
+              </label>
+              <div className="flex gap-3">
+                {([7, 15, 30] as const).map((days) => (
+                  <button
+                    key={days}
+                    onClick={() => setEmailDaysAhead(days)}
+                    style={{
+                      padding: "8px 20px",
+                      borderRadius: 8,
+                      border: `2px solid ${emailDaysAhead === days ? "#f59e0b" : "#e2e8f0"}`,
+                      background: emailDaysAhead === days ? "#fef3c7" : "#fff",
+                      color: emailDaysAhead === days ? "#92400e" : "#64748b",
+                      fontWeight: emailDaysAhead === days ? 700 : 500,
+                      fontSize: 14,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {days} días
+                  </button>
+                ))}
+              </div>
+              <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 6 }}>
+                El email incluirá todos los documentos que venzan dentro de este período.
+              </p>
+            </div>
+
+            {emailLastSent && (
+              <div style={{ padding: "8px 12px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", marginBottom: 16, fontSize: 13, color: "#15803d" }}>
+                Último envío: <strong>{new Date(emailLastSent).toLocaleDateString("es-ES", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</strong>
+              </div>
+            )}
+
+            {emailPendingCount !== null && emailPendingCount > 0 && (
+              <div style={{ padding: "8px 12px", background: "#fff7ed", borderRadius: 8, border: "1px solid #fed7aa", marginBottom: 16, fontSize: 13, color: "#c2410c" }}>
+                Hay <strong>{emailPendingCount} documento{emailPendingCount !== 1 ? "s" : ""}</strong> con vencimiento dentro del horizonte configurado.
+              </div>
+            )}
+
+            <div className="flex items-center gap-3" style={{ flexWrap: "wrap" }}>
+              <button
+                className="btn-primary"
+                onClick={saveEmailConfig}
+                disabled={emailSaving}
+                style={{ minWidth: 160, background: "#f59e0b" }}
+              >
+                {emailSaving ? "Guardando..." : "Guardar configuración"}
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={sendEmailNow}
+                disabled={emailSending}
+                style={{ minWidth: 140 }}
+              >
+                {emailSending ? (
+                  <span className="inline-flex items-center gap-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" style={{ animation: "spin 1s linear infinite" }}>
+                      <circle cx="12" cy="12" r="10" stroke="#94a3b8" strokeWidth="3" fill="none" strokeDasharray="31.4" strokeLinecap="round" />
+                    </svg>
+                    Enviando...
+                  </span>
+                ) : "Enviar ahora"}
+              </button>
+              {emailSaveMsg && (
+                <span style={{ fontSize: 13, fontWeight: 600, color: emailSaveMsg.includes("correctamente") ? "#16a34a" : "#dc2626" }}>
+                  {emailSaveMsg}
+                </span>
+              )}
+              {emailSendMsg && (
+                <span style={{ fontSize: 13, fontWeight: 600, color: emailSendMsg.toLowerCase().includes("error") || emailSendMsg.toLowerCase().includes("no configurada") ? "#dc2626" : "#16a34a" }}>
+                  {emailSendMsg}
+                </span>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <style jsx>{`
