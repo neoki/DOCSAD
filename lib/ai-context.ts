@@ -6,12 +6,16 @@ export type AiConfig = {
   provider: string;
   model: string;
   apiKey: string;
+  endpoint?: string;
+  apiVersion?: string;
 };
 
 type ProviderEntry = {
   apiKey?: string;
   model?: string;
   active?: boolean;
+  endpoint?: string;
+  apiVersion?: string;
 };
 
 type AiConfigData = {
@@ -34,7 +38,13 @@ export async function getActiveAiConfig(): Promise<AiConfig | null> {
 
   for (const [id, cfg] of Object.entries(providers)) {
     if (cfg.active && cfg.apiKey && cfg.model) {
-      return { provider: id, model: cfg.model, apiKey: cfg.apiKey };
+      return {
+        provider: id,
+        model: cfg.model,
+        apiKey: cfg.apiKey,
+        endpoint: cfg.endpoint,
+        apiVersion: cfg.apiVersion,
+      };
     }
   }
   return null;

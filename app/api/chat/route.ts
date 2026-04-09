@@ -120,6 +120,36 @@ async function callKimi(
   return data.choices?.[0]?.message?.content ?? "";
 }
 
+async function callAzureOpenAI(
+  apiKey: string,
+  endpoint: string,
+  deploymentName: string,
+  apiVersion: string,
+  systemPrompt: string,
+  messages: Message[]
+): Promise<string> {
+  const base = endpoint.replace(/\/$/, "");
+  const url = `${base}/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": apiKey,
+    },
+    body: JSON.stringify({
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      max_tokens: 1024,
+      temperature: 0.3,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Azure OpenAI error ${res.status}: ${err.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -157,9 +187,20 @@ export async function POST(req: NextRequest) {
 
   try {
     let reply: string;
-    const { provider, model, apiKey } = aiConfig;
+    const { provider, model, apiKey, endpoint, apiVersion } = aiConfig;
 
-    if (provider === "openai" || provider === "copilot") {
+    if (provider === "azure_openai") {
+      const azureEndpoint = endpoint ?? "";
+      const deploymentName = model;
+      const version = apiVersion ?? "2024-08-01-preview";
+      if (!azureEndpoint || !deploymentName) {
+        return NextResponse.json(
+          { error: "config_error", message: "Azure OpenAI requiere Endpoint URL y Nombre de despliegue. Configúralos en Ajustes." },
+          { status: 200 }
+        );
+      }
+      reply = await callAzureOpenAI(apiKey, azureEndpoint, deploymentName, version, systemPrompt, messages);
+    } else if (provider === "openai") {
       reply = await callOpenAI(apiKey, model, systemPrompt, messages);
     } else if (provider === "anthropic") {
       reply = await callAnthropic(apiKey, model, systemPrompt, messages);

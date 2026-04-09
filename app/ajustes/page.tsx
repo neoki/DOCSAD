@@ -6,6 +6,8 @@ interface ProviderConfig {
   apiKey: string;
   model: string;
   active: boolean;
+  endpoint?: string;
+  apiVersion?: string;
 }
 
 interface ProviderDef {
@@ -43,12 +45,12 @@ const PROVIDERS: ProviderDef[] = [
     models: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash"],
   },
   {
-    id: "copilot",
-    name: "Microsoft Copilot",
-    description: "IA integrada en el ecosistema Microsoft",
+    id: "azure_openai",
+    name: "Azure OpenAI",
+    description: "GPT-4o en tu propio tenant de Microsoft Azure",
     color: "#0078d4",
-    initial: "C",
-    models: ["copilot-gpt4", "copilot-gpt3.5"],
+    initial: "A",
+    models: [],
   },
   {
     id: "kimi",
@@ -63,7 +65,12 @@ const PROVIDERS: ProviderDef[] = [
 function defaultProviders(): Record<string, ProviderConfig> {
   const result: Record<string, ProviderConfig> = {};
   PROVIDERS.forEach((p, i) => {
-    result[p.id] = { apiKey: "", model: p.models[0], active: i === 0 };
+    result[p.id] = {
+      apiKey: "",
+      model: p.models[0] ?? "",
+      active: i === 0,
+      ...(p.id === "azure_openai" ? { endpoint: "", apiVersion: "2024-08-01-preview" } : {}),
+    };
   });
   return result;
 }
@@ -111,6 +118,10 @@ export default function AjustesPage() {
                   model: data.providers[key].model || merged[key].model,
                   active: data.providers[key].active ?? merged[key].active,
                   apiKey: data.providers[key].hasKey ? data.providers[key].apiKeyMasked : "",
+                  ...(key === "azure_openai" ? {
+                    endpoint: data.providers[key].endpoint ?? merged[key].endpoint ?? "",
+                    apiVersion: data.providers[key].apiVersion ?? merged[key].apiVersion ?? "2024-08-01-preview",
+                  } : {}),
                 };
               }
             }
@@ -367,21 +378,61 @@ export default function AjustesPage() {
                 </button>
               </div>
 
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
-                Modelo
-              </label>
-              <select
-                className="input-field"
-                value={cfg?.model || prov.models[0]}
-                onChange={(e) => updateProvider(prov.id, "model", e.target.value)}
-                style={{ marginBottom: 12 }}
-              >
-                {prov.models.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+              {prov.id === "azure_openai" ? (
+                <>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+                    Endpoint URL
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="https://mi-recurso.openai.azure.com"
+                    value={cfg?.endpoint ?? ""}
+                    onChange={(e) => updateProvider(prov.id, "endpoint", e.target.value)}
+                    style={{ marginBottom: 12 }}
+                  />
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+                    Nombre de despliegue
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="gpt-4o"
+                    value={cfg?.model ?? ""}
+                    onChange={(e) => updateProvider(prov.id, "model", e.target.value)}
+                    style={{ marginBottom: 12 }}
+                  />
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+                    Versión de API
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="2024-08-01-preview"
+                    value={cfg?.apiVersion ?? "2024-08-01-preview"}
+                    onChange={(e) => updateProvider(prov.id, "apiVersion", e.target.value)}
+                    style={{ marginBottom: 12 }}
+                  />
+                </>
+              ) : (
+                <>
+                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 6 }}>
+                    Modelo
+                  </label>
+                  <select
+                    className="input-field"
+                    value={cfg?.model || prov.models[0]}
+                    onChange={(e) => updateProvider(prov.id, "model", e.target.value)}
+                    style={{ marginBottom: 12 }}
+                  >
+                    {prov.models.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
 
               <div className="flex items-center gap-2">
                 <button
