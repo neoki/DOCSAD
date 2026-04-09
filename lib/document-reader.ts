@@ -104,11 +104,11 @@ async function fetchDocumentText(
   }
 }
 
-export async function readRelevantDocuments(
+async function readRelevantDocumentsImpl(
   comunidadId: string,
   userQuery: string,
-  maxDocs = 4,
-  maxCharsPerDoc = 2500,
+  maxDocs: number,
+  maxCharsPerDoc: number,
 ): Promise<string> {
   const files = await prisma.fileCache.findMany({
     where: {
@@ -134,6 +134,8 @@ export async function readRelevantDocuments(
     );
   });
 
+  if (readable.length === 0) return "";
+
   const scored = readable.map((f) => ({
     ...f,
     score: scoreFile(f.name, f.subfolder, userQuery),
@@ -157,4 +159,23 @@ export async function readRelevantDocuments(
   return results.length > 0
     ? `=== CONTENIDO DE DOCUMENTOS ===\n${results.join("\n\n")}`
     : "";
+}
+
+export async function readRelevantDocuments(
+  comunidadId: string,
+  userQuery: string,
+  maxDocs = 4,
+  maxCharsPerDoc = 2500,
+): Promise<string> {
+  const GLOBAL_TIMEOUT_MS = 15000;
+  try {
+    return await Promise.race([
+      readRelevantDocumentsImpl(comunidadId, userQuery, maxDocs, maxCharsPerDoc),
+      new Promise<string>((resolve) =>
+        setTimeout(() => resolve(""), GLOBAL_TIMEOUT_MS),
+      ),
+    ]);
+  } catch {
+    return "";
+  }
 }

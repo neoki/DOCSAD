@@ -542,15 +542,15 @@ export async function getRecentSyncLogs(limit = 50) {
 
 export const STANDARD_SUBFOLDERS = [
   "01_Actas",
-  "02_Certificados",
+  "02_Presupuestos_y_Cuentas",
   "03_Contratos",
   "04_Facturas",
   "05_Seguros",
-  "06_Escrituras",
-  "07_Informes",
+  "06_Certificados_e_Informes",
+  "07_Recibos",
   "08_Correspondencia",
-  "09_Licencias",
-  "10_Presupuestos",
+  "09_Documentacion_Legal",
+  "10_Mantenimiento",
   "11_Otros",
 ];
 
