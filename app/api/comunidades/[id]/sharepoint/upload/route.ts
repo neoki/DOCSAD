@@ -64,8 +64,17 @@ export async function POST(
 
     const uploadedItemId = result?.id;
     const uploadedItem = result as { id?: string; name?: string; size?: number; webUrl?: string; lastModifiedDateTime?: string; file?: { mimeType?: string } } | null;
-    const targetFolderName = folderName ?? null;
-    const ocrQueued = !!(uploadedItemId && isInvoiceFolder(targetFolderName));
+
+    let resolvedFolderName: string | null = folderName ?? null;
+    if (folderId && folderId !== comunidad.sharePointFolderId) {
+      const cachedFolder = await prisma.fileCache.findUnique({
+        where: { sharePointItemId: folderId },
+        select: { name: true },
+      });
+      if (cachedFolder?.name) resolvedFolderName = cachedFolder.name;
+    }
+
+    const ocrQueued = !!(uploadedItemId && isInvoiceFolder(resolvedFolderName));
 
     if (uploadedItemId && uploadedItem) {
       await prisma.fileCache.upsert({
@@ -74,8 +83,8 @@ export async function POST(
           sharePointItemId: uploadedItemId,
           driveId: comunidad.sharePointDriveId!,
           name: file.name,
-          path: targetFolderName ? `${targetFolderName}/${file.name}` : file.name,
-          subfolder: targetFolderName ?? undefined,
+          path: resolvedFolderName ? `${resolvedFolderName}/${file.name}` : file.name,
+          subfolder: resolvedFolderName ?? undefined,
           sizeBytes: file.size,
           mimeType: file.type || null,
           isFolder: false,

@@ -198,17 +198,6 @@ function ExpiryModal({
   );
 }
 
-function isInvoiceFolderName(name: string | null | undefined): boolean {
-  if (!name) return false;
-  const lower = name.toLowerCase();
-  return (
-    lower.includes("factura") ||
-    lower.includes("invoice") ||
-    lower.includes("recibo") ||
-    lower.includes("04_fact")
-  );
-}
-
 function fmtImporte(importe: number | null, moneda: string): string {
   if (importe === null) return "";
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: moneda || "EUR", maximumFractionDigits: 0 }).format(importe);
