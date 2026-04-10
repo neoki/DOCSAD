@@ -141,8 +141,10 @@ export async function POST(request: Request) {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        const msg = err?.error?.message ?? `Error ${res.status}`;
-        return NextResponse.json({ ok: false, error: msg });
+        const code = err?.error?.code ?? "";
+        const msg = err?.error?.message ?? `HTTP ${res.status}`;
+        const detail = code ? `[${code}] ${msg}` : `HTTP ${res.status}: ${msg}`;
+        return NextResponse.json({ ok: false, error: detail, debugUrl: url });
       }
       return NextResponse.json({ ok: true });
 
