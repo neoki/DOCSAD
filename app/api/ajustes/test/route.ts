@@ -133,20 +133,32 @@ export async function POST(request: Request) {
       }
       const version = apiVersion ?? "2025-01-01-preview";
       const base = endpoint.replace(/\/$/, "");
-      const url = `${base}/openai/deployments/${encodeURIComponent(deploymentName)}/chat/completions?api-version=${encodeURIComponent(version)}`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "api-key": apiKey },
-        body: JSON.stringify({ messages: testMessages, max_tokens: 5 }),
-      });
-      if (!res.ok) {
+      const enc = encodeURIComponent;
+
+      const urlCandidates = [
+        // Azure AI Foundry Inference API (cognitiveservices / AI Services)
+        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(version)}`,
+        // Classic Azure OpenAI Service
+        `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(version)}`,
+      ];
+
+      let lastError = "";
+      for (const url of urlCandidates) {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "api-key": apiKey },
+          body: JSON.stringify({ messages: testMessages, max_tokens: 5 }),
+        });
+        if (res.ok) {
+          const pathHint = url.includes("/models/") ? "Azure AI Foundry" : "Azure OpenAI clásico";
+          return NextResponse.json({ ok: true, hint: pathHint, debugUrl: url });
+        }
         const err = await res.json().catch(() => ({}));
         const code = err?.error?.code ?? "";
         const msg = err?.error?.message ?? `HTTP ${res.status}`;
-        const detail = code ? `[${code}] ${msg}` : `HTTP ${res.status}: ${msg}`;
-        return NextResponse.json({ ok: false, error: detail, debugUrl: url });
+        lastError = code ? `[${code}] ${msg}` : `HTTP ${res.status}: ${msg}`;
       }
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: false, error: lastError });
 
     } else {
       return NextResponse.json({ ok: false, error: "Proveedor no reconocido" });

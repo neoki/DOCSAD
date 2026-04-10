@@ -129,25 +129,35 @@ async function callAzureOpenAI(
   messages: Message[]
 ): Promise<string> {
   const base = endpoint.replace(/\/$/, "");
-  const url = `${base}/openai/deployments/${encodeURIComponent(deploymentName)}/chat/completions?api-version=${encodeURIComponent(apiVersion)}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "api-key": apiKey,
-    },
-    body: JSON.stringify({
-      messages: [{ role: "system", content: systemPrompt }, ...messages],
-      max_tokens: 1024,
-      temperature: 0.3,
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Azure OpenAI error ${res.status}: ${err.slice(0, 200)}`);
+  const enc = encodeURIComponent;
+  const payload = {
+    messages: [{ role: "system", content: systemPrompt }, ...messages],
+    max_tokens: 1024,
+    temperature: 0.3,
+  };
+
+  const urlCandidates = [
+    // Azure AI Foundry Inference API (cognitiveservices / AI Services)
+    `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
+    // Classic Azure OpenAI Service
+    `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
+  ];
+
+  let lastErr = "";
+  for (const url of urlCandidates) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "api-key": apiKey },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content ?? "";
+    }
+    const errText = await res.text();
+    lastErr = `Azure error ${res.status}: ${errText.slice(0, 200)}`;
   }
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content ?? "";
+  throw new Error(lastErr);
 }
 
 export async function POST(req: NextRequest) {

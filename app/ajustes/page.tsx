@@ -200,7 +200,9 @@ export default function AjustesPage() {
       const data = await res.json();
       setTestResult((prev) => ({
         ...prev,
-        [id]: data.ok ? "Conexión verificada correctamente" : `Error: ${data.error ?? "desconocido"}`,
+        [id]: data.ok
+          ? `Conexión verificada correctamente${data.hint ? ` (${data.hint})` : ""}`
+          : `Error: ${data.error ?? "desconocido"}`,
       }));
     } catch {
       setTestResult((prev) => ({ ...prev, [id]: "Error de red al probar la conexión" }));
