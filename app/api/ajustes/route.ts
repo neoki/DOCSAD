@@ -103,7 +103,7 @@ export async function PUT(request: Request) {
           if (id === "azure_openai") {
             if (incoming.endpoint === undefined) incoming.endpoint = stored.endpoint ?? "";
             if (incoming.deploymentName === undefined) incoming.deploymentName = stored.deploymentName ?? "";
-            if (incoming.apiVersion === undefined) incoming.apiVersion = stored.apiVersion ?? "2024-08-01-preview";
+            if (incoming.apiVersion === undefined) incoming.apiVersion = stored.apiVersion ?? "2025-01-01-preview";
           }
         }
       }

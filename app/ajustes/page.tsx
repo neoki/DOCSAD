@@ -70,7 +70,7 @@ function defaultProviders(): Record<string, ProviderConfig> {
       apiKey: "",
       model: p.models[0] ?? "",
       active: i === 0,
-      ...(p.id === "azure_openai" ? { endpoint: "", deploymentName: "", apiVersion: "2024-08-01-preview" } : {}),
+      ...(p.id === "azure_openai" ? { endpoint: "", deploymentName: "", apiVersion: "2025-01-01-preview" } : {}),
     };
   });
   return result;
@@ -122,7 +122,7 @@ export default function AjustesPage() {
                   ...(key === "azure_openai" ? {
                     endpoint: data.providers[key].endpoint ?? merged[key].endpoint ?? "",
                     deploymentName: data.providers[key].deploymentName ?? merged[key].deploymentName ?? "",
-                    apiVersion: data.providers[key].apiVersion ?? merged[key].apiVersion ?? "2024-08-01-preview",
+                    apiVersion: data.providers[key].apiVersion ?? merged[key].apiVersion ?? "2025-01-01-preview",
                   } : {}),
                 };
               }
@@ -410,8 +410,8 @@ export default function AjustesPage() {
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="2024-08-01-preview"
-                    value={cfg?.apiVersion ?? "2024-08-01-preview"}
+                    placeholder="2025-01-01-preview"
+                    value={cfg?.apiVersion ?? "2025-01-01-preview"}
                     onChange={(e) => updateProvider(prov.id, "apiVersion", e.target.value)}
                     style={{ marginBottom: 12 }}
                   />

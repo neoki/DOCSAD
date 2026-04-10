@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
     if (provider === "azure_openai") {
       const azureEndpoint = endpoint ?? "";
       const azureDeployment = aiConfig.deploymentName ?? "";
-      const version = apiVersion ?? "2024-08-01-preview";
+      const version = apiVersion ?? "2025-01-01-preview";
       if (!azureEndpoint || !azureDeployment) {
         return NextResponse.json(
           { error: "config_error", message: "Azure OpenAI requiere Endpoint URL y Nombre de despliegue. Configúralos en Ajustes." },
