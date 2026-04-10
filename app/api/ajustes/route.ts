@@ -11,7 +11,13 @@ function maskKey(key: string): string {
 function isValidAzureEndpoint(endpoint: string): boolean {
   try {
     const url = new URL(endpoint);
-    return url.protocol === "https:" && url.hostname.endsWith(".openai.azure.com");
+    if (url.protocol !== "https:") return false;
+    const h = url.hostname;
+    return (
+      h.endsWith(".openai.azure.com") ||
+      h.endsWith(".cognitiveservices.azure.com") ||
+      h.endsWith(".services.ai.azure.com")
+    );
   } catch {
     return false;
   }
@@ -73,7 +79,7 @@ export async function PUT(request: Request) {
     const azureCfg = body.providers.azure_openai;
     if (azureCfg.endpoint && !isValidAzureEndpoint(azureCfg.endpoint)) {
       return NextResponse.json(
-        { error: "El Endpoint de Azure OpenAI debe ser una URL HTTPS de *.openai.azure.com" },
+        { error: "El Endpoint de Azure OpenAI debe ser una URL HTTPS de un dominio de Microsoft Azure" },
         { status: 400 }
       );
     }

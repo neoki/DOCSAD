@@ -208,9 +208,14 @@ export async function POST(req: NextRequest) {
           { status: 200 }
         );
       }
-      if (parsedUrl.protocol !== "https:" || !parsedUrl.hostname.endsWith(".openai.azure.com")) {
+      const h = parsedUrl.hostname;
+      const validHost =
+        h.endsWith(".openai.azure.com") ||
+        h.endsWith(".cognitiveservices.azure.com") ||
+        h.endsWith(".services.ai.azure.com");
+      if (parsedUrl.protocol !== "https:" || !validHost) {
         return NextResponse.json(
-          { error: "config_error", message: "El Endpoint de Azure OpenAI debe ser una URL HTTPS de *.openai.azure.com." },
+          { error: "config_error", message: "El Endpoint de Azure OpenAI debe ser una URL HTTPS de un dominio de Microsoft Azure." },
           { status: 200 }
         );
       }
