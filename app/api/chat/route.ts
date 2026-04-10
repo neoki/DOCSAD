@@ -136,12 +136,19 @@ async function callAzureOpenAI(
     temperature: 0.3,
   };
 
-  const urlCandidates = [
-    // Azure AI Foundry Inference API (cognitiveservices / AI Services)
-    `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
-    // Classic Azure OpenAI Service
-    `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
-  ];
+  const hostname = new URL(base).hostname;
+  const isFoundryProject = hostname.endsWith(".services.ai.azure.com");
+
+  const urlCandidates: string[] = isFoundryProject
+    ? [
+        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=2024-05-01-preview`,
+        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=2024-12-01-preview`,
+        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
+      ]
+    : [
+        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
+        `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
+      ];
 
   let lastErr = "";
   for (const url of urlCandidates) {

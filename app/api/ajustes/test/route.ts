@@ -131,16 +131,25 @@ export async function POST(request: Request) {
       if (!isValidAzureEndpoint(endpoint)) {
         return NextResponse.json({ ok: false, error: "El Endpoint debe ser HTTPS de un dominio Azure" });
       }
-      const version = apiVersion ?? "2025-01-01-preview";
+      const userVersion = apiVersion ?? "2025-01-01-preview";
       const base = endpoint.replace(/\/$/, "");
       const enc = encodeURIComponent;
+      const hostname = new URL(base).hostname;
+      const isFoundryProject = hostname.endsWith(".services.ai.azure.com");
 
-      const urlCandidates = [
-        // Azure AI Foundry Inference API (cognitiveservices / AI Services)
-        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(version)}`,
-        // Classic Azure OpenAI Service
-        `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(version)}`,
-      ];
+      // Build candidates ordered by likelihood of success
+      const urlCandidates: string[] = isFoundryProject
+        ? [
+            // Azure AI Foundry project endpoint — correct API version
+            `${base}/models/${enc(deploymentName)}/chat/completions?api-version=2024-05-01-preview`,
+            `${base}/models/${enc(deploymentName)}/chat/completions?api-version=2024-12-01-preview`,
+            `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(userVersion)}`,
+          ]
+        : [
+            // cognitiveservices / openai.azure.com — try both paths with user version
+            `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(userVersion)}`,
+            `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(userVersion)}`,
+          ];
 
       let lastError = "";
       for (const url of urlCandidates) {
@@ -150,8 +159,10 @@ export async function POST(request: Request) {
           body: JSON.stringify({ messages: testMessages, max_tokens: 5 }),
         });
         if (res.ok) {
-          const pathHint = url.includes("/models/") ? "Azure AI Foundry" : "Azure OpenAI clásico";
-          return NextResponse.json({ ok: true, hint: pathHint, debugUrl: url });
+          const workedVersion = new URL(url).searchParams.get("api-version") ?? "";
+          const pathType = url.includes("/models/") ? "Azure AI Foundry" : "Azure OpenAI clásico";
+          const hint = workedVersion ? `${pathType} · api-version: ${workedVersion}` : pathType;
+          return NextResponse.json({ ok: true, hint, debugUrl: url });
         }
         const err = await res.json().catch(() => ({}));
         const code = err?.error?.code ?? "";
