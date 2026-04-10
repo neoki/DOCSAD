@@ -175,17 +175,38 @@ export default function AjustesPage() {
     });
   };
 
-  const testConnection = (id: string) => {
+  const testConnection = async (id: string) => {
+    const cfg = providers[id];
+    if (!cfg?.apiKey?.trim()) {
+      setTestResult((prev) => ({ ...prev, [id]: "Sin clave API configurada" }));
+      return;
+    }
     setTesting((prev) => ({ ...prev, [id]: true }));
     setTestResult((prev) => ({ ...prev, [id]: "" }));
-    setTimeout(() => {
-      const hasKey = providers[id]?.apiKey?.trim().length > 0;
+    try {
+      const prov = PROVIDERS.find((p) => p.id === id);
+      const res = await fetch("/api/ajustes/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: id,
+          apiKey: cfg.apiKey.includes("****") ? "" : cfg.apiKey,
+          model: cfg.model || prov?.models[0] || "",
+          endpoint: cfg.endpoint ?? "",
+          deploymentName: cfg.deploymentName ?? "",
+          apiVersion: cfg.apiVersion ?? "2025-01-01-preview",
+        }),
+      });
+      const data = await res.json();
       setTestResult((prev) => ({
         ...prev,
-        [id]: hasKey ? "Conexión simulada correctamente" : "Sin clave API configurada",
+        [id]: data.ok ? "Conexión verificada correctamente" : `Error: ${data.error ?? "desconocido"}`,
       }));
+    } catch {
+      setTestResult((prev) => ({ ...prev, [id]: "Error de red al probar la conexión" }));
+    } finally {
       setTesting((prev) => ({ ...prev, [id]: false }));
-    }, 1500);
+    }
   };
 
   const saveEmailConfig = async () => {
