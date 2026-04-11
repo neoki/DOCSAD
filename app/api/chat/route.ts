@@ -136,14 +136,16 @@ async function callAzureOpenAI(
     temperature: 0.3,
   };
 
-  const hostname = new URL(base).hostname;
-  const isFoundryProject = hostname.endsWith(".services.ai.azure.com");
+  const parsedUrl = new URL(base);
+  const isFoundryDomain = parsedUrl.hostname.endsWith(".services.ai.azure.com");
+  const hubBase = isFoundryDomain ? `${parsedUrl.protocol}//${parsedUrl.host}` : base;
 
-  const urlCandidates: string[] = isFoundryProject
+  const foundryVersions = ["2024-05-01-preview", "2024-07-01-preview", "2024-09-01-preview", "2024-10-01-preview"];
+
+  const urlCandidates: string[] = isFoundryDomain
     ? [
-        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=2024-05-01-preview`,
-        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=2024-12-01-preview`,
-        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
+        ...foundryVersions.map(v => `${hubBase}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`),
+        ...foundryVersions.map(v => `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`),
       ]
     : [
         `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,

@@ -134,16 +134,25 @@ export async function POST(request: Request) {
       const userVersion = apiVersion ?? "2025-01-01-preview";
       const base = endpoint.replace(/\/$/, "");
       const enc = encodeURIComponent;
-      const hostname = new URL(base).hostname;
-      const isFoundryProject = hostname.endsWith(".services.ai.azure.com");
+      const parsedUrl = new URL(base);
+      const hostname = parsedUrl.hostname;
+      const isFoundryDomain = hostname.endsWith(".services.ai.azure.com");
+
+      // If the user pasted the project management URL (/api/projects/...), extract the hub base
+      const hubBase = isFoundryDomain
+        ? `${parsedUrl.protocol}//${parsedUrl.host}` // e.g. https://docfincas.services.ai.azure.com
+        : base;
+
+      // Versions to try for Foundry inference API
+      const foundryVersions = ["2024-05-01-preview", "2024-07-01-preview", "2024-09-01-preview", "2024-10-01-preview"];
 
       // Build candidates ordered by likelihood of success
-      const urlCandidates: string[] = isFoundryProject
+      const urlCandidates: string[] = isFoundryDomain
         ? [
-            // Azure AI Foundry project endpoint — correct API version
-            `${base}/models/${enc(deploymentName)}/chat/completions?api-version=2024-05-01-preview`,
-            `${base}/models/${enc(deploymentName)}/chat/completions?api-version=2024-12-01-preview`,
-            `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(userVersion)}`,
+            // Hub-level inference (strip /api/projects/... — this is the real inference endpoint)
+            ...foundryVersions.map(v => `${hubBase}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`),
+            // Also try the full base in case user entered hub URL directly
+            ...foundryVersions.map(v => `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`),
           ]
         : [
             // cognitiveservices / openai.azure.com — try both paths with user version
