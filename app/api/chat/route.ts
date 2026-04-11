@@ -138,26 +138,33 @@ async function callAzureOpenAI(
 
   const parsedUrl = new URL(base);
   const isFoundryDomain = parsedUrl.hostname.endsWith(".services.ai.azure.com");
-  const hubBase = isFoundryDomain ? `${parsedUrl.protocol}//${parsedUrl.host}` : base;
-
+  const hubBase = `${parsedUrl.protocol}//${parsedUrl.host}`;
   const foundryVersions = ["2024-05-01-preview", "2024-07-01-preview", "2024-09-01-preview", "2024-10-01-preview"];
 
-  const urlCandidates: string[] = isFoundryDomain
+  type AzureCandidate = { url: string; body: Record<string, unknown>; authHeader: Record<string, string> };
+
+  const apiKeyHeader = { "api-key": apiKey };
+  const bearerHeader = { "Authorization": `Bearer ${apiKey}` };
+
+  const candidates: AzureCandidate[] = isFoundryDomain
     ? [
-        ...foundryVersions.map(v => `${hubBase}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`),
-        ...foundryVersions.map(v => `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`),
+        // Azure AI Foundry project — OpenAI-compatible v1 (model in body, no api-version)
+        { url: `${base}/openai/v1/chat/completions`, body: { ...payload, model: deploymentName }, authHeader: apiKeyHeader },
+        { url: `${base}/openai/v1/chat/completions`, body: { ...payload, model: deploymentName }, authHeader: bearerHeader },
+        // Hub-level models inference
+        ...foundryVersions.map(v => ({ url: `${hubBase}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`, body: payload, authHeader: apiKeyHeader })),
       ]
     : [
-        `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
-        `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`,
+        { url: `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`, body: payload, authHeader: apiKeyHeader },
+        { url: `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(apiVersion)}`, body: payload, authHeader: apiKeyHeader },
       ];
 
   let lastErr = "";
-  for (const url of urlCandidates) {
-    const res = await fetch(url, {
+  for (const c of candidates) {
+    const res = await fetch(c.url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "api-key": apiKey },
-      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json", ...c.authHeader },
+      body: JSON.stringify(c.body),
     });
     if (res.ok) {
       const data = await res.json();

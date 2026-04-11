@@ -137,41 +137,40 @@ export async function POST(request: Request) {
       const parsedUrl = new URL(base);
       const hostname = parsedUrl.hostname;
       const isFoundryDomain = hostname.endsWith(".services.ai.azure.com");
-
-      // If the user pasted the project management URL (/api/projects/...), extract the hub base
-      const hubBase = isFoundryDomain
-        ? `${parsedUrl.protocol}//${parsedUrl.host}` // e.g. https://docfincas.services.ai.azure.com
-        : base;
-
-      // Versions to try for Foundry inference API
+      const hubBase = `${parsedUrl.protocol}//${parsedUrl.host}`;
       const foundryVersions = ["2024-05-01-preview", "2024-07-01-preview", "2024-09-01-preview", "2024-10-01-preview"];
 
-      // Build candidates ordered by likelihood of success
-      const urlCandidates: string[] = isFoundryDomain
+      type Candidate = { url: string; body: Record<string, unknown>; headers: Record<string, string> };
+
+      const baseHeaders = { "Content-Type": "application/json", "api-key": apiKey };
+      const bearerHeaders = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` };
+
+      const urlCandidates: Candidate[] = isFoundryDomain
         ? [
-            // Hub-level inference (strip /api/projects/... — this is the real inference endpoint)
-            ...foundryVersions.map(v => `${hubBase}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`),
-            // Also try the full base in case user entered hub URL directly
-            ...foundryVersions.map(v => `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`),
+            // Azure AI Foundry project — OpenAI-compatible v1 endpoint (model in body, no api-version)
+            { url: `${base}/openai/v1/chat/completions`, body: { model: deploymentName, messages: testMessages, max_tokens: 5 }, headers: baseHeaders },
+            { url: `${base}/openai/v1/chat/completions`, body: { model: deploymentName, messages: testMessages, max_tokens: 5 }, headers: bearerHeaders },
+            // Hub-level models inference with api-version
+            ...foundryVersions.map(v => ({ url: `${hubBase}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`, body: { messages: testMessages, max_tokens: 5 }, headers: baseHeaders })),
           ]
         : [
-            // cognitiveservices / openai.azure.com — try both paths with user version
-            `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(userVersion)}`,
-            `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(userVersion)}`,
+            // cognitiveservices / openai.azure.com
+            { url: `${base}/models/${enc(deploymentName)}/chat/completions?api-version=${enc(userVersion)}`, body: { messages: testMessages, max_tokens: 5 }, headers: baseHeaders },
+            { url: `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(userVersion)}`, body: { messages: testMessages, max_tokens: 5 }, headers: baseHeaders },
           ];
 
       let lastError = "";
-      for (const url of urlCandidates) {
-        const res = await fetch(url, {
+      for (const candidate of urlCandidates) {
+        const res = await fetch(candidate.url, {
           method: "POST",
-          headers: { "Content-Type": "application/json", "api-key": apiKey },
-          body: JSON.stringify({ messages: testMessages, max_tokens: 5 }),
+          headers: candidate.headers,
+          body: JSON.stringify(candidate.body),
         });
         if (res.ok) {
-          const workedVersion = new URL(url).searchParams.get("api-version") ?? "";
-          const pathType = url.includes("/models/") ? "Azure AI Foundry" : "Azure OpenAI clásico";
+          const workedVersion = new URL(candidate.url).searchParams.get("api-version") ?? "";
+          const pathType = candidate.url.includes("/openai/v1/") ? "Azure AI Foundry (OpenAI-compatible)" : candidate.url.includes("/models/") ? "Azure AI Foundry" : "Azure OpenAI";
           const hint = workedVersion ? `${pathType} · api-version: ${workedVersion}` : pathType;
-          return NextResponse.json({ ok: true, hint, debugUrl: url });
+          return NextResponse.json({ ok: true, hint, debugUrl: candidate.url });
         }
         const err = await res.json().catch(() => ({}));
         const code = err?.error?.code ?? "";
