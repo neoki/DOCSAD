@@ -198,12 +198,18 @@ export default function AjustesPage() {
         }),
       });
       const data = await res.json();
-      setTestResult((prev) => ({
-        ...prev,
-        [id]: data.ok
-          ? `Conexión verificada correctamente${data.hint ? ` (${data.hint})` : ""}`
-          : `Error: ${data.error ?? "desconocido"}`,
-      }));
+      if (data.ok) {
+        setTestResult((prev) => ({
+          ...prev,
+          [id]: `Conexión verificada correctamente${data.hint ? ` (${data.hint})` : ""}`,
+        }));
+      } else {
+        const attempts: string[] = data.attempts ?? [];
+        const detail = attempts.length > 0
+          ? attempts.map((a: string, i: number) => `[${i + 1}] ${a}`).join(" | ")
+          : (data.error ?? "desconocido");
+        setTestResult((prev) => ({ ...prev, [id]: `Error: ${detail}` }));
+      }
     } catch {
       setTestResult((prev) => ({ ...prev, [id]: "Error de red al probar la conexión" }));
     } finally {

@@ -145,12 +145,19 @@ export async function POST(request: Request) {
       const baseHeaders = { "Content-Type": "application/json", "api-key": apiKey };
       const bearerHeaders = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` };
 
+      // API versions to try for Azure AI Foundry project v1 endpoint
+      const v1Versions = ["2025-01-01-preview", "2024-12-01-preview", "2024-10-01-preview", "2024-08-01-preview"];
+
       const urlCandidates: Candidate[] = isFoundryDomain
         ? [
-            // Azure AI Foundry project — OpenAI-compatible v1 endpoint (model in body, no api-version)
+            // Azure AI Foundry project — /openai/v1/chat/completions WITH api-version (required by Azure)
+            ...v1Versions.flatMap(v => [
+              { url: `${base}/openai/v1/chat/completions?api-version=${v}`, body: { model: deploymentName, messages: testMessages, max_tokens: 5 }, headers: baseHeaders },
+              { url: `${base}/openai/v1/chat/completions?api-version=${v}`, body: { model: deploymentName, messages: testMessages, max_tokens: 5 }, headers: bearerHeaders },
+            ]),
+            // Without api-version fallback
             { url: `${base}/openai/v1/chat/completions`, body: { model: deploymentName, messages: testMessages, max_tokens: 5 }, headers: baseHeaders },
-            { url: `${base}/openai/v1/chat/completions`, body: { model: deploymentName, messages: testMessages, max_tokens: 5 }, headers: bearerHeaders },
-            // Hub-level models inference with api-version
+            // Hub-level models inference
             ...foundryVersions.map(v => ({ url: `${hubBase}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`, body: { messages: testMessages, max_tokens: 5 }, headers: baseHeaders })),
           ]
         : [
@@ -159,25 +166,36 @@ export async function POST(request: Request) {
             { url: `${base}/openai/deployments/${enc(deploymentName)}/chat/completions?api-version=${enc(userVersion)}`, body: { messages: testMessages, max_tokens: 5 }, headers: baseHeaders },
           ];
 
-      let lastError = "";
+      const attemptLog: string[] = [];
       for (const candidate of urlCandidates) {
-        const res = await fetch(candidate.url, {
-          method: "POST",
-          headers: candidate.headers,
-          body: JSON.stringify(candidate.body),
-        });
-        if (res.ok) {
-          const workedVersion = new URL(candidate.url).searchParams.get("api-version") ?? "";
-          const pathType = candidate.url.includes("/openai/v1/") ? "Azure AI Foundry (OpenAI-compatible)" : candidate.url.includes("/models/") ? "Azure AI Foundry" : "Azure OpenAI";
-          const hint = workedVersion ? `${pathType} · api-version: ${workedVersion}` : pathType;
-          return NextResponse.json({ ok: true, hint, debugUrl: candidate.url });
+        let status = 0;
+        let errDetail = "";
+        try {
+          const res = await fetch(candidate.url, {
+            method: "POST",
+            headers: candidate.headers,
+            body: JSON.stringify(candidate.body),
+          });
+          status = res.status;
+          if (res.ok) {
+            const workedVersion = new URL(candidate.url).searchParams.get("api-version") ?? "";
+            const pathType = candidate.url.includes("/openai/v1/") ? "Azure AI Foundry (OpenAI-compatible)" : candidate.url.includes("/models/") ? "Azure AI Foundry" : "Azure OpenAI";
+            const hint = workedVersion ? `${pathType} · api-version: ${workedVersion}` : pathType;
+            console.log(`[azure-test] OK: ${candidate.url}`);
+            return NextResponse.json({ ok: true, hint, debugUrl: candidate.url });
+          }
+          const err = await res.json().catch(() => ({}));
+          const code = err?.error?.code ?? "";
+          const msg = err?.error?.message ?? `HTTP ${status}`;
+          errDetail = code ? `[${code}] ${msg}` : `HTTP ${status}: ${msg}`;
+        } catch (fetchErr) {
+          errDetail = String(fetchErr).slice(0, 120);
         }
-        const err = await res.json().catch(() => ({}));
-        const code = err?.error?.code ?? "";
-        const msg = err?.error?.message ?? `HTTP ${res.status}`;
-        lastError = code ? `[${code}] ${msg}` : `HTTP ${res.status}: ${msg}`;
+        const shortUrl = candidate.url.replace("https://", "").slice(0, 80);
+        attemptLog.push(`${shortUrl} → ${errDetail}`);
+        console.log(`[azure-test] FAIL ${status}: ${candidate.url} — ${errDetail}`);
       }
-      return NextResponse.json({ ok: false, error: lastError });
+      return NextResponse.json({ ok: false, error: attemptLog[0] ?? "Sin respuesta", attempts: attemptLog });
 
     } else {
       return NextResponse.json({ ok: false, error: "Proveedor no reconocido" });
