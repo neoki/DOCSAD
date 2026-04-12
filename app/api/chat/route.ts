@@ -160,17 +160,20 @@ async function callAzureOpenAI(
 
   let lastErr = "";
   for (const c of candidates) {
+    console.log(`[chat-azure] trying: ${c.url}`);
     const res = await fetch(c.url, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...c.authHeader },
       body: JSON.stringify(c.body),
     });
     if (res.ok) {
+      console.log(`[chat-azure] success: ${c.url}`);
       const data = await res.json();
       return data.choices?.[0]?.message?.content ?? "";
     }
     const errText = await res.text();
     lastErr = `Azure error ${res.status}: ${errText.slice(0, 200)}`;
+    console.log(`[chat-azure] failed ${res.status}: ${c.url} — ${errText.slice(0, 150)}`);
   }
   throw new Error(lastErr);
 }
