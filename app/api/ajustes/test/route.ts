@@ -145,19 +145,11 @@ export async function POST(request: Request) {
       const baseHeaders = { "Content-Type": "application/json", "api-key": apiKey };
       const bearerHeaders = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` };
 
-      // API versions to try for Azure AI Foundry project v1 endpoint
-      const v1Versions = ["2025-01-01-preview", "2024-12-01-preview", "2024-10-01-preview", "2024-08-01-preview"];
-
       const urlCandidates: Candidate[] = isFoundryDomain
         ? [
-            // Azure AI Foundry project — /openai/v1/chat/completions WITH api-version (required by Azure)
-            ...v1Versions.flatMap(v => [
-              { url: `${base}/openai/v1/chat/completions?api-version=${v}`, body: { model: deploymentName, messages: testMessages, max_tokens: 5 }, headers: baseHeaders },
-              { url: `${base}/openai/v1/chat/completions?api-version=${v}`, body: { model: deploymentName, messages: testMessages, max_tokens: 5 }, headers: bearerHeaders },
-            ]),
-            // Without api-version fallback
+            // Azure AI Foundry /v1 — NO api-version (Azure rejects it on /v1 paths), model in body
             { url: `${base}/openai/v1/chat/completions`, body: { model: deploymentName, messages: testMessages, max_tokens: 5 }, headers: baseHeaders },
-            // Hub-level models inference
+            // Hub-level models inference with api-version
             ...foundryVersions.map(v => ({ url: `${hubBase}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`, body: { messages: testMessages, max_tokens: 5 }, headers: baseHeaders })),
           ]
         : [

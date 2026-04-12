@@ -146,17 +146,11 @@ async function callAzureOpenAI(
   const apiKeyHeader = { "api-key": apiKey };
   const bearerHeader = { "Authorization": `Bearer ${apiKey}` };
 
-  const v1Versions = ["2025-01-01-preview", "2024-12-01-preview", "2024-10-01-preview", "2024-08-01-preview"];
-
   const candidates: AzureCandidate[] = isFoundryDomain
     ? [
-        // Azure AI Foundry project — /openai/v1/chat/completions with api-version
-        ...v1Versions.flatMap(v => [
-          { url: `${base}/openai/v1/chat/completions?api-version=${v}`, body: { ...payload, model: deploymentName }, authHeader: apiKeyHeader },
-          { url: `${base}/openai/v1/chat/completions?api-version=${v}`, body: { ...payload, model: deploymentName }, authHeader: bearerHeader },
-        ]),
+        // Azure AI Foundry /v1 — NO api-version (Azure rejects it on /v1 paths), model in body
         { url: `${base}/openai/v1/chat/completions`, body: { ...payload, model: deploymentName }, authHeader: apiKeyHeader },
-        // Hub-level models inference
+        // Hub-level models inference fallback
         ...foundryVersions.map(v => ({ url: `${hubBase}/models/${enc(deploymentName)}/chat/completions?api-version=${v}`, body: payload, authHeader: apiKeyHeader })),
       ]
     : [
