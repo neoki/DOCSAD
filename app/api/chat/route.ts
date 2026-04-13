@@ -283,29 +283,48 @@ async function saveConversation(
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return existingConversationId ?? "";
 
-    let conversationId = existingConversationId;
+    const title = userMessage.slice(0, 80).replace(/\s+/g, " ").trim() || "Nueva conversación";
+    const now = new Date();
 
-    if (!conversationId) {
-      const title = userMessage.slice(0, 80).replace(/\s+/g, " ").trim() || "Nueva conversación";
-      const conversation = await prisma.conversation.create({
-        data: { userId: user.id, title },
+    let conversationId: string;
+
+    if (existingConversationId) {
+      const owned = await prisma.conversation.findFirst({
+        where: { id: existingConversationId, userId: user.id },
+        select: { id: true },
       });
-      conversationId = conversation.id;
-    } else {
-      await prisma.conversation.update({
-        where: { id: conversationId },
-        data: { updatedAt: new Date() },
-      });
+      if (owned) {
+        conversationId = owned.id;
+        await prisma.$transaction([
+          prisma.conversation.update({
+            where: { id: conversationId },
+            data: { updatedAt: now },
+          }),
+          prisma.chatMessage.createMany({
+            data: [
+              { conversationId, role: "user", content: userMessage, createdAt: now },
+              { conversationId, role: "assistant", content: assistantReply, createdAt: now },
+            ],
+          }),
+        ]);
+        return conversationId;
+      }
     }
 
-    await prisma.chatMessage.createMany({
-      data: [
-        { conversationId, role: "user", content: userMessage },
-        { conversationId, role: "assistant", content: assistantReply },
-      ],
+    const result = await prisma.$transaction(async (tx) => {
+      const conv = await tx.conversation.create({
+        data: { userId: user.id, title },
+      });
+      await tx.chatMessage.createMany({
+        data: [
+          { conversationId: conv.id, role: "user", content: userMessage },
+          { conversationId: conv.id, role: "assistant", content: assistantReply },
+        ],
+      });
+      return conv.id;
     });
 
-    return conversationId;
+    return result;
   } catch (err) {
     console.error("Error saving conversation:", err);
     return existingConversationId ?? "";
