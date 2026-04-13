@@ -261,9 +261,19 @@ export async function POST(req: NextRequest) {
       reply = await callOpenAI(apiKey, model, systemPrompt, messages);
     }
 
-    const conversationId = await saveConversation(session.user?.email ?? "", body.conversationId, lastUserMsg, reply);
+    const userEmail = session.user?.email;
+    let conversationId: string | undefined;
+    let persistenceWarning: string | undefined;
+    if (userEmail) {
+      conversationId = await saveConversation(userEmail, body.conversationId, lastUserMsg, reply);
+      if (!conversationId) {
+        persistenceWarning = "La respuesta se ha generado correctamente pero no se pudo guardar en el historial.";
+      }
+    } else {
+      persistenceWarning = "La respuesta se ha generado correctamente pero no se pudo guardar en el historial (sesión sin email).";
+    }
 
-    return NextResponse.json({ reply, conversationId });
+    return NextResponse.json({ reply, conversationId, persistenceWarning });
   } catch (err) {
     const msg = String(err);
     return NextResponse.json(
@@ -327,6 +337,6 @@ async function saveConversation(
     return result;
   } catch (err) {
     console.error("Error saving conversation:", err);
-    return existingConversationId ?? "";
+    return "";
   }
 }

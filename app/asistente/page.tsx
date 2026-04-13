@@ -132,9 +132,11 @@ export default function AsistentePage() {
         );
         setMessages(msgs);
         setActiveConversationId(id);
+      } else {
+        setError("No se pudo cargar la conversación.");
       }
     } catch {
-      setError("No se pudo cargar la conversación.");
+      setError("No se pudo cargar la conversación. Comprueba tu conexión.");
     }
     setLoadingHistory(false);
   }
@@ -157,8 +159,11 @@ export default function AsistentePage() {
         if (activeConversationId === id) {
           startNewConversation();
         }
+      } else {
+        setError("No se pudo eliminar la conversación.");
       }
     } catch {
+      setError("No se pudo eliminar la conversación. Comprueba tu conexión.");
     }
     setDeletingId(null);
   }
@@ -201,6 +206,10 @@ export default function AsistentePage() {
       if (data.reply) {
         const withReply = [...newMessages, { role: "assistant" as const, content: data.reply }];
         setMessages(withReply);
+
+        if (data.persistenceWarning) {
+          setError(data.persistenceWarning);
+        }
 
         if (data.conversationId) {
           const isNew = !activeConversationId;
