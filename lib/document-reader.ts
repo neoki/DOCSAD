@@ -14,7 +14,7 @@ const SUBFOLDERS_PRIORITY: Record<string, number> = {
 const READABLE_EXTENSIONS = new Set([".txt", ".md", ".csv", ".json", ".xml", ".htm", ".html"]);
 const WORD_EXTENSIONS = new Set([".docx", ".doc"]);
 const EXCEL_EXTENSIONS = new Set([".xlsx", ".xls"]);
-const PDF_EXTENSION = ".pdf";
+const PDF_EXTENSIONS = new Set([".pdf"]);
 
 function getExt(name: string): string {
   const m = name.match(/\.[a-zA-Z0-9]+$/);
@@ -25,9 +25,9 @@ function scoreFile(name: string, subfolder: string | null, query: string): numbe
   let score = SUBFOLDERS_PRIORITY[subfolder ?? ""] ?? 0;
   const ext = getExt(name);
   if (WORD_EXTENSIONS.has(ext)) score += 5;
+  else if (PDF_EXTENSIONS.has(ext)) score += 5;
   else if (READABLE_EXTENSIONS.has(ext)) score += 4;
   else if (EXCEL_EXTENSIONS.has(ext)) score += 3;
-  else if (ext === PDF_EXTENSION) score += 2;
   const qwords = query.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
   const nameLow = name.toLowerCase();
   for (const w of qwords) {
@@ -66,6 +66,14 @@ async function extractTextFromExcelBuffer(buffer: ArrayBuffer): Promise<string> 
   return lines.join("\n\n");
 }
 
+async function extractTextFromPdfBuffer(buffer: ArrayBuffer): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParse = require("pdf-parse") as (buf: Buffer, opts?: { max?: number }) => Promise<{ text: string }>;
+  const nodeBuffer = Buffer.from(buffer);
+  const data = await pdfParse(nodeBuffer, { max: 5 });
+  return data.text.replace(/\s+/g, " ").trim();
+}
+
 async function fetchDocumentText(
   driveId: string,
   itemId: string,
@@ -93,6 +101,8 @@ async function fetchDocumentText(
       text = await extractTextFromWordBuffer(buffer);
     } else if (EXCEL_EXTENSIONS.has(ext)) {
       text = await extractTextFromExcelBuffer(buffer);
+    } else if (PDF_EXTENSIONS.has(ext)) {
+      text = await extractTextFromPdfBuffer(buffer);
     } else {
       return null;
     }
@@ -130,7 +140,8 @@ async function readRelevantDocumentsImpl(
     return (
       READABLE_EXTENSIONS.has(ext) ||
       WORD_EXTENSIONS.has(ext) ||
-      EXCEL_EXTENSIONS.has(ext)
+      EXCEL_EXTENSIONS.has(ext) ||
+      PDF_EXTENSIONS.has(ext)
     );
   });
 

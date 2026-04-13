@@ -177,7 +177,7 @@ export async function buildSystemContext(lastUserMessage: string): Promise<strin
     detailSection.push(`=== DETALLE COMUNIDAD: ${detectedComunidad.codigo} — ${detectedComunidad.nombre} ===`);
     const [detail, docContent] = await Promise.all([
       buildComunidadDetail(detectedComunidad.id, detectedComunidad.checklists),
-      readRelevantDocuments(detectedComunidad.id, lastUserMessage),
+      readRelevantDocuments(detectedComunidad.id, lastUserMessage, 6, 3000),
     ]);
     detailSection.push(detail);
     if (docContent) docContentSection.push(docContent);
@@ -205,23 +205,50 @@ async function detectComunidad(
       .replace(/[íìï]/g, "i").replace(/[óòö]/g, "o")
       .replace(/[úùü]/g, "u").replace(/ñ/g, "n");
 
+  const STOP_WORDS = new Set([
+    "comunidad", "propietarios", "calle", "avenida", "avda", "plaza", "paseo",
+    "edificio", "bloque", "numero", "cuentas", "contabilidad", "actas", "acta",
+    "para", "sobre", "desde", "hasta", "como", "este", "esta", "esto",
+  ]);
+
   const normalizedText = norm(text);
 
-  const codeMatch = text.match(/\b(\d{3,6})\b/);
-  if (codeMatch) {
-    const code = codeMatch[1].padStart(6, "0");
+  const codeMatches = text.match(/\b(\d{2,6})\b/g) ?? [];
+  for (const raw of codeMatches) {
+    const code = raw.padStart(6, "0");
     const found = comunidades.find((c) => c.codigo === code);
     if (found) return found;
   }
 
+  const candidates: { com: typeof comunidades[0]; score: number }[] = [];
+
   for (const c of comunidades) {
-    const words = norm(c.nombre).split(/\s+/).filter((w) => w.length > 3);
+    const words = norm(c.nombre)
+      .split(/\s+/)
+      .filter((w) => w.length > 3 && !STOP_WORDS.has(w));
+    if (words.length === 0) continue;
+
     const matchCount = words.filter((w) => normalizedText.includes(w)).length;
-    if (matchCount >= 2 || (words.length === 1 && matchCount === 1)) {
-      return c;
+
+    if (matchCount >= 2) {
+      candidates.push({ com: c, score: matchCount });
+    } else if (matchCount === 1) {
+      const matchedWord = words.find((w) => normalizedText.includes(w))!;
+      if (matchedWord.length >= 5) {
+        const countWithSameWord = comunidades.filter((other) => {
+          const otherWords = norm(other.nombre).split(/\s+/).filter((w) => w.length > 3 && !STOP_WORDS.has(w));
+          return otherWords.includes(matchedWord);
+        }).length;
+        if (countWithSameWord === 1) {
+          candidates.push({ com: c, score: 1 });
+        }
+      }
     }
   }
-  return null;
+
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates[0].com;
 }
 
 async function buildComunidadDetail(
@@ -233,7 +260,6 @@ async function buildComunidadDetail(
       where: { comunidadId, isFolder: false },
       select: { name: true, subfolder: true, sharePointModified: true },
       orderBy: { sharePointModified: "desc" },
-      take: 60,
     }),
     prisma.nota.findMany({
       where: { comunidadId },
