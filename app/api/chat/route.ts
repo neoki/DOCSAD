@@ -291,7 +291,7 @@ async function saveConversation(
 ): Promise<string> {
   try {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return existingConversationId ?? "";
+    if (!user) return "";
 
     const title = userMessage.slice(0, 80).replace(/\s+/g, " ").trim() || "Nueva conversación";
     const now = new Date();
