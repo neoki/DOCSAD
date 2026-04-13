@@ -151,10 +151,12 @@ export default function AsistentePage() {
   async function deleteConversation(id: string) {
     setDeletingId(id);
     try {
-      await fetch(`/api/conversations/${id}`, { method: "DELETE" });
-      setConversations((prev) => prev.filter((c) => c.id !== id));
-      if (activeConversationId === id) {
-        startNewConversation();
+      const res = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setConversations((prev) => prev.filter((c) => c.id !== id));
+        if (activeConversationId === id) {
+          startNewConversation();
+        }
       }
     } catch {
     }
@@ -206,13 +208,16 @@ export default function AsistentePage() {
           if (isNew) {
             await loadConversations();
           } else {
-            setConversations((prev) =>
-              prev.map((c) =>
+            setConversations((prev) => {
+              const updated = prev.map((c) =>
                 c.id === data.conversationId
                   ? { ...c, updatedAt: new Date().toISOString(), _count: { messages: c._count.messages + 2 } }
                   : c
-              )
-            );
+              );
+              return [...updated].sort(
+                (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+              );
+            });
           }
         }
       }
