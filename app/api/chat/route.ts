@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getActiveAiConfig, buildSystemContext } from "@/lib/ai-context";
+import { prisma } from "@/lib/prisma";
 
 export const maxDuration = 60;
 
@@ -182,7 +183,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: { messages?: Message[] };
+  let body: { messages?: Message[]; conversationId?: string };
   try {
     body = await req.json();
   } catch {
@@ -260,12 +261,53 @@ export async function POST(req: NextRequest) {
       reply = await callOpenAI(apiKey, model, systemPrompt, messages);
     }
 
-    return NextResponse.json({ reply });
+    const conversationId = await saveConversation(session.user?.email ?? "", body.conversationId, lastUserMsg, reply);
+
+    return NextResponse.json({ reply, conversationId });
   } catch (err) {
     const msg = String(err);
     return NextResponse.json(
       { error: "api_error", message: `Error al llamar a la IA: ${msg.slice(0, 300)}` },
       { status: 200 }
     );
+  }
+}
+
+async function saveConversation(
+  email: string,
+  existingConversationId: string | undefined,
+  userMessage: string,
+  assistantReply: string
+): Promise<string> {
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return existingConversationId ?? "";
+
+    let conversationId = existingConversationId;
+
+    if (!conversationId) {
+      const title = userMessage.slice(0, 80).replace(/\s+/g, " ").trim() || "Nueva conversación";
+      const conversation = await prisma.conversation.create({
+        data: { userId: user.id, title },
+      });
+      conversationId = conversation.id;
+    } else {
+      await prisma.conversation.update({
+        where: { id: conversationId },
+        data: { updatedAt: new Date() },
+      });
+    }
+
+    await prisma.chatMessage.createMany({
+      data: [
+        { conversationId, role: "user", content: userMessage },
+        { conversationId, role: "assistant", content: assistantReply },
+      ],
+    });
+
+    return conversationId;
+  } catch (err) {
+    console.error("Error saving conversation:", err);
+    return existingConversationId ?? "";
   }
 }
