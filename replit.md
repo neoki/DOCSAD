@@ -28,6 +28,7 @@ DocFincas is a document management system for community property management ("Ge
   - `app/comparar/` — Side-by-side community comparison (2-5 communities)
   - `app/usuarios/` — User management (admin only)
   - `app/auditoria/` — Audit log viewer (admin only)
+  - `app/admin/conversaciones/` — Admin-only: view all users' AI assistant conversations with user filter and message reader; protected by server layout redirect
   - `app/escaner/` — Scanner migration tool with "Bandeja de Entrada Inteligente" auto-routing inbox panel
   - `app/ajustes/` — Settings: OneDrive credentials, sync trigger
   - `app/api/sync/` — Sync API: POST triggers full/incremental sync, GET returns stats/logs/status

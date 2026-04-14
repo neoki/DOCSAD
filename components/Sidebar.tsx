@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
@@ -85,6 +86,18 @@ const NAV_ITEMS = [
   },
 ];
 
+const ADMIN_BOTTOM_ITEMS = [
+  {
+    label: "Conversaciones IA",
+    href: "/admin/conversaciones",
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+];
+
 const BOTTOM_ITEMS = [
   {
     label: "Usuarios",
@@ -124,6 +137,8 @@ const BOTTOM_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN";
   const [darkMode, setDarkMode] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
 
@@ -277,6 +292,7 @@ export default function Sidebar() {
             paddingTop: 8,
           }}
         >
+          {isAdmin && ADMIN_BOTTOM_ITEMS.map((item) => renderLink(item))}
           {BOTTOM_ITEMS.map((item) => renderLink(item))}
 
           <button
