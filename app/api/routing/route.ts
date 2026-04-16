@@ -190,7 +190,16 @@ export async function POST(req: NextRequest) {
         }
 
         const sourceDriveId = c.driveId || scanner.driveId;
-        await moveFile(sourceDriveId, c.sharePointItemId, targetFolderId, destDriveId);
+        try {
+          await moveFile(sourceDriveId, c.sharePointItemId, targetFolderId, destDriveId);
+        } catch (moveErr) {
+          const errStr = String(moveErr);
+          // 409 nameAlreadyExists → file is already at destination, treat as success
+          if (!errStr.includes("nameAlreadyExists")) {
+            throw moveErr;
+          }
+          console.log(`[routing] "${c.fileName}" ya existe en destino, marcando como confirmado`);
+        }
 
         await prisma.routingCandidate.update({
           where: { id: c.id },
