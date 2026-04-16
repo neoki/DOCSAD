@@ -91,6 +91,8 @@ export default function ComunidadDetailPage() {
 
   const [routingCandidates, setRoutingCandidates] = useState<RoutingCandidate[]>([]);
   const [routingConfirming, setRoutingConfirming] = useState(false);
+  const [routingExpanded, setRoutingExpanded] = useState(false);
+  const [rejectingIds, setRejectingIds] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     const [comRes, checkRes] = await Promise.all([
@@ -125,6 +127,26 @@ export default function ComunidadDetailPage() {
       await fetchRouting();
     } finally {
       setRoutingConfirming(false);
+    }
+  };
+
+  const rejectOne = async (candidateId: string) => {
+    setRejectingIds((prev) => new Set(prev).add(candidateId));
+    setRoutingCandidates((prev) => prev.filter((c) => c.id !== candidateId));
+    try {
+      await fetch("/api/routing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reject", ids: [candidateId] }),
+      });
+    } catch {
+      await fetchRouting();
+    } finally {
+      setRejectingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(candidateId);
+        return next;
+      });
     }
   };
 
@@ -277,6 +299,7 @@ export default function ComunidadDetailPage() {
             background: "white",
           }}
         >
+          {/* Header row */}
           <div
             style={{
               background: "linear-gradient(135deg, #EFF6FF, #E0EAFF)",
@@ -284,24 +307,73 @@ export default function ComunidadDetailPage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              gap: 10,
             }}
           >
-            <div className="flex items-center gap-2">
+            {/* Toggle + title + badge */}
+            <button
+              onClick={() => setRoutingExpanded((v) => !v)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
               <span style={{ fontSize: 18 }}>📥</span>
               <span className="font-bold text-gray-900" style={{ fontSize: 14 }}>
                 Documentos detectados en el Escáner
               </span>
               <span
-                className="text-xs font-bold px-2 py-0.5 rounded-full"
+                className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
                 style={{ background: "#4F7CFF", color: "white" }}
               >
                 {routingCandidates.length} pendiente{routingCandidates.length !== 1 ? "s" : ""}
               </span>
-            </div>
+              {/* Confidence summary pills */}
+              {!routingExpanded && (
+                <span className="flex items-center gap-1 ml-2">
+                  {routingCandidates.filter((c) => c.confidence === "high").length > 0 && (
+                    <span style={{ fontSize: 11, background: "#dcfce7", color: "#16a34a", borderRadius: 8, padding: "1px 7px", fontWeight: 600 }}>
+                      {routingCandidates.filter((c) => c.confidence === "high").length} alta
+                    </span>
+                  )}
+                  {routingCandidates.filter((c) => c.confidence === "medium").length > 0 && (
+                    <span style={{ fontSize: 11, background: "#fef3c7", color: "#d97706", borderRadius: 8, padding: "1px 7px", fontWeight: 600 }}>
+                      {routingCandidates.filter((c) => c.confidence === "medium").length} media
+                    </span>
+                  )}
+                  {routingCandidates.filter((c) => c.confidence === "low").length > 0 && (
+                    <span style={{ fontSize: 11, background: "#f1f5f9", color: "#64748b", borderRadius: 8, padding: "1px 7px", fontWeight: 600 }}>
+                      {routingCandidates.filter((c) => c.confidence === "low").length} baja
+                    </span>
+                  )}
+                </span>
+              )}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#6b7280"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ marginLeft: 4, flexShrink: 0, transform: routingExpanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {/* Archive all button */}
             <button
               onClick={confirmAllRouting}
               disabled={routingConfirming}
-              className="text-xs font-semibold px-4 py-1.5 rounded-lg cursor-pointer"
+              className="text-xs font-semibold px-4 py-1.5 rounded-lg cursor-pointer shrink-0"
               style={{
                 background: routingConfirming ? "#94a3b8" : "#4F7CFF",
                 color: "white",
@@ -309,41 +381,65 @@ export default function ComunidadDetailPage() {
                 opacity: routingConfirming ? 0.7 : 1,
               }}
             >
-              {routingConfirming ? "Archivando en SharePoint..." : `✓ Confirmar y archivar todos (${routingCandidates.length})`}
+              {routingConfirming ? "Archivando..." : `✓ Archivar todos (${routingCandidates.length})`}
             </button>
           </div>
-          <div>
-            {routingCandidates.map((c, i) => (
-              <div
-                key={c.id}
-                style={{
-                  padding: "8px 18px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  borderTop: i === 0 ? "none" : "1px solid #f1f5f9",
-                  background: i % 2 === 0 ? "#FAFBFF" : "white",
-                }}
-              >
-                <span style={{ fontSize: 14 }}>📄</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="text-xs font-medium text-gray-800 truncate">{c.fileName}</div>
-                  <div className="text-xs text-gray-400">
-                    Se archivará en: <span className="font-semibold text-blue-600">{c.subfolder}</span>
-                  </div>
-                </div>
-                <span
-                  className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+
+          {/* Collapsible list */}
+          {routingExpanded && (
+            <div style={{ maxHeight: 420, overflowY: "auto" }}>
+              {routingCandidates.map((c, i) => (
+                <div
+                  key={c.id}
                   style={{
-                    background: c.confidence === "high" ? "#dcfce7" : c.confidence === "medium" ? "#fef3c7" : "#f1f5f9",
-                    color: c.confidence === "high" ? "#16a34a" : c.confidence === "medium" ? "#d97706" : "#64748b",
+                    padding: "8px 18px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    borderTop: i === 0 ? "none" : "1px solid #f1f5f9",
+                    background: i % 2 === 0 ? "#FAFBFF" : "white",
                   }}
                 >
-                  {c.confidence === "high" ? "Alta" : c.confidence === "medium" ? "Media" : "Baja"}
-                </span>
-              </div>
-            ))}
-          </div>
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>📄</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="text-xs font-medium text-gray-800 truncate">{c.fileName}</div>
+                    <div className="text-xs text-gray-400">
+                      Se archivará en: <span className="font-semibold text-blue-600">{c.subfolder}</span>
+                    </div>
+                  </div>
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+                    style={{
+                      background: c.confidence === "high" ? "#dcfce7" : c.confidence === "medium" ? "#fef3c7" : "#f1f5f9",
+                      color: c.confidence === "high" ? "#16a34a" : c.confidence === "medium" ? "#d97706" : "#64748b",
+                    }}
+                  >
+                    {c.confidence === "high" ? "Alta" : c.confidence === "medium" ? "Media" : "Baja"}
+                  </span>
+                  <button
+                    onClick={() => rejectOne(c.id)}
+                    disabled={rejectingIds.has(c.id)}
+                    title="Descartar este documento"
+                    style={{
+                      flexShrink: 0,
+                      background: "none",
+                      border: "1px solid #fca5a5",
+                      borderRadius: 6,
+                      color: "#ef4444",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: "2px 8px",
+                      cursor: "pointer",
+                      opacity: rejectingIds.has(c.id) ? 0.4 : 1,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Descartar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
