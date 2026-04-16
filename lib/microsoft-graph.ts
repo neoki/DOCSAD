@@ -683,21 +683,25 @@ async function graphGetFull(url: string, accessToken: string): Promise<Record<st
 }
 
 export async function moveFile(
-  driveId: string,
+  sourceDriveId: string,
   itemId: string,
   destinationFolderId: string,
+  destinationDriveId?: string,
   newName?: string,
 ): Promise<{ id: string; name: string; webUrl: string }> {
   const accessToken = await getValidAccessToken();
   if (!accessToken) throw new Error("Not connected");
 
   const body: Record<string, unknown> = {
-    parentReference: { driveId, id: destinationFolderId },
+    parentReference: {
+      driveId: destinationDriveId || sourceDriveId,
+      id: destinationFolderId,
+    },
   };
   if (newName) body.name = newName;
 
   const res = await fetch(
-    `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}`,
+    `https://graph.microsoft.com/v1.0/drives/${sourceDriveId}/items/${itemId}`,
     {
       method: "PATCH",
       headers: {

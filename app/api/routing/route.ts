@@ -148,8 +148,10 @@ export async function POST(req: NextRequest) {
 
     const scanner = await getEscanerRoot();
     if (!scanner) {
+      console.error("[routing] getEscanerRoot() returned null — carpeta Escáner no configurada");
       return NextResponse.json({ error: "Carpeta Escáner no encontrada" }, { status: 404 });
     }
+    console.log(`[routing] Confirmando ${candidates.length} candidatos, scanner driveId=${scanner.driveId}`);
 
     const subfolderCache = new Map<string, string>();
     const results: { id: string; fileName: string; success: boolean; error?: string }[] = [];
@@ -188,7 +190,7 @@ export async function POST(req: NextRequest) {
         }
 
         const sourceDriveId = c.driveId || scanner.driveId;
-        await moveFile(sourceDriveId, c.sharePointItemId, targetFolderId);
+        await moveFile(sourceDriveId, c.sharePointItemId, targetFolderId, destDriveId);
 
         await prisma.routingCandidate.update({
           where: { id: c.id },
@@ -201,6 +203,7 @@ export async function POST(req: NextRequest) {
 
         results.push({ id: c.id, fileName: c.fileName, success: true });
       } catch (err) {
+        console.error(`[routing] Error archivando "${c.fileName}":`, String(err));
         results.push({ id: c.id, fileName: c.fileName, success: false, error: String(err) });
       }
     }

@@ -93,6 +93,7 @@ export default function ComunidadDetailPage() {
   const [routingConfirming, setRoutingConfirming] = useState(false);
   const [routingExpanded, setRoutingExpanded] = useState(false);
   const [rejectingIds, setRejectingIds] = useState<Set<string>>(new Set());
+  const [routingResult, setRoutingResult] = useState<{ succeeded: number; failed: number; errors: string[] } | null>(null);
 
   const fetchData = useCallback(async () => {
     const [comRes, checkRes] = await Promise.all([
@@ -115,8 +116,9 @@ export default function ComunidadDetailPage() {
   const confirmAllRouting = async () => {
     if (routingCandidates.length === 0) return;
     setRoutingConfirming(true);
+    setRoutingResult(null);
     try {
-      await fetch("/api/routing", {
+      const res = await fetch("/api/routing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,7 +126,22 @@ export default function ComunidadDetailPage() {
           ids: routingCandidates.map((c) => c.id),
         }),
       });
+      const data = await res.json();
+      if (!res.ok) {
+        setRoutingResult({ succeeded: 0, failed: routingCandidates.length, errors: [data.error || `Error ${res.status}`] });
+      } else {
+        const errors = (data.results || [])
+          .filter((r: { success: boolean; fileName: string; error?: string }) => !r.success)
+          .map((r: { success: boolean; fileName: string; error?: string }) => `${r.fileName}: ${r.error || "desconocido"}`);
+        setRoutingResult({
+          succeeded: data.summary?.succeeded ?? 0,
+          failed: data.summary?.failed ?? 0,
+          errors,
+        });
+      }
       await fetchRouting();
+    } catch (err) {
+      setRoutingResult({ succeeded: 0, failed: routingCandidates.length, errors: [String(err)] });
     } finally {
       setRoutingConfirming(false);
     }
@@ -384,6 +401,45 @@ export default function ComunidadDetailPage() {
               {routingConfirming ? "Archivando..." : `✓ Archivar todos (${routingCandidates.length})`}
             </button>
           </div>
+
+          {/* Result banner */}
+          {routingResult && (
+            <div style={{
+              padding: "10px 18px",
+              background: routingResult.failed === 0 ? "#f0fdf4" : routingResult.succeeded === 0 ? "#fef2f2" : "#fffbeb",
+              borderTop: "1px solid",
+              borderColor: routingResult.failed === 0 ? "#bbf7d0" : routingResult.succeeded === 0 ? "#fecaca" : "#fde68a",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+            }}>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>
+                {routingResult.failed === 0 ? "✅" : routingResult.succeeded === 0 ? "❌" : "⚠️"}
+              </span>
+              <div style={{ flex: 1, fontSize: 13 }}>
+                {routingResult.succeeded > 0 && (
+                  <span style={{ color: "#15803d", fontWeight: 600 }}>
+                    {routingResult.succeeded} archivado{routingResult.succeeded !== 1 ? "s" : ""} correctamente.{" "}
+                  </span>
+                )}
+                {routingResult.failed > 0 && (
+                  <span style={{ color: "#dc2626", fontWeight: 600 }}>
+                    {routingResult.failed} fallido{routingResult.failed !== 1 ? "s" : ""}.{" "}
+                  </span>
+                )}
+                {routingResult.errors.length > 0 && (
+                  <details style={{ marginTop: 4 }}>
+                    <summary style={{ cursor: "pointer", color: "#92400e", fontSize: 12 }}>Ver errores</summary>
+                    <ul style={{ margin: "4px 0 0 16px", fontSize: 12, color: "#78350f" }}>
+                      {routingResult.errors.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}
+                      {routingResult.errors.length > 10 && <li>... y {routingResult.errors.length - 10} más</li>}
+                    </ul>
+                  </details>
+                )}
+              </div>
+              <button onClick={() => setRoutingResult(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 16, flexShrink: 0 }}>×</button>
+            </div>
+          )}
 
           {/* Collapsible list */}
           {routingExpanded && (
