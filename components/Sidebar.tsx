@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
@@ -336,6 +336,72 @@ export default function Sidebar() {
               )}
             </span>
             {darkMode ? "Modo claro" : "Modo oscuro"}
+          </button>
+        </div>
+
+        {/* User info + sign out */}
+        <div
+          style={{
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            marginTop: 4,
+            paddingTop: 10,
+            paddingBottom: 4,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 14px 8px" }}>
+            <div
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #4F7CFF, #8B5CF6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#fff",
+                flexShrink: 0,
+              }}
+            >
+              {session?.user?.name?.charAt(0)?.toUpperCase() ?? "?"}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {session?.user?.name ?? "Usuario"}
+              </div>
+              <div style={{ fontSize: 10, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {session?.user?.email ?? ""}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "9px 14px",
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#f87171",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              width: "100%",
+              textAlign: "left",
+              transition: "all 0.2s",
+            }}
+          >
+            <span style={{ opacity: 0.8 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </span>
+            Cerrar sesión
           </button>
         </div>
       </div>
