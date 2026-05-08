@@ -348,7 +348,19 @@ export default function Sidebar() {
             paddingBottom: 4,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 14px 8px" }}>
+          <Link
+            href="/perfil"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "6px 14px 8px",
+              borderRadius: 10,
+              textDecoration: "none",
+              transition: "background 0.15s",
+              background: pathname === "/perfil" ? "rgba(79,124,255,0.12)" : "transparent",
+            }}
+          >
             <div
               style={{
                 width: 30,
@@ -374,7 +386,10 @@ export default function Sidebar() {
                 {session?.user?.email ?? ""}
               </div>
             </div>
-          </div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             style={{
